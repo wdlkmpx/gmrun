@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: gtkcompletionline.cc,v 1.7 2001/05/05 22:11:17 mishoo Exp $
+ *  $Id: gtkcompletionline.cc,v 1.8 2001/05/06 09:48:19 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -764,13 +764,18 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
       STOP_PRESS;
       return TRUE;
      case GDK_Escape:
-      if (cl->win_compl != NULL) {
-        gtk_widget_destroy(cl->win_compl);
-        cl->win_compl = NULL;
-        STOP_PRESS;
-        return TRUE;
-      }
-      return FALSE;
+     case GDK_End:
+     {
+       int pos = gtk_editable_get_position(GTK_EDITABLE(cl));
+       gtk_entry_select_region(GTK_ENTRY(cl), pos, pos);
+       if (cl->win_compl != NULL) {
+         gtk_widget_destroy(cl->win_compl);
+         cl->win_compl = NULL;
+         STOP_PRESS;
+         return TRUE;
+       }
+       return FALSE;
+     }
      default:
       if (cl->win_compl != NULL) {
         gtk_widget_destroy(cl->win_compl);
@@ -783,23 +788,7 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
    case GDK_KEY_RELEASE:
     switch (event->keyval) {
      default:
-      if ((event->keyval >= GDK_0 && event->keyval <= GDK_9) ||
-          (event->keyval >= GDK_A && event->keyval <= GDK_Z) ||
-          (event->keyval >= GDK_a && event->keyval <= GDK_z)) {
-        cl->pos_in_text++;
-        if (cl->win_compl != NULL) {
-          get_prefix(cl);
-          select_appropiate(cl);
-        }
-      } else {
-        if (cl->win_compl != NULL) {
-          gtk_widget_destroy(cl->win_compl);
-          cl->win_compl = NULL;
-        }
-        cl->where = NULL;
-      }
-      
-      return FALSE;
+      break;
     }
     break;
   }
