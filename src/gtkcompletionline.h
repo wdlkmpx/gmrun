@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: gtkcompletionline.h,v 1.8 2001/07/17 15:57:19 mishoo Exp $
+ *  $Id: gtkcompletionline.h,v 1.9 2001/07/22 14:14:45 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -35,7 +35,8 @@ extern "C++" {
   {
     GCL_SEARCH_OFF = 0,
     GCL_SEARCH_REW = 1,
-    GCL_SEARCH_FWD = 2
+    GCL_SEARCH_FWD = 2,
+    GCL_SEARCH_BEG = 3
   };
 
   struct _GtkCompletionLine
