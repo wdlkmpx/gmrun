@@ -22,7 +22,7 @@ BuildPrereq: gtk+ >= 1.2.6
 ./configure
 make
 %install
-make prefix=$RPM_BUILD_ROOT%{prefix} install
+make prefix=/usr install-strip
 
 %files
 %defattr(-,root,root)
