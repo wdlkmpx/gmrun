@@ -7,13 +7,14 @@
 # Set terminal
 Terminal = gnome-terminal --start-factory-server --use-factory
 TermExec = ${Terminal} -e
+AlwaysInTerm = ssh telnet ftp lynx mc
 
 
 
 # Set window geometry (except height)
 Width = 400
 Top = 100
-Left = 50
+Left = 200
 
 
 
@@ -28,9 +29,10 @@ History = 256
 #   - %s gets replaced with "//www.google.com".  This is useful for URL-s
 #     like "man:printf" --> %s will get replaced with "printf"
 
-URL_http = mozilla -url %u
-URL_mailto = mozilla -mail %u
+URL_http = /usr/local/mozilla/mozilla -remote "openURL(%u, new-window)"
+URL_mailto = /usr/local/mozilla/mozilla -remote "mailto(%s)"
 URL_man = ${TermExec} 'man %s'
 URL_file = xftree %s
 URL_readme = ${TermExec} 'less /usr/doc/%s/README'
 URL_info = ${TermExec} 'info %s'
+URL_sh = sh -c '%s'
