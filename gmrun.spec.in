@@ -33,6 +33,16 @@ make install-strip
 %{prefix}/share/gmrun/gmrunrc
 
 %changelog
+* Fri Aug 16 2002 Mihai Bazon <mishoo@infoiasi.ro>
+- Fixed bug: filenames can now contain white spaces (will be backslash-ed)
+- New feature: can specify application handler per file extension, so you
+  can directly type the name of some .cpp file and emacs will show up :)
+  see config file for details.
+- New feature: can automatically simulate a TAB press after some timeout.
+  Check config file for details, key "TabTimeout" (0 to disable).
+- New feature: you can now always use "system" for running programs
+  (specify --enable-system at configure).
+
 * Fri Oct 19 2001 Mihai Bazon <mishoo@infoiasi.ro>
 - Fixed bug with sorting of completion list
 - Fixed bug with URL handling

@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: prefs.cc,v 1.8 2002/08/16 10:30:18 mishoo Exp $
+ *  $Id: prefs.cc,v 1.9 2002/08/16 10:48:22 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -30,7 +30,7 @@ Prefs configuration;
 
 Prefs::Prefs()
 {
-  string file_name = "/etc/";
+  string file_name = PACKAGE_DATA_DIR"/";
   file_name += GMRUNRC;
   init(file_name);
 
