@@ -1,5 +1,12 @@
 -*- text -*-
 
+0.9.2 (Son, Nov 16 2003)
+
+  - UTF-8 support (only tested with german). Please report problems with
+    other languages to <andreas99@users.sf.net>
+
+  - New little feature: you could place gmrun with the -geometry parameter
+
 0.8.1 (Sat, Aug 17 2002)
 
   - bug fix release:
