@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: gtkcompletionline.cc,v 1.3 2001/03/12 09:30:06 mishoo Exp $
+ *  $Id: gtkcompletionline.cc,v 1.4 2001/03/12 16:57:34 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -15,6 +15,9 @@
 #include "gtkcompletionline.h"
 #include <gdk/gdkkeysyms.h>
 #include <gtk/gtksignal.h>
+#include <gtk/gtkclist.h>
+#include <gtk/gtkwindow.h>
+#include <gtk/gtkscrolledwindow.h>
 
 #include <stddef.h>
 #include <stdio.h>
@@ -30,14 +33,16 @@
 #include <iostream>
 using namespace std;
 
+static int on_row_selected_handler = 0;
+
 #ifdef DEBUG
-#define D_VAR(x) cerr << "-v- " << #x << " = " << x << endl
-#define D_MSG(x) cerr << x << endl
-#define D_FNC cerr << "-f- " << __PRETTY_FUNCTION__ << endl
+#define DEBUG_VAR(x) cerr << "-v- " << #x << " = " << x << endl
+#define DEBUG_MSG(x) cerr << x << endl
+#define DEBUG_FNC cerr << "-f- " << __PRETTY_FUNCTION__ << endl
 #else
-#define D_VAR
-#define D_MSG
-#define D_FNC
+#define DEBUG_VAR
+#define DEBUG_MSG
+#define DEBUG_FNC
 #endif
 
 /* GLOBALS */
@@ -75,7 +80,7 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data);
 /* get_type */
 guint gtk_completion_line_get_type(void)
 {
-  D_FNC;
+  DEBUG_FNC;
 
   static guint type = 0;
   if (type == 0)
@@ -99,7 +104,7 @@ guint gtk_completion_line_get_type(void)
 static void
 gtk_completion_line_class_init(GtkCompletionLineClass *klass)
 {
-  D_FNC;
+  DEBUG_FNC;
 
   GtkObjectClass *object_class;
 
@@ -154,12 +159,14 @@ gtk_completion_line_class_init(GtkCompletionLineClass *klass)
 static void
 gtk_completion_line_init(GtkCompletionLine *object)
 {
-  D_FNC;
+  DEBUG_FNC;
 
   /* Add object initialization / creation stuff here */
 
   object->where = NULL;
   object->cmpl = NULL;
+  object->win_compl = NULL;
+  object->list_compl = NULL;
 
   gtk_signal_connect(GTK_OBJECT(object), "key_press_event",
                      GTK_SIGNAL_FUNC(on_key_press), NULL);
@@ -170,32 +177,32 @@ gtk_completion_line_init(GtkCompletionLine *object)
 static int
 get_words(GtkCompletionLine *object, vector<string>& words)
 {
-  D_FNC;
+  DEBUG_FNC;
 
   istrstream ss(gtk_entry_get_text(GTK_ENTRY(object)));
   int pos_in_text = gtk_editable_get_position(GTK_EDITABLE(object));
   int pos = 0;
-  D_VAR(pos_in_text);
+  DEBUG_VAR(pos_in_text);
   while (!ss.eof()) {
     string s;
-    D_VAR(s);
+    DEBUG_VAR(s);
     ss >> s;
     words.push_back(s);
     if (ss.eof()) break;
-    D_VAR(ss.tellg());
+    DEBUG_VAR(ss.tellg());
     if (ss.tellg() < pos_in_text && ss.tellg() >= 0) {
       pos++;
-      D_VAR(pos);
+      DEBUG_VAR(pos);
     }
   }
-  D_MSG("*** END of function");
+  DEBUG_MSG("*** END of function");
   return pos;
 }
 
 static void
 set_words(GtkCompletionLine *object, const vector<string>& words, int pos = -1)
 {
-  D_FNC;
+  DEBUG_FNC;
 
   strstream ss;
   bool first = true;
@@ -227,7 +234,7 @@ set_words(GtkCompletionLine *object, const vector<string>& words, int pos = -1)
 static void
 generate_path()
 {
-  D_FNC;
+  DEBUG_FNC;
 
   char *path_cstr = (char*)getenv("PATH");
     
@@ -271,7 +278,7 @@ select_executables_only(const struct dirent* dent)
 static void
 generate_execs()
 {
-  D_FNC;
+  DEBUG_FNC;
 
   execs.clear();
     
@@ -291,7 +298,7 @@ generate_execs()
 static int
 generate_completion_from_execs(GtkCompletionLine *object)
 {
-  D_FNC;
+  DEBUG_FNC;
 
   g_list_foreach(object->cmpl, (GFunc)g_string_free, NULL);
   g_list_free(object->cmpl);
@@ -308,7 +315,7 @@ generate_completion_from_execs(GtkCompletionLine *object)
 static string
 get_common_part(const char *s1, const char *s2)
 {
-  D_FNC;
+  DEBUG_FNC;
 
   string ret;
     
@@ -327,7 +334,7 @@ get_common_part(const char *s1, const char *s2)
 static int
 complete_common(GtkCompletionLine *object)
 {
-  D_FNC;
+  DEBUG_FNC;
 
   GList *l;
   GList *ls = object->cmpl;
@@ -360,7 +367,7 @@ complete_common(GtkCompletionLine *object)
 static int
 generate_dirlist(const char *what)
 {
-  D_FNC;
+  DEBUG_FNC;
 
   char *str = strdup(what);
   char *p = str + 1;
@@ -413,7 +420,7 @@ generate_dirlist(const char *what)
 static int
 generate_completion_from_dirlist(GtkCompletionLine *object)
 {
-  D_FNC;
+  DEBUG_FNC;
 
   g_list_foreach(object->cmpl, (GFunc)g_string_free, NULL);
   g_list_free(object->cmpl);
@@ -430,28 +437,76 @@ generate_completion_from_dirlist(GtkCompletionLine *object)
 static int
 parse_tilda(GtkCompletionLine *object)
 {
-  D_FNC;
+  DEBUG_FNC;
 
   string text = gtk_entry_get_text(GTK_ENTRY(object));
   int where = text.find("~");
-  if (where >= 0 && where < text.length()) {
-    text.replace(where, 1, g_get_home_dir());
-    gtk_entry_set_text(GTK_ENTRY(object), text.c_str());
+  if (where != string::npos) {
+    if (where < text.size() - 1 && text[where + 1] != '/') {
+      // Parse user's home
+    } else {
+      text.replace(where, 1, g_get_home_dir());
+      gtk_entry_set_text(GTK_ENTRY(object), text.c_str());
+    }
   }
 
   return 0;
 }
 
-static int
-complete_line(GtkCompletionLine *object)
+static void
+complete_from_list(GtkCompletionLine *object)
 {
-  D_FNC;
+  DEBUG_FNC;
 
   parse_tilda(object);
   vector<string> words;
   int pos = get_words(object, words);
-  D_VAR(pos);
-  D_VAR(words.size());
+  DEBUG_VAR(pos);
+  DEBUG_VAR(words.size());
+  prefix = words[pos];
+
+  if (object->win_compl != NULL) {
+    object->where = (GList*)gtk_clist_get_row_data(
+      GTK_CLIST(object->list_compl), object->list_compl_items_where);
+
+    words[pos] = ((GString*)object->where->data)->str;
+    set_words(object, words, pos);
+    
+    int &item = object->list_compl_items_where;
+    gtk_clist_select_row(GTK_CLIST(object->list_compl), item, 0);
+    gtk_clist_moveto(GTK_CLIST(object->list_compl), item, 0, 0.5, 0.0);
+  } else {
+    words[pos] = ((GString*)object->where->data)->str;
+    set_words(object, words, pos);
+    object->where = object->where->next;
+    g_list_next(object->where);
+  }
+}
+
+static int
+on_row_selected(GtkWidget *ls, gint row, gint col, GdkEvent *ev, gpointer data)
+{
+  GtkCompletionLine *cl = GTK_COMPLETION_LINE(data);
+
+  cl->list_compl_items_where = row;
+  DEBUG_VAR(row);
+  gtk_signal_handler_block(GTK_OBJECT(cl->list_compl),
+                           on_row_selected_handler);
+  complete_from_list(cl);
+  gtk_signal_handler_unblock(GTK_OBJECT(cl->list_compl),
+                             on_row_selected_handler);
+}
+
+static int
+complete_line(GtkCompletionLine *object)
+{
+  DEBUG_FNC;
+
+  parse_tilda(object);
+  vector<string> words;
+  int pos = get_words(object, words);
+  DEBUG_VAR(pos);
+  DEBUG_VAR(words.size());
   prefix = words[pos];
 
   if (prefix[0] != '/') {
@@ -470,11 +525,14 @@ complete_line(GtkCompletionLine *object)
   }
   // FUCK C! C++ Rules!
   if (object->where != NULL) {
-    words[pos] = ((GString*)object->where->data)->str;
-    set_words(object, words, pos);
-    object->where = object->where->next;
-    if (object->where == NULL) object->where = object->cmpl;
-    // wouldn't be where++ better? :)
+    if (object->win_compl != NULL) {
+      int &item = object->list_compl_items_where;
+      item++;
+      if (item >= object->list_compl_nr_rows) {
+        item = object->list_compl_nr_rows - 1;
+      }
+    }
+    complete_from_list(object);
   } else if (object->cmpl != NULL) {
     complete_common(object);
     object->where = object->cmpl;
@@ -490,8 +548,73 @@ complete_line(GtkCompletionLine *object)
     return GEN_CANT_COMPLETE;
   } else if (g_list_length(ls) >  1) {
     gtk_signal_emit_by_name(GTK_OBJECT(object), "notunique");
+
     if (strcmp(gtk_entry_get_text(GTK_ENTRY(object)),
                ((GString*)ls->data)->str) == 0) {
+
+      if (object->win_compl == NULL) {
+        object->win_compl = gtk_window_new(GTK_WINDOW_POPUP);
+        /*gtk_window_set_position(GTK_WINDOW(object->win_compl),
+          GTK_WIN_POS_MOUSE);*/
+        
+        gtk_window_set_policy(GTK_WINDOW(object->win_compl),
+                              FALSE, FALSE, TRUE);
+        gtk_container_set_border_width(GTK_CONTAINER(object->win_compl), 5);
+
+        object->list_compl = gtk_clist_new(1);
+
+        on_row_selected_handler =
+          gtk_signal_connect(GTK_OBJECT(object->list_compl), "select_row",
+                             GTK_SIGNAL_FUNC(on_row_selected), object);
+
+        gtk_signal_handler_block(GTK_OBJECT(object->list_compl),
+                                 on_row_selected_handler);
+
+        GList *p = ls;
+        object->list_compl_nr_rows = 0;
+        while (p) {
+          char *tmp[2];
+          tmp[0] = ((GString*)p->data)->str;
+          tmp[1] = NULL;
+          int row = gtk_clist_append(GTK_CLIST(object->list_compl), tmp);
+          gtk_clist_set_row_data(GTK_CLIST(object->list_compl), row, p);
+          object->list_compl_nr_rows++;
+          p = g_list_next(p);
+        }
+
+        GtkWidget *scroll = gtk_scrolled_window_new(NULL, NULL);
+        gtk_widget_show(scroll);
+        gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW (scroll),
+                                       GTK_POLICY_NEVER,
+                                       GTK_POLICY_AUTOMATIC);
+
+        gtk_container_add(GTK_CONTAINER (scroll), object->list_compl);
+
+        object->list_compl_items_where = 0;
+      
+        gtk_widget_show(object->list_compl);
+        int w = gtk_clist_optimal_column_width(GTK_CLIST(object->list_compl),
+                                               0);
+        gtk_widget_set_usize(scroll, w + 40, 150);
+
+        gtk_container_add(GTK_CONTAINER(object->win_compl), scroll);
+
+        GdkWindow *top = gtk_widget_get_parent_window(GTK_WIDGET(object));
+        int x, y;
+        gdk_window_get_position(top, &x, &y);
+        x += GTK_WIDGET(object)->allocation.x;
+        y += GTK_WIDGET(object)->allocation.y + GTK_WIDGET(object)->allocation.height;
+
+        gtk_widget_popup(object->win_compl, x, y);
+        // gtk_widget_show(object->win_compl);
+
+        gtk_clist_select_row(GTK_CLIST(object->list_compl),
+                             object->list_compl_items_where, 0);
+
+        gtk_signal_handler_unblock(GTK_OBJECT(object->list_compl),
+                                   on_row_selected_handler);
+      }
+      
       return GEN_COMPLETION_OK;
     }
     return GEN_NOT_UNIQUE;
@@ -501,7 +624,7 @@ complete_line(GtkCompletionLine *object)
 GtkWidget *
 gtk_completion_line_new()
 {
-  D_FNC;
+  DEBUG_FNC;
 
   return GTK_WIDGET(gtk_type_new(gtk_completion_line_get_type()));
 }
@@ -509,7 +632,7 @@ gtk_completion_line_new()
 static gboolean
 on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
 {
-  D_FNC;
+  DEBUG_FNC;
 
 #define STOP_PRESS \
 (gtk_signal_emit_stop_by_name(GTK_OBJECT(cl),   "key_press_event"))
@@ -524,18 +647,53 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
       STOP_PRESS;
       return TRUE;
      case GDK_Up:
-      gtk_signal_emit_by_name(GTK_OBJECT(cl), "uparrow");
+      if (cl->win_compl != NULL) {
+        int &item = cl->list_compl_items_where;
+        item--;
+        if (item < 0) {
+          item = 0;
+        } else {
+          complete_from_list(cl);
+        }
+      } else {
+        gtk_signal_emit_by_name(GTK_OBJECT(cl), "uparrow");
+      }
       STOP_PRESS;
       return TRUE;
      case GDK_Down:
-      gtk_signal_emit_by_name(GTK_OBJECT(cl), "dnarrow");
+      if (cl->win_compl != NULL) {
+        int &item = cl->list_compl_items_where;
+        item++;
+        if (item >= cl->list_compl_nr_rows) {
+          item = cl->list_compl_nr_rows - 1;
+        } else {
+          complete_from_list(cl);
+        }
+      } else {
+        gtk_signal_emit_by_name(GTK_OBJECT(cl), "dnarrow");
+      }
       STOP_PRESS;
       return TRUE;
      case GDK_Return:
+      if (cl->win_compl != NULL) {
+        gtk_widget_destroy(cl->win_compl);
+        cl->win_compl = NULL;
+      }
       gtk_signal_emit_by_name(GTK_OBJECT(cl), "activate");
       STOP_PRESS;
       return TRUE;
+     case GDK_Escape:
+      if (cl->win_compl != NULL) {
+        gtk_widget_destroy(cl->win_compl);
+        cl->win_compl = NULL;
+        STOP_PRESS;
+        return TRUE;
+      }
      default:
+      if (cl->win_compl != NULL) {
+        gtk_widget_destroy(cl->win_compl);
+        cl->win_compl = NULL;
+      }
       cl->where = NULL;
       return FALSE;
     }
