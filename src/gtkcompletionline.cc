@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: gtkcompletionline.cc,v 1.18 2001/07/22 14:14:45 mishoo Exp $
+ *  $Id: gtkcompletionline.cc,v 1.19 2001/07/22 14:32:17 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -906,14 +906,12 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
       return TRUE;
 
      case GDK_space:
-     {
-       search_off(cl);
-       if (cl->win_compl != NULL) {
-         gtk_widget_destroy(cl->win_compl);
-         cl->win_compl = NULL;
-       }
-       return TRUE;
-     }
+      search_off(cl);
+      if (cl->win_compl != NULL) {
+        gtk_widget_destroy(cl->win_compl);
+        cl->win_compl = NULL;
+      }
+      return TRUE;
 
      case GDK_Down:
       if (cl->win_compl != NULL) {
