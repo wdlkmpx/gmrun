@@ -23,11 +23,10 @@ For code critics
 -----------------
 
     This program is written in 2 hours.  The code might seem a little weird,
-    but it works, and is that I'm interested in.  Code completion is written in
-    C++, although GTK+ is written in standard C.  This has the disadvantage of
-    being unlinkable to standard C modules, I mean the GtkCompletionLine widget
-    may be only used from C++ modules.  Should you think this is a problem,
-    feel free to rewrite the code in C (it could be at least 4 times bigger).
+    but it works, and is that I'm interested in.  Code completion is written
+    in C++, although GTK+ is written in standard C.  Should you think this
+    is a problem, feel free to rewrite the code in C (it could be at least 4
+    times bigger).
 
     It uses some static data (I know, I'm a too lasy programmer to think about
     something better); this means that if you're having *two or more*
@@ -45,8 +44,6 @@ For code critics
     preferred the easy way of doing different kind of things.  It works pretty
     fine, so "don't expect tons of C code for completion" (quoted from some
     sources in mini-commander applet of GNOME).
-
-    And, yes, this is written in Emacs.
 
 
 Compilation, installation
@@ -72,19 +69,18 @@ Bugs
 
     * Writting this README took me more time than writting the program.
 
-    * As I mentioned before, the code is written in C++, although GTK+ is a C
-      library.  This leads to the impossibility of linking
-      "gtkcompletionline.o" against a standard C module which uses a
-      GtkCompletionLine widget.  This is not actually a bug; I like C++ because
-      programs become clearer and easier to maintain, not to mention the source
-      file size is smaller.  So, if anyone cares to port this to standard C,
-      feel free to do it, but I fear the code should be rewritten (almost) from
+    * As I mentioned before, the code is written in C++, although GTK+ is a
+      C library.  This is not actually a bug; I like C++ because programs
+      become clearer and easier to maintain, not to mention the source file
+      size is smaller.  So, if anyone cares to port this to standard C, feel
+      free to do it, but I fear the code should be rewritten (almost) from
       scratch.
 
     * Documentation is inexistent (however, it would be useless).
 
-    Should you have any problems mail me a detailed description; please put the
-    text "ignore_me" in the subject line, for easy message filtering. :)
+    Should you have any problems mail me a detailed description; please put
+    the text "ignore_me" in the subject line, for easy message filtering. :)
+    (just kidding...)
 
     Never send me cores!  My mail box is limited to 4 Mb.  Use instead:
 
