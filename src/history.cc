@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: history.cc,v 1.8 2002/06/05 19:39:18 sonofkojak Exp $
+ *  $Id: history.cc,v 1.9 2002/08/16 10:30:18 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -40,7 +40,7 @@ HistoryFile::read_the_file()
   const char *filename = m_filename.c_str();
   ifstream f(filename);
   if (!f) return;
-    	
+
   while (!f.eof()) {
     char line_text[256];
     string line_str;
@@ -60,23 +60,23 @@ void
 HistoryFile::sync_the_file()
 {
   const char *filename = m_filename.c_str();
-	
+
   int HIST_MAX_SIZE;
-	
+
   if (!configuration.get_int("History", HIST_MAX_SIZE)) {
     HIST_MAX_SIZE = 20;
   }
-	
+
   ofstream f(filename, ios::out);
-	
+
   int start = 0;
   if (history.size() > HIST_MAX_SIZE)
     start = history.size() - HIST_MAX_SIZE;
-	
+
   for (int i = start; i < history.size(); i++)
     if (history[i].length() != 0)
       f << history[i] << endl;
-	
+
   f.flush();
 }
 
@@ -86,12 +86,14 @@ HistoryFile::append(const char *entry)
   std::string ent = std::string(entry);
   if (!history.empty()) {
     StrArray::reverse_iterator i;
-#ifdef DEBUG	
+#ifdef DEBUG
     for_each(history.begin(), history.end(), DumpString(cerr));
-#endif	
+#endif
     i = find(history.rbegin(), history.rend(), ent);
     if (i != history.rend()) {
+#ifdef DEBUG
       cerr << "erasing "<< ent << endl;
+#endif
       history.erase(remove(history.begin(), history.end(), ent));
     }
   }
@@ -113,7 +115,7 @@ HistoryFile::operator [] (int index)
   if (index < 0 || index >= history.size()) {
     return m_default.c_str();
   }
-	
+
   return history[index].c_str();
 }
 

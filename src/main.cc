@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: main.cc,v 1.22 2002/06/05 19:39:18 sonofkojak Exp $
+ *  $Id: main.cc,v 1.23 2002/08/16 10:30:18 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -15,9 +15,10 @@
 
 #include <string>
 #include <iostream>
-#include <strstream>
+#include <sstream>
 #include <vector>
 #include <algorithm>
+#include <iterator>
 using namespace std;
 
 #include <unistd.h>
@@ -26,6 +27,9 @@ using namespace std;
 #include "gtkcompletionline.h"
 #include "prefs.h"
 
+// defined in gtkcompletionline.cc
+int get_words(GtkCompletionLine *object, vector<string>& words);
+string quote_string(const string& str);
 
 struct gigi
 {
@@ -84,13 +88,50 @@ GtkStyle* style_unique(GtkWidget *w)
 }
 
 static void
+run_with_system(const std::string& command, struct gigi* g)
+{
+  string cmd(command);
+  cmd += '&';
+  int ret = system(cmd.c_str());
+#ifdef DEBUG
+  cerr << "System exit code: " << ret << endl;
+#endif
+  if (ret != -1)
+    gtk_main_quit();
+  else {
+    string error("ERROR: ");
+    error += strerror(errno);
+#ifdef DEBUG
+    cerr << error << endl;
+#endif
+    gtk_label_set_text(GTK_LABEL(g->w1), error.c_str());
+    gtk_widget_set_style(g->w1, style_notfound(g->w1));
+    gtk_timeout_add(2000, GtkFunction(search_off_timeout), g);
+  }
+}
+
+#ifdef USE_SYSTEM
+
+// this version uses the "system" libc function to execute commands.
+static void
+run_the_command(const std::string& command, struct gigi* g)
+{
+  run_with_system(command, g);
+}
+
+#else
+
+// a more elaborate function to avoid system..  though I think that most will
+// prefer the above one.  I don't even remember why I coded this... but let it
+// be there.
+static void
 run_the_command(const std::string& command, struct gigi* g)
 {
   string prog;
   std::vector<char*> argv;
 
   string cmd = command + ' ';
-  istrstream iss(cmd.c_str());
+  istringstream iss(cmd);
 #ifdef DEBUG
   cerr << cmd << endl;
 #endif
@@ -184,6 +225,24 @@ run_the_command(const std::string& command, struct gigi* g)
   gtk_widget_set_style(g->w1, style_notfound(g->w1));
   gtk_timeout_add(2000, GtkFunction(search_off_timeout), g);
 }
+#endif
+
+static void
+on_ext_handler(GtkCompletionLine *cl, const char* ext, struct gigi* g)
+{
+  string cmd;
+  if (configuration.get_ext_handler(ext, cmd)) {
+    string str("Handler: ");
+    size_t pos = cmd.find_first_of(" \t");
+    if (pos == string::npos)
+      str += cmd;
+    else
+      str += cmd.substr(0, pos);
+    gtk_label_set_text(GTK_LABEL(g->w2), str.c_str());
+    gtk_widget_show(g->w2);
+    gtk_timeout_add(1000, GtkFunction(search_off_timeout), g);
+  }
+}
 
 static void
 on_compline_runwithterm(GtkCompletionLine *cl, struct gigi* g)
@@ -200,8 +259,8 @@ on_compline_runwithterm(GtkCompletionLine *cl, struct gigi* g)
       term = "xterm -e";
     }
     tmp = term;
-    tmp += " \"";
-    tmp += command + "\"";
+    tmp += " '";
+    tmp += command + "'";
   } else {
     if (!configuration.get_string("Terminal", term)) {
       tmp = "xterm";
@@ -216,7 +275,7 @@ on_compline_runwithterm(GtkCompletionLine *cl, struct gigi* g)
 
   cl->hist->append(command.c_str());
   cl->hist->sync_the_file();
-  run_the_command(tmp.c_str(), g);
+  run_with_system(tmp.c_str(), g);
 }
 
 static gint
@@ -337,10 +396,47 @@ url_check(GtkCompletionLine *cl, struct gigi *g)
   return false;
 }
 
+static bool
+ext_check(GtkCompletionLine *cl, struct gigi *g)
+{
+  vector<string> words;
+  get_words(cl, words);
+  vector<string>::const_iterator
+    i     = words.begin(),
+    i_end = words.end();
+
+  while (i != i_end) {
+    const string& w = quote_string(*i++);
+    if (w[0] == '/') {
+      // absolute path, check for extension
+      size_t pos = w.rfind('.');
+      if (pos != string::npos) {
+        // we have extension
+        string ext = w.substr(pos + 1);
+        string ext_handler;
+        if (configuration.get_ext_handler(ext, ext_handler)) {
+          // we have the handler
+          pos = ext_handler.find("%s");
+          if (pos != string::npos)
+            ext_handler.replace(pos, 2, w);
+          cl->hist->append(w.c_str());
+          cl->hist->sync_the_file();
+          run_the_command(ext_handler.c_str(), g);
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
+}
+
 static void
 on_compline_activated(GtkCompletionLine *cl, struct gigi *g)
 {
   if (url_check(cl, g))
+    return;
+  if (ext_check(cl, g))
     return;
 
   string command = gtk_entry_get_text(GTK_ENTRY(cl));
@@ -358,7 +454,7 @@ on_compline_activated(GtkCompletionLine *cl, struct gigi *g)
                 std::ostream_iterator<string>(cerr, "\n"));
       cerr << "---" << std::endl;
 #endif
-      list<string>::const_iterator w = 
+      list<string>::const_iterator w =
         std::find(term_progs.begin(), term_progs.end(), progname);
       if (w != term_progs.end()) {
         on_compline_runwithterm(cl, g);
@@ -420,6 +516,12 @@ int main(int argc, char **argv)
   if (!configuration.get_int("Width", prefs_width))
     prefs_width = 500;
 
+  {
+    int tmp;
+    if (configuration.get_int("TabTimeout", tmp))
+      ((GtkCompletionLine*)compline)->tabtimeout = tmp;
+  }
+
   g.w1 = label;
   g.w2 = label_search;
 
@@ -446,6 +548,9 @@ int main(int argc, char **argv)
                      GTK_SIGNAL_FUNC(on_search_not_found), &g);
   gtk_signal_connect(GTK_OBJECT(compline), "search_letter",
                      GTK_SIGNAL_FUNC(on_search_letter), label_search);
+
+  gtk_signal_connect(GTK_OBJECT(compline), "ext_handler",
+                     GTK_SIGNAL_FUNC(on_ext_handler), &g);
   gtk_widget_show(compline);
 
   int shows_last_history_item;

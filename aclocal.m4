@@ -11,7 +11,7 @@ dnl even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 dnl PARTICULAR PURPOSE.
 
 #
-# $Id: aclocal.m4,v 1.3 2002/08/15 10:00:24 mishoo Exp $
+# $Id: aclocal.m4,v 1.4 2002/08/16 10:30:18 mishoo Exp $
 #
 
 #

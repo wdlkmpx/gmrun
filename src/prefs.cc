@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: prefs.cc,v 1.7 2002/08/15 10:00:25 mishoo Exp $
+ *  $Id: prefs.cc,v 1.8 2002/08/16 10:30:18 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -59,6 +59,18 @@ bool Prefs::get_string(const string& key, string& val) const
   }
 }
 
+bool Prefs::get_ext_handler(const std::string& ext, std::string& val) const
+{
+  CONFIG::const_iterator i;
+  i = exts_.find(ci_string(ext.c_str()));
+  if (i != exts_.end()) {
+    val = process(i->second);
+    return true;
+  } else {
+    return false;
+  }
+}
+
 bool Prefs::get_int(const std::string& key, int& val) const
 {
   string sval;
@@ -91,10 +103,31 @@ bool Prefs::init(const string& file_name)
     string::size_type i = line.find_first_not_of(" \t");
     if (i == string::npos) continue;
     if (line[i] == '#') continue;
-    
-    sscanf(line.c_str(), "%255[a-zA-Z_0-9] = %255[^\n]",
-           key, val);
-    vals_[key] = val;
+
+    sscanf(line.c_str(), "%255[a-zA-Z_0-9:,;] = %255[^\n]", key, val);
+    if (strncmp(key, "EXT:", 4) == 0) {
+      string k(key + 4);
+      size_t i = 0;
+      while (i != string::npos) {
+        string ext;
+        size_t j = k.find(',', i);
+        if (j != string::npos) {
+          ext = k.substr(i, j - i);
+          i = j + 1;
+        } else {
+          ext = k.substr(i);
+          i = string::npos;
+        }
+        if (ext.length() > 0) {
+#ifdef DEBUG
+          std::cerr << "Extension: " << ext << " - " << val << std::endl;
+#endif
+          exts_[ext.c_str()] = val;
+        }
+      }
+    } else {
+      vals_[key] = val;
+    }
 
 #ifdef DEBUG
     std::cerr << "Key: " << key << ", val: " << vals_[key] << std::endl;
@@ -108,7 +141,7 @@ string Prefs::process(const std::string& cmd) const
 {
   string::size_type i = cmd.find("${");
   string::size_type j = cmd.find("}", i);
-  
+
   if (i == string::npos || j == string::npos) {
     return cmd;
   }

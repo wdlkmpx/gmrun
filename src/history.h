@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: history.h,v 1.9 2002/06/05 19:39:18 sonofkojak Exp $
+ *  $Id: history.h,v 1.10 2002/08/16 10:30:18 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -25,22 +25,22 @@ class HistoryFile
   string m_default;
   bool m_default_set;
   int m_current;
-	
+
   typedef vector<string> StrArray;
   StrArray history;
-	
+
  public:
   HistoryFile();
   ~HistoryFile();
-	
+
   void append(const char *entry);
   void set_default(const char *defstr);
   void clear_default();
 
   void reset_position();
-	
+
   const char * operator [] (int index);
-	
+
   const char * prev();
   const char * next();
 
@@ -56,7 +56,7 @@ class HistoryFile
   inline const char* first_item() {
     return history.empty() ? 0 : history.front().c_str();
   }
-	
+
  protected:
   void read_the_file();
  private:

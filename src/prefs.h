@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: prefs.h,v 1.5 2002/08/15 10:00:25 mishoo Exp $
+ *  $Id: prefs.h,v 1.6 2002/08/16 10:30:18 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -25,6 +25,7 @@ class Prefs
 
  private:
   CONFIG vals_;
+  CONFIG exts_;
 
   bool init(const std::string& file_name);
   string process(const std::string& cmd) const;
@@ -36,6 +37,7 @@ class Prefs
   bool get_string(const std::string& key, std::string& val) const;
   bool get_int(const std::string& key, int& val) const;
   bool get_string_list(const std::string& ket, std::list<string>& val) const;
+  bool get_ext_handler(const std::string& ext, std::string& val) const;
 };
 
 extern Prefs configuration;

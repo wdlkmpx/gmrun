@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: gtkcompletionline.h,v 1.10 2001/11/02 15:49:11 mishoo Exp $
+ *  $Id: gtkcompletionline.h,v 1.11 2002/08/16 10:30:18 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -47,7 +47,7 @@ extern "C++" {
     int list_compl_items_where;
     int list_compl_nr_rows;
     int pos_in_text;
-    
+
     GList *cmpl;
     GList *where;
 
@@ -56,12 +56,13 @@ extern "C++" {
     std::string *hist_word;
 
     int first_key;
+    int tabtimeout;
   };
 
   struct _GtkCompletionLineClass
   {
-	GtkEntryClass parent_class;
-	/* add your CLASS members here */
+    GtkEntryClass parent_class;
+    /* add your CLASS members here */
 
     void (* unique)(GtkCompletionLine *cl);
     void (* notunique)(GtkCompletionLine *cl);
@@ -70,6 +71,7 @@ extern "C++" {
     void (* search_mode)(GtkCompletionLine *cl);
     void (* search_letter)(GtkCompletionLine *cl);
     void (* search_not_found)(GtkCompletionLine *cl);
+    void (* ext_handler)(GtkCompletionLine *cl);
   };
 
   guint gtk_completion_line_get_type(void);
