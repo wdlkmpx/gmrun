@@ -1,17 +1,36 @@
-# set terminal
-TermOptions = -cr green -C -fn 9x15 -sl 8912
-TermGeometry = -geometry 100x40
+# gmrun configuration file
+# gmrun is (C) Mihai Bazon, <mishoo@infoiasi.ro>
+# GPL v2.0 applies
 
-MyTerm = rxvt
 
-Terminal = ${MyTerm} ${TermOptions} ${TermGeometry}
 
+# Set terminal
+Terminal = gnome-terminal --start-factory-server --use-factory
 TermExec = ${Terminal} -e
 
-# set width
-Width = 250
+
+
+# Set window geometry (except height)
+Width = 400
 Top = 100
 Left = 50
 
+
+
 # History size
-History = 50
+History = 256
+
+
+
+# URL handlers
+# If the entered text is "http://www.google.com" then:
+#   - %u gets replaced with the whole URL ("http://www.google.com")
+#   - %s gets replaced with "//www.google.com".  This is useful for URL-s
+#     like "man:printf" --> %s will get replaced with "printf"
+
+URL_http = mozilla -url %u
+URL_mailto = mozilla -mail %u
+URL_man = ${TermExec} 'man %s'
+URL_file = xftree %s
+URL_readme = ${TermExec} 'less /usr/doc/%s/README'
+URL_info = ${TermExec} 'info %s'
