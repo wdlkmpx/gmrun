@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: main.cc,v 1.8 2001/06/27 07:00:55 mishoo Exp $
+ *  $Id: main.cc,v 1.9 2001/06/28 13:40:04 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -160,11 +160,11 @@ int main(int argc, char **argv)
 
   gtk_init(&argc, &argv);
 	
-	win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-	gtk_widget_set_name(win, "Msh_Run_Window");
+  win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+  gtk_widget_set_name(win, "Msh_Run_Window");
   gtk_window_set_title(GTK_WINDOW(win), "Execute program feat. completion");
   gtk_window_set_policy(GTK_WINDOW(win), FALSE, FALSE, TRUE);
-  gtk_window_set_position(GTK_WINDOW(win), GTK_WIN_POS_CENTER);
+  // gtk_window_set_position(GTK_WINDOW(win), GTK_WIN_POS_CENTER);
   gtk_container_set_border_width(GTK_CONTAINER(win), 4);
   gtk_signal_connect(GTK_OBJECT(win), "destroy",
                      GTK_SIGNAL_FUNC(gtk_main_quit), NULL);
@@ -211,15 +211,13 @@ int main(int argc, char **argv)
   gtk_widget_show(compline);
     
   gtk_box_pack_start(GTK_BOX(hbox), compline, TRUE, TRUE, 0);
-
-  gtk_widget_show(win);
   
-  int prefs_top;
-  int prefs_left;
-  gdk_window_get_position(win->window, &prefs_top, &prefs_left);
+  int prefs_top = 80;
+  int prefs_left = 100;
   configuration.get_int("Top", prefs_top);
   configuration.get_int("Left", prefs_left);
-  gdk_window_move(win->window, prefs_left, prefs_top);
+  gtk_widget_set_uposition(win, prefs_left, prefs_top);
+  gtk_widget_show(win);
 
   gtk_window_set_focus(GTK_WINDOW(win), compline);
     
