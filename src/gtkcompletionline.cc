@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: gtkcompletionline.cc,v 1.13 2001/07/17 15:57:19 mishoo Exp $
+ *  $Id: gtkcompletionline.cc,v 1.14 2001/07/17 16:09:00 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -792,6 +792,21 @@ search_history(GtkCompletionLine* cl)
   }
 }
 
+static int
+inverse_search_history(GtkCompletionLine* cl)
+{
+  switch (cl->hist_search_mode) {
+   case GCL_SEARCH_FWD:
+    return search_back_history(cl);
+
+   case GCL_SEARCH_REW:
+    return search_forward_history(cl);
+
+   default:
+    return -1;
+  }
+}
+
 static gboolean
 on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
 {
@@ -890,6 +905,16 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
           cl->hist_search_mode = GCL_SEARCH_FWD;
           cl->hist_word->clear();
           gtk_signal_emit_by_name(GTK_OBJECT(cl), "search_mode");
+        }
+        STOP_PRESS;
+        return TRUE;
+      }
+      return FALSE;
+     case GDK_BackSpace:
+      if (cl->hist_search_mode != GCL_SEARCH_OFF) {
+        if (!cl->hist_word->empty()) {
+          cl->hist_word->erase(cl->hist_word->length() - 1);
+          inverse_search_history(cl);
         }
         STOP_PRESS;
         return TRUE;

@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: main.cc,v 1.11 2001/07/17 15:57:19 mishoo Exp $
+ *  $Id: main.cc,v 1.12 2001/07/17 16:09:00 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -146,6 +146,7 @@ static gint
 search_off_timeout(GtkWidget *label)
 {
   gtk_widget_hide(label);
+  return FALSE;
 }
 
 static void
@@ -155,6 +156,7 @@ on_search_mode(GtkCompletionLine *cl, GtkWidget *label)
     gtk_widget_show(label);
     gtk_label_set_text(GTK_LABEL(label), "search mode ON");
   } else {
+    gtk_widget_show(label);
     gtk_label_set_text(GTK_LABEL(label), "search mode OFF");
     gtk_timeout_add(1000, GtkFunction(search_off_timeout), label);
   }
@@ -163,6 +165,7 @@ on_search_mode(GtkCompletionLine *cl, GtkWidget *label)
 static void
 on_search_letter(GtkCompletionLine *cl, GtkWidget *label)
 {
+  gtk_widget_show(label);
   gtk_label_set_text(GTK_LABEL(label), cl->hist_word->c_str());
 }
 
