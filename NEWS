@@ -1,5 +1,19 @@
 -*- text -*-
 
+0.8.1 (Sat, Aug 17 2002)
+
+  - bug fix release:
+
+        - major bug fixed: you could not edit a .doc file with soffice if
+          you had an extension handler for .doc set as "AbiWord %s" :)
+          Analogue for other extensions.
+
+        - smoother key handling (mainly the END/C-E, HOME/C-A keys now work
+          correctly and also clear the selection).
+
+        - others: elimined most compiler warnings (I just noticed them..:),
+          some code cleanup (mainly reindentation).
+
 0.8.0 (Fri, Aug 16 2002, it's been a long time)
 
   - New feature: extension handlers.  This allows us to type directly the
