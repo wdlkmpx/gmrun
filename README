@@ -122,5 +122,12 @@ Changes since writing this file:
 	
 	* Actually I worked more than 2 hours.  Anyway, the completion code took
 	  about 2-3 h to design and implement.
+
+    * CTRL-Enter runs the command in a terminal.  CTRL-Enter without any
+      command starts a new terminal.
+
+    * New configuration file: ~/.gmrunrc or /usr/local/share/gmrun/gmrunrc.
+      Check one of them, configuration is very simple.  From that file you
+      can change window position and width, history size, terminal.
 	
 	These changes should appear in the ChangeLog.
