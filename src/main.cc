@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: main.cc,v 1.23 2002/08/16 10:30:18 mishoo Exp $
+ *  $Id: main.cc,v 1.24 2002/08/17 13:19:31 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -20,6 +20,10 @@
 #include <algorithm>
 #include <iterator>
 using namespace std;
+
+#ifdef MTRACE
+#include <mcheck.h>
+#endif
 
 #include <unistd.h>
 #include <errno.h>
@@ -426,6 +430,8 @@ ext_check(GtkCompletionLine *cl, struct gigi *g)
         }
       }
     }
+    // FIXME: for now we check only one entry
+    break;
   }
 
   return false;
@@ -473,6 +479,10 @@ int main(int argc, char **argv)
   GtkWidget *compline;
   GtkWidget *label_search;
   struct gigi g;
+
+#ifdef MTRACE
+  mtrace();
+#endif
 
   gtk_init(&argc, &argv);
 

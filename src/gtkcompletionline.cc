@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: gtkcompletionline.cc,v 1.29 2002/08/16 10:30:18 mishoo Exp $
+ *  $Id: gtkcompletionline.cc,v 1.30 2002/08/17 13:19:31 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -269,9 +269,8 @@ get_words(GtkCompletionLine *object, vector<string>& words)
     get_token(ss, s);
     words.push_back(s);
     if (ss.eof()) break;
-    if (ss.tellg() < pos_in_text && ss.tellg() >= 0) {
-      pos++;
-    }
+    if (ss.tellg() < pos_in_text && ss.tellg() >= 0)
+      ++pos;
   }
 
   return pos;
@@ -296,7 +295,7 @@ set_words(GtkCompletionLine *object, const vector<string>& words, int pos = -1)
     if (!pos && !where)
       where = ss.tellp();
     else
-      pos--;
+      --pos;
   }
   ss << ends;
 
@@ -330,7 +329,8 @@ generate_path()
       if (c == ':' || path_ss.eof()) break;
       else tmp += c;
     } while (true);
-    if (tmp.length() != 0) path.insert(tmp);
+    if (tmp.length() != 0)
+      path.insert(tmp);
   }
 }
 
@@ -339,21 +339,22 @@ select_executables_only(const struct dirent* dent)
 {
   int len = strlen(dent->d_name);
   int lenp = prefix.length();
-  struct stat stat_data;
 
   if (dent->d_name[0] == '.') {
-    if (dent->d_name[1] == '\0') return 0;
-    if (dent->d_name[1] == '.') {
-      if (dent->d_name[2] == '\0') return 0;
-    }
+    if (dent->d_name[1] == '\0')
+      return 0;
+    if ((dent->d_name[1] == '.') && (dent->d_name[2] == '\0'))
+      return 0;
   }
-  if (dent->d_name[len - 1] == '~') return 0;
-  if (lenp == 0) return 1;
-  if (lenp > len) return 0;
-
-  if (strncmp(dent->d_name, prefix.c_str(), lenp) == 0) {
+  if (dent->d_name[len - 1] == '~')
+    return 0;
+  if (lenp == 0)
     return 1;
-  }
+  if (lenp > len)
+    return 0;
+
+  if (strncmp(dent->d_name, prefix.c_str(), lenp) == 0)
+    return 1;
 
   return 0;
 }
@@ -441,11 +442,11 @@ complete_common(GtkCompletionLine *object)
   int pos = get_words(object, words);
   words[pos] = ((GString*)ls->data)->str;
 
-  ls = ls->next;
+  ls = g_list_next(ls);
   while (ls != NULL) {
     words[pos] = get_common_part(words[pos].c_str(),
                                  ((GString*)ls->data)->str);
-    ls = ls->next;
+    ls = g_list_next(ls);
   }
 
   set_words(object, words, pos);
@@ -476,11 +477,12 @@ generate_dirlist(const char *what)
     dest += *p;
     if (*p == '/') {
       DIR* dir = opendir(dest.c_str());
-      if (!dir) goto dirty;
+      if (!dir)
+        goto dirty;
       closedir(dir);
       filename = p;
     }
-    p++;
+    ++p;
   }
 
   *filename = '\0';
@@ -509,6 +511,7 @@ generate_dirlist(const char *what)
 
   free(str);
   return GEN_COMPLETION_OK;
+
  dirty:
   free(str);
   return GEN_CANT_COMPLETE;
@@ -533,20 +536,17 @@ static int
 parse_tilda(GtkCompletionLine *object)
 {
   string text = gtk_entry_get_text(GTK_ENTRY(object));
-  int where = text.find("~");
+  size_t where = text.find("~");
   if (where != string::npos) {
-    if (where > 0) {
-      if (text[where - 1] != ' ') return 0;
-    }
+    if ((where > 0) && (text[where - 1] != ' '))
+      return 0;
     if (where < text.size() - 1 && text[where + 1] != '/') {
-      // Parse user's home
+      // FIXME: Parse another user's home
     } else {
       string home = g_get_home_dir();
-      if (where >= text.size() - 1) {
-        string::iterator i = home.end() - 1;
-        if (*i == '/') home.erase(i);
-        home += '/';
-      }
+      size_t i = home.length() - 1;
+      while ((i >= 0) && (home[i] == '/'))
+        home.erase(i--);
       text.replace(where, 1, home);
       gtk_entry_set_text(GTK_ENTRY(object), text.c_str());
     }
@@ -567,12 +567,10 @@ complete_from_list(GtkCompletionLine *object)
   if (object->win_compl != NULL) {
     object->where = (GList*)gtk_clist_get_row_data(
       GTK_CLIST(object->list_compl), object->list_compl_items_where);
-
     words[pos] = ((GString*)object->where->data)->str;
     int current_pos = set_words(object, words, pos);
     gtk_entry_select_region(GTK_ENTRY(object),
                             object->pos_in_text, current_pos);
-
     int &item = object->list_compl_items_where;
     gtk_clist_select_row(GTK_CLIST(object->list_compl), item, 0);
     gtk_clist_moveto(GTK_CLIST(object->list_compl), item, 0, 0.5, 0.0);
@@ -582,12 +580,11 @@ complete_from_list(GtkCompletionLine *object)
     int current_pos = set_words(object, words, pos);
     gtk_entry_select_region(GTK_ENTRY(object),
                             object->pos_in_text, current_pos);
-    object->where = object->where->next;
-    g_list_next(object->where);
+    object->where = g_list_next(object->where);
   }
 }
 
-static int
+static void
 on_row_selected(GtkWidget *ls, gint row, gint col, GdkEvent *ev, gpointer data)
 {
   GtkCompletionLine *cl = GTK_COMPLETION_LINE(data);
@@ -599,6 +596,8 @@ on_row_selected(GtkWidget *ls, gint row, gint col, GdkEvent *ev, gpointer data)
   gtk_signal_handler_unblock(GTK_OBJECT(cl->list_compl),
                              on_row_selected_handler);
 }
+
+/*
 
 static void
 select_appropiate(GtkCompletionLine *object)
@@ -627,6 +626,8 @@ get_prefix(GtkCompletionLine *object)
   prefix = words[pos];
 }
 
+*/
+
 static int
 complete_line(GtkCompletionLine *object)
 {
@@ -642,12 +643,10 @@ complete_line(GtkCompletionLine *object)
       generate_completion_from_execs(object);
       object->where = NULL;
     }
-  } else {
-    if (object->where == NULL) {
-      generate_dirlist(prefix.c_str());
-      generate_completion_from_dirlist(object);
-      object->where = NULL;
-    }
+  } else if (object->where == NULL) {
+    generate_dirlist(prefix.c_str());
+    generate_completion_from_dirlist(object);
+    object->where = NULL;
   }
 
   if (object->cmpl != NULL) {
@@ -659,10 +658,9 @@ complete_line(GtkCompletionLine *object)
   if (object->where != NULL) {
     if (object->win_compl != NULL) {
       int &item = object->list_compl_items_where;
-      item++;
-      if (item >= object->list_compl_nr_rows) {
+      ++item;
+      if (item >= object->list_compl_nr_rows)
         item = object->list_compl_nr_rows - 1;
-      }
     }
     complete_from_list(object);
   } else if (object->cmpl != NULL) {
@@ -762,6 +760,8 @@ complete_line(GtkCompletionLine *object)
     }
     return GEN_NOT_UNIQUE;
   }
+
+  return GEN_COMPLETION_OK;
 }
 
 GtkWidget *
@@ -884,6 +884,7 @@ search_history(GtkCompletionLine* cl, bool avance, bool begin)
   }
 }
 
+/*
 static int
 inverse_search_history(GtkCompletionLine* cl, bool avance, bool begin)
 {
@@ -899,8 +900,9 @@ inverse_search_history(GtkCompletionLine* cl, bool avance, bool begin)
     return -1;
   }
 }
+*/
 
-static int
+static void
 search_off(GtkCompletionLine* cl)
 {
   int pos = gtk_editable_get_position(GTK_EDITABLE(cl));
@@ -923,11 +925,17 @@ search_off(GtkCompletionLine* cl)
 
 static gint tab_pressed(GtkCompletionLine* cl)
 {
-  if (MODE_SRC) {
+  if (MODE_SRC)
     search_off(cl);
-  }
   complete_line(cl);
   return FALSE;
+}
+
+static void
+clear_selection(GtkCompletionLine* cl)
+{
+  int pos = gtk_editable_get_position(GTK_EDITABLE(cl));
+  gtk_editable_select_region(GTK_EDITABLE(cl), pos, pos);
 }
 
 static gboolean
@@ -941,6 +949,14 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
 
 
     switch (event->keyval) {
+
+     case GDK_Control_R:
+     case GDK_Control_L:
+     case GDK_Shift_R:
+     case GDK_Shift_L:
+     case GDK_Alt_R:
+     case GDK_Alt_L:
+      break;
 
      case GDK_Tab:
       if (tt_id != -1) {
@@ -973,9 +989,8 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
      {
        cl->first_key = 0;
        bool search = MODE_SRC;
-       if (search) {
+       if (search)
          search_off(cl);
-       }
        if (cl->win_compl != NULL) {
          gtk_widget_destroy(cl->win_compl);
          cl->win_compl = NULL;
@@ -1020,13 +1035,11 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
 
      case GDK_exclam:
       if (!MODE_BEG) {
-        if (!MODE_SRC) {
+        if (!MODE_SRC)
           gtk_editable_delete_selection(GTK_EDITABLE(cl));
-        }
         const char *tmp = gtk_entry_get_text(GTK_ENTRY(cl));
-        if (!(*tmp == '\0' || cl->first_key)) {
+        if (!(*tmp == '\0' || cl->first_key))
           goto ordinary;
-        }
         cl->hist_search_mode = GCL_SEARCH_BEG;
         cl->hist_word->clear();
         gtk_signal_emit_by_name(GTK_OBJECT(cl), "search_mode");
@@ -1075,43 +1088,32 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
       }
       return FALSE;
 
-     case GDK_Escape:
+     case GDK_Home:
      case GDK_End:
-     {
-       int pos = gtk_editable_get_position(GTK_EDITABLE(cl));
-       gtk_entry_select_region(GTK_ENTRY(cl), pos, pos);
-       if (cl->win_compl != NULL) {
-         gtk_widget_destroy(cl->win_compl);
-         cl->win_compl = NULL;
-         STOP_PRESS;
-         return TRUE;
-       }
-       if (MODE_SRC) {
-         search_off(cl);
-         STOP_PRESS;
-         return TRUE;
-       }
-       return FALSE;
-     }
+      clear_selection(cl);
+      goto ordinary;
+
+     case GDK_Escape:
+      if (MODE_SRC) {
+        search_off(cl);
+        STOP_PRESS;
+        return TRUE;
+      } else goto ordinary;
 
      case GDK_G:
      case GDK_g:
-     case GDK_A:
-     case GDK_a:
-     case GDK_E:
-     case GDK_e:
       if ((event->state & GDK_CONTROL_MASK) && MODE_SRC) {
         search_off(cl);
-        return FALSE;
+        STOP_PRESS;
+        return TRUE;
       } else goto ordinary;
 
-     case GDK_Control_R:
-     case GDK_Control_L:
-     case GDK_Shift_R:
-     case GDK_Shift_L:
-     case GDK_Alt_R:
-     case GDK_Alt_L:
-      break;
+     case GDK_E:
+     case GDK_e:
+      if ((event->state & GDK_CONTROL_MASK) && MODE_SRC)
+        search_off(cl);
+      clear_selection(cl);
+      goto ordinary;
 
      ordinary:
      default:
@@ -1124,24 +1126,21 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
       if (MODE_SRC) {
         if (event->length > 0) {
           *cl->hist_word += event->string;
-          if (search_history(cl, false, MODE_BEG) <= 0) {
+          if (search_history(cl, false, MODE_BEG) <= 0)
             cl->hist_word->erase(cl->hist_word->length() - 1);
-          }
           STOP_PRESS;
           return TRUE;
-        } else {
+        } else
           search_off(cl);
-        }
       }
       if (cl->tabtimeout != 0) {
         if (tt_id != -1) {
           gtk_timeout_remove(tt_id);
           tt_id = -1;
         }
-        if (::isprint(*event->string)) {
+        if (::isprint(*event->string))
           tt_id = gtk_timeout_add(cl->tabtimeout,
                                   GtkFunction(tab_pressed), cl);
-        }
       }
       break;
     }
@@ -1151,10 +1150,10 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
     break;
   }
   return FALSE;
+}
 
 #undef STOP_PRESS
 #undef MODE_BEG
 #undef MODE_REW
 #undef MODE_FWD
 #undef MODE_SRC
-}

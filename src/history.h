@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: history.h,v 1.10 2002/08/16 10:30:18 mishoo Exp $
+ *  $Id: history.h,v 1.11 2002/08/17 13:19:31 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -39,7 +39,7 @@ class HistoryFile
 
   void reset_position();
 
-  const char * operator [] (int index);
+  const char * operator [] (size_t index);
 
   const char * prev();
   const char * next();

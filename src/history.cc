@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: history.cc,v 1.9 2002/08/16 10:30:18 mishoo Exp $
+ *  $Id: history.cc,v 1.10 2002/08/17 13:19:31 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -63,17 +63,16 @@ HistoryFile::sync_the_file()
 
   int HIST_MAX_SIZE;
 
-  if (!configuration.get_int("History", HIST_MAX_SIZE)) {
+  if (!configuration.get_int("History", HIST_MAX_SIZE))
     HIST_MAX_SIZE = 20;
-  }
 
   ofstream f(filename, ios::out);
 
   int start = 0;
-  if (history.size() > HIST_MAX_SIZE)
+  if (history.size() > (size_t)HIST_MAX_SIZE)
     start = history.size() - HIST_MAX_SIZE;
 
-  for (int i = start; i < history.size(); i++)
+  for (size_t i = start; i < history.size(); i++)
     if (history[i].length() != 0)
       f << history[i] << endl;
 
@@ -110,7 +109,7 @@ HistoryFile::set_default(const char *defstr)
 }
 
 const char *
-HistoryFile::operator [] (int index)
+HistoryFile::operator [] (size_t index)
 {
   if (index < 0 || index >= history.size()) {
     return m_default.c_str();
