@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: history.h,v 1.7 2001/10/19 08:59:40 mishoo Exp $
+ *  $Id: history.h,v 1.8 2001/10/19 09:19:35 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -50,11 +50,11 @@ class HistoryFile
   void sync_the_file();
 
   inline const char* last_item() {
-    return history.back().c_str();
+    return history.empty() ? 0 : history.back().c_str();
   }
 
   inline const char* first_item() {
-    return history.front().c_str();
+    return history.empty() ? 0 : history.front().c_str();
   }
 	
  protected:

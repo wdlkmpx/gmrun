@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: gtkcompletionline.cc,v 1.23 2001/10/19 08:59:40 mishoo Exp $
+ *  $Id: gtkcompletionline.cc,v 1.24 2001/10/19 09:19:35 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -180,9 +180,12 @@ gtk_completion_line_init(GtkCompletionLine *object)
 
   object->hist = new HistoryFile();
 
-  gtk_entry_set_text(GTK_ENTRY(object), object->hist->last_item());
-  gtk_entry_select_region(GTK_ENTRY(object), 0, 
-                          strlen(object->hist->last_item()));
+  const char *last_item = object->hist->last_item();
+  if (last_item) {
+    gtk_entry_set_text(GTK_ENTRY(object), last_item);
+    gtk_entry_select_region(GTK_ENTRY(object), 0, 
+                            strlen(object->hist->last_item()));
+  }
 }
 
 static int
