@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: gtkcompletionline.cc,v 1.2 2001/03/12 09:23:21 mishoo Exp $
+ *  $Id: gtkcompletionline.cc,v 1.3 2001/03/12 09:30:06 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -189,7 +189,6 @@ get_words(GtkCompletionLine *object, vector<string>& words)
     }
   }
   D_MSG("*** END of function");
-  copy(words.begin(), words.end(), ostream_iterator<string>(cerr, "\n"));
   return pos;
 }
 
