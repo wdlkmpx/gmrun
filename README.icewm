@@ -1,0 +1,32 @@
+for those who use icewm as their window manager gmrun comes as a very light and good
+replacement for the nifty but desktop space consuming 'address bar' that
+comes with this window manager.
+what should you do:
+	edit your icewm preferences (~/.icewm/preferences) and modify some
+params there as below:
+     TaskBarDoubleHeight=0
+     ShowAddressBar=0      # in fact this is the only option you need to
+                           # modify.. but this was my only reason to use a
+                           # double-height taskbar :))
+     RunCommand="gmrun"    # heh, this too :) .. it's pretty obvious why :P~
+
+this can suffice but still there is more you can do to make your life easier:
+
+1. put up a keyboard shortcut for gmrun:
+    edit ~/.icewm/keys and put there a line like this one below:
+         key "Alt+Ctrl+r" gmrun
+
+2. customize the gmrun window management:
+    edit ~/.icewm/winoptions and put there stuff like this:
+         gmrun.ignoreTaskBar: 1
+         gmrun.layer: OnTop
+         gmrun.fResize: 0
+         gmrun.fClose: 0
+         gmrun.fMinimize: 0
+         gmrun.fMaximize: 0
+         gmrun.fHide: 0
+         gmrun.fRollup: 0
+         gmrun.dTitleBar: 0
+         gmrun.dBorder: 0
+
+//altblue

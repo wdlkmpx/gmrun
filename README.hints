@@ -1,0 +1,15 @@
+* Terminal spawning:
+  - just activate your command by pressing not only ENTER but CTRL-ENTER
+  (i.e.: man perl<CTRL-ENTER>)
+
+* Completion:
+  - hit TAB key to get a list of possible completions
+    (isn't that obvious, duh!?! =]~ ) 
+
+* Window too large?
+  - read README.gmrunrc
+
+* Want to run eterm/kterm/rxvt/gnome-terminal/footerm instead xterm?
+  - read README.gmrunrc
+
+//altblue

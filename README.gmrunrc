@@ -1,0 +1,47 @@
+
+since gmrun version 0.2.5 there is possible to use a configuration file for
+some features gmrun has... for now only Terminal and Width are available but
+maybe more will be added in the future ;-]~
+
+The configuration file should be located in your home directory, named as
+GMRUNRC compilation directive (".gmrunrc" by default).
+
+The syntax is plain simple. Look at the example below:
+--
+TermExec = xterm -bg black -fg white -geometry 100x60 -e
+Width = 300
+Top = 100
+Left = 50
+--
+
+*  'TermExec' is the command used for terminal spawning when the magic
+  Ctrl-Enter is pressed upon a gmrun command. NOTE that -e should be THE
+  VERY LAST argument as the program just gets this configuration line and
+  appends to it the gmrun input text. ie, try: 'man bash<Ctrl-Enter>'
+
+*  'Width' is simply the desired width of the gmrun window in pixels (by
+   default it is 500 which may be a little big for low-resolution X desktops).
+
+* 'Top' and 'Left' represent ofc the distance from the top-left corner of your
+  screen where the gmrun window will appear
+
+
+-----------------------------------
+NEWS: 
+	as gmrun v 0.5.3 appeared... mishoo thought it would be useful to be
+able to to things like these below in your configuration file:
+
+##################### set terminal
+TermOptions = -bg black -cr green -fg white -C -fn 9x15 -sl 8912
+TermGeometry = -geometry 100x40
+MyTerm = rxvt
+
+Terminal = ${MyTerm} ${TermOptions} ${TermGeometry}
+TermExec = ${Terminal} -e
+#####################################################
+
+if you understand it and need it, use it =]~ it's pretty simple duh.. and
+quite useless though ;-]~
+
+
+//altblue
