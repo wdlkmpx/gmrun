@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: main.cc,v 1.15 2001/07/26 07:47:41 mishoo Exp $
+ *  $Id: main.cc,v 1.16 2001/07/27 08:01:02 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -20,6 +20,12 @@
 #include <string>
 #include <iostream>
 using namespace std;
+
+struct gigi
+{
+  GtkWidget *w1;
+  GtkWidget *w2;
+};
 
 GtkStyle* style_normal(GtkWidget *w)
 {
@@ -80,23 +86,6 @@ IsStringBlank(const char *str)
   return 1;
 }
 
-
-static void
-on_compline_activated(GtkCompletionLine *cl, gpointer data)
-{
-  const char *progname = gtk_entry_get_text(GTK_ENTRY(cl));
-  if(!IsStringBlank(progname)) {
-	string tmp = progname;
-	tmp += " &";
-
-	system(tmp.c_str());
-	cl->hist->append(progname);
-    delete cl->hist;
-    delete cl->hist_word;
-  }
-  gtk_main_quit();
-}
-
 static void
 on_compline_runwithterm(GtkCompletionLine *cl, gpointer data)
 {
@@ -112,9 +101,9 @@ on_compline_runwithterm(GtkCompletionLine *cl, gpointer data)
       term = "xterm -e";
     }
     tmp = term;
-    tmp += " ";
+    tmp += " \"";
     tmp += command;
-    tmp += " &";
+    tmp += "\" &";
   } else {
     if (!configuration.get_string("Terminal", term)) {
       term = "xterm";
@@ -132,12 +121,6 @@ on_compline_runwithterm(GtkCompletionLine *cl, gpointer data)
   delete cl->hist_word;
   gtk_main_quit();
 }
-
-struct gigi
-{
-  GtkWidget *w1;
-  GtkWidget *w2;
-};
 
 static gint
 search_off_timeout(struct gigi *g)
@@ -209,6 +192,70 @@ on_search_not_found(GtkCompletionLine *cl, struct gigi *g)
   gtk_timeout_add(1000, GtkFunction(search_fail_timeout), g);
 }
 
+static bool
+url_check(GtkCompletionLine *cl, struct gigi *g)
+{
+  string text(gtk_entry_get_text(GTK_ENTRY(cl)));
+  string::size_type i;
+
+  i = text.find(":");
+
+  if (i != string::npos) {
+    // URL entered...
+    string url(text.substr(i + 1));
+    string url_type(text.substr(0, i));
+    string url_handler;
+
+    if (configuration.get_string(string("URL_") + url_type, url_handler)) {
+      string::size_type j;
+
+      j = url_handler.find("%s");
+      if (j != string::npos) {
+        url_handler.replace(j, 2, string("\"") + url + "\"");
+      }
+      j = url_handler.find("%u");
+      if (j != string::npos) {
+        url_handler.replace(j, 2, string("\"") + text + "\"");
+      }
+      url_handler += " &";
+      system(url_handler.c_str());
+      cl->hist->append(text.c_str());
+      delete cl->hist;
+      delete cl->hist_word;
+      gtk_main_quit();
+      return true;
+    } else {
+      gtk_label_set_text(GTK_LABEL(g->w1),
+                         (string("No URL handler for [") +
+                          url_type + "]").c_str());
+      gtk_widget_set_style(g->w1, style_notfound(g->w1));
+      gtk_timeout_add(1000, GtkFunction(search_off_timeout), g);
+      return true;
+    }
+  }
+
+  return false;
+}
+
+static void
+on_compline_activated(GtkCompletionLine *cl, struct gigi *g)
+{
+  const char *progname = gtk_entry_get_text(GTK_ENTRY(cl));
+  if (url_check(cl, g))
+    return;
+
+  if(!IsStringBlank(progname)) {
+	string tmp = progname;
+	tmp += " &";
+
+	system(tmp.c_str());
+	cl->hist->append(progname);
+    delete cl->hist;
+    delete cl->hist_word;
+  }
+  gtk_main_quit();
+}
+
 int main(int argc, char **argv)
 {
   GtkWidget *win;
@@ -267,7 +314,7 @@ int main(int argc, char **argv)
   gtk_signal_connect(GTK_OBJECT(compline), "destroy",
                      GTK_SIGNAL_FUNC(gtk_main_quit), NULL);
   gtk_signal_connect(GTK_OBJECT(compline), "activate",
-                     GTK_SIGNAL_FUNC(on_compline_activated), NULL);
+                     GTK_SIGNAL_FUNC(on_compline_activated), &g);
   gtk_signal_connect(GTK_OBJECT(compline), "runwithterm",
                      GTK_SIGNAL_FUNC(on_compline_runwithterm), NULL);
 
