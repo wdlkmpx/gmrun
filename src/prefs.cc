@@ -1,9 +1,11 @@
 // -*- c++ -*-
-// $Id: prefs.cc,v 1.1 2001/05/04 09:05:44 mishoo Exp $
+// $Id: prefs.cc,v 1.2 2001/05/04 09:24:51 mishoo Exp $
 
 #include <string>
 #include <fstream>
 #include <iostream>
+
+#include <stdio.h>
 
 using std::string;
 using std::ifstream;
