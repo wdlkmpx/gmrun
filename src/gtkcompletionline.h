@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: gtkcompletionline.h,v 1.1 2001/02/23 07:48:28 mishoo Exp $
+ *  $Id: gtkcompletionline.h,v 1.2 2001/03/12 09:23:21 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -28,20 +28,20 @@ GTK_CHECK_CLASS_CAST(klass, gtk_completion_line_get_type(), GtkCompletionLineCla
 #define IS_GTK_COMPLETION_LINE(obj) \
 GTK_CHECK_TYPE(obj, gtk_completion_line_get_type())
 
-typedef struct _GtkCompletionLine GtkCompletionLine;
-typedef struct _GtkCompletionLineClass GtkCompletionLineClass;
+  typedef struct _GtkCompletionLine GtkCompletionLine;
+  typedef struct _GtkCompletionLineClass GtkCompletionLineClass;
 
-struct _GtkCompletionLine
-{
+  struct _GtkCompletionLine
+  {
 	GtkEntry parent;
 	/* add your OBJECT members here */
     
     GList *cmpl;
     GList *where;
-};
+  };
 
-struct _GtkCompletionLineClass
-{
+  struct _GtkCompletionLineClass
+  {
 	GtkEntryClass parent_class;
 	/* add your CLASS members here */
 
@@ -50,10 +50,10 @@ struct _GtkCompletionLineClass
     void (* incomplete)(GtkCompletionLine *cl);
     void (* uparrow)(GtkCompletionLine *cl);
     void (* dnarrow)(GtkCompletionLine *cl);
-};
+  };
 
-guint gtk_completion_line_get_type(void);
-GtkWidget *gtk_completion_line_new();
+  guint gtk_completion_line_get_type(void);
+  GtkWidget *gtk_completion_line_new();
 
 #ifdef __cplusplus
 }

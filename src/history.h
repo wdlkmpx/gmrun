@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: history.h,v 1.1 2001/02/23 07:48:28 mishoo Exp $
+ *  $Id: history.h,v 1.2 2001/03/12 09:23:21 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -20,32 +20,32 @@ using namespace std;
 
 class HistoryFile
 {
-  protected:
-	int m_file_entries;
-	string m_filename;
-	string m_default;
-	bool m_default_set;
-	int m_current;
+ protected:
+  int m_file_entries;
+  string m_filename;
+  string m_default;
+  bool m_default_set;
+  int m_current;
 	
-	typedef vector<string> StrArray;
-	StrArray history;
+  typedef vector<string> StrArray;
+  StrArray history;
 	
-  public:
-	HistoryFile();
-	~HistoryFile();
+ public:
+  HistoryFile();
+  ~HistoryFile();
 	
-	void append(const char *entry);
-	void set_default(const char *defstr);
-	void clear_default();
+  void append(const char *entry);
+  void set_default(const char *defstr);
+  void clear_default();
 	
-	const char * operator [] (int index);
+  const char * operator [] (int index);
 	
-	const char * prev();
-	const char * next();
+  const char * prev();
+  const char * next();
 	
-  protected:
-	void read_the_file();
-	void sync_the_file();
+ protected:
+  void read_the_file();
+  void sync_the_file();
 };
 
 extern "C++" HistoryFile history;
