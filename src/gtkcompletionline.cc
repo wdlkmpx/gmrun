@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: gtkcompletionline.cc,v 1.25 2001/11/02 15:49:11 mishoo Exp $
+ *  $Id: gtkcompletionline.cc,v 1.26 2001/11/02 16:33:21 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -16,6 +16,7 @@
 #include <gtk/gtkclist.h>
 #include <gtk/gtkwindow.h>
 #include <gtk/gtkscrolledwindow.h>
+#include <gtk/gtkframe.h>
 
 #include <stddef.h>
 #include <stdio.h>
@@ -620,12 +621,17 @@ complete_line(GtkCompletionLine *object)
 
       if (object->win_compl == NULL) {
         object->win_compl = gtk_window_new(GTK_WINDOW_POPUP);
+        gtk_widget_set_name(object->win_compl, "Msh_Run_Window");
+
+        GtkWidget *the_frame = gtk_frame_new("");
+        gtk_frame_set_shadow_type(GTK_FRAME(the_frame), GTK_SHADOW_OUT);
+        gtk_widget_show(the_frame);
+
         /*gtk_window_set_position(GTK_WINDOW(object->win_compl),
           GTK_WIN_POS_MOUSE);*/
 
         gtk_window_set_policy(GTK_WINDOW(object->win_compl),
                               FALSE, FALSE, TRUE);
-        gtk_container_set_border_width(GTK_CONTAINER(object->win_compl), 5);
 
         object->list_compl = gtk_clist_new(1);
 
@@ -654,6 +660,8 @@ complete_line(GtkCompletionLine *object)
                                        GTK_POLICY_NEVER,
                                        GTK_POLICY_AUTOMATIC);
 
+        gtk_container_set_border_width(GTK_CONTAINER(scroll), 5);
+
         gtk_container_add(GTK_CONTAINER (scroll), object->list_compl);
 
         object->list_compl_items_where = 0;
@@ -663,7 +671,8 @@ complete_line(GtkCompletionLine *object)
                                                0);
         gtk_widget_set_usize(scroll, w + 40, 150);
 
-        gtk_container_add(GTK_CONTAINER(object->win_compl), scroll);
+        gtk_container_add(GTK_CONTAINER(object->win_compl), the_frame);
+        gtk_container_add(GTK_CONTAINER(the_frame), scroll);
 
         GdkWindow *top = gtk_widget_get_parent_window(GTK_WIDGET(object));
         int x, y;
