@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: gtkcompletionline.h,v 1.11 2002/08/16 10:30:18 mishoo Exp $
+ *  $Id: gtkcompletionline.h,v 1.12 2003/11/16 10:43:32 andreas99 Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -57,6 +57,7 @@ extern "C++" {
 
     int first_key;
     int tabtimeout;
+    int show_dot_files;
   };
 
   struct _GtkCompletionLineClass
@@ -72,6 +73,7 @@ extern "C++" {
     void (* search_letter)(GtkCompletionLine *cl);
     void (* search_not_found)(GtkCompletionLine *cl);
     void (* ext_handler)(GtkCompletionLine *cl);
+    void (* cancel)(GtkCompletionLine *cl);
   };
 
   guint gtk_completion_line_get_type(void);
@@ -81,3 +83,8 @@ extern "C++" {
 }
 
 #endif /* __GTKCOMPLETIONLINE_H__ */
+
+// Local Variables: ***
+// mode: c++ ***
+// c-basic-offset: 2 ***
+// End: ***

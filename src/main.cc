@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: main.cc,v 1.24 2002/08/17 13:19:31 mishoo Exp $
+ *  $Id: main.cc,v 1.25 2003/11/16 10:43:32 andreas99 Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -41,7 +41,29 @@ struct gigi
   GtkWidget *w2;
 };
 
+/// BEGIN: TIMEOUT MANAGEMENT
+
 static gint search_off_timeout(struct gigi *g);
+
+static guint g_search_off_timeout_id = 0;
+
+static void remove_search_off_timeout()
+{
+  if (g_search_off_timeout_id) {
+    gtk_timeout_remove(g_search_off_timeout_id);
+    g_search_off_timeout_id = 0;
+  }
+}
+
+static void add_search_off_timeout(guint32 timeout, struct gigi *g, GtkFunction func = 0)
+{
+  remove_search_off_timeout();
+  if (!func)
+    func = GtkFunction(search_off_timeout);
+  g_search_off_timeout_id = gtk_timeout_add(timeout, func, g);
+}
+
+/// END: TIMEOUT MANAGEMENT
 
 GtkStyle* style_normal(GtkWidget *w)
 {
@@ -110,7 +132,7 @@ run_with_system(const std::string& command, struct gigi* g)
 #endif
     gtk_label_set_text(GTK_LABEL(g->w1), error.c_str());
     gtk_widget_set_style(g->w1, style_notfound(g->w1));
-    gtk_timeout_add(2000, GtkFunction(search_off_timeout), g);
+    add_search_off_timeout(2000, g);
   }
 }
 
@@ -146,6 +168,7 @@ run_the_command(const std::string& command, struct gigi* g)
     CT_ESCAPE
   };
   TYPE_CONTEXT context = CT_NORMAL;
+  TYPE_CONTEXT save_context = CT_NORMAL;
   string tmp;
   char c;
 
@@ -158,6 +181,7 @@ run_the_command(const std::string& command, struct gigi* g)
     switch (c) {
      case '\\':
       if (context != CT_ESCAPE) {
+        save_context = context;
         context = CT_ESCAPE;
       } else {
         goto ordinary;
@@ -199,7 +223,7 @@ run_the_command(const std::string& command, struct gigi* g)
      ordinary:
      default:
       if (context == CT_ESCAPE) {
-        context = CT_NORMAL;
+        context = save_context;
         tmp += c;
       } else if (context == CT_QUOTE) {
         tmp += c;
@@ -227,7 +251,7 @@ run_the_command(const std::string& command, struct gigi* g)
 
   gtk_label_set_text(GTK_LABEL(g->w1), error.c_str());
   gtk_widget_set_style(g->w1, style_notfound(g->w1));
-  gtk_timeout_add(2000, GtkFunction(search_off_timeout), g);
+  add_search_off_timeout(2000, g);
 }
 #endif
 
@@ -235,7 +259,7 @@ static void
 on_ext_handler(GtkCompletionLine *cl, const char* ext, struct gigi* g)
 {
   string cmd;
-  if (configuration.get_ext_handler(ext, cmd)) {
+  if (ext && configuration.get_ext_handler(ext, cmd)) {
     string str("Handler: ");
     size_t pos = cmd.find_first_of(" \t");
     if (pos == string::npos)
@@ -244,7 +268,9 @@ on_ext_handler(GtkCompletionLine *cl, const char* ext, struct gigi* g)
       str += cmd.substr(0, pos);
     gtk_label_set_text(GTK_LABEL(g->w2), str.c_str());
     gtk_widget_show(g->w2);
-    gtk_timeout_add(1000, GtkFunction(search_off_timeout), g);
+    // gtk_timeout_add(1000, GtkFunction(search_off_timeout), g);
+  } else {
+    search_off_timeout(g);
   }
 }
 
@@ -296,7 +322,7 @@ on_compline_unique(GtkCompletionLine *cl, struct gigi *g)
 {
   gtk_label_set_text(GTK_LABEL(g->w1), "unique");
   gtk_widget_set_style(g->w1, style_unique(g->w1));
-  gtk_timeout_add(1000, GtkFunction(search_off_timeout), g);
+  add_search_off_timeout(1000, g);
 }
 
 static void
@@ -304,7 +330,7 @@ on_compline_notunique(GtkCompletionLine *cl, struct gigi *g)
 {
   gtk_label_set_text(GTK_LABEL(g->w1), "not unique");
   gtk_widget_set_style(g->w1, style_notunique(g->w1));
-  gtk_timeout_add(1000, GtkFunction(search_off_timeout), g);
+  add_search_off_timeout(1000, g);
 }
 
 static void
@@ -312,7 +338,7 @@ on_compline_incomplete(GtkCompletionLine *cl, struct gigi *g)
 {
   gtk_label_set_text(GTK_LABEL(g->w1), "not found");
   gtk_widget_set_style(g->w1, style_notfound(g->w1));
-  gtk_timeout_add(1000, GtkFunction(search_off_timeout), g);
+  add_search_off_timeout(1000, g);
 }
 
 static void
@@ -325,7 +351,7 @@ on_search_mode(GtkCompletionLine *cl, struct gigi *g)
   } else {
     gtk_widget_hide(g->w2);
     gtk_label_set_text(GTK_LABEL(g->w1), "Search OFF");
-    gtk_timeout_add(1000, GtkFunction(search_off_timeout), g);
+    add_search_off_timeout(1000, g);
   }
 }
 
@@ -349,7 +375,7 @@ on_search_not_found(GtkCompletionLine *cl, struct gigi *g)
 {
   gtk_label_set_text(GTK_LABEL(g->w1), "Not Found!");
   gtk_widget_set_style(g->w2, style_notfound(g->w2));
-  gtk_timeout_add(1000, GtkFunction(search_fail_timeout), g);
+  add_search_off_timeout(1000, g, GtkFunction(search_fail_timeout));
 }
 
 static bool
@@ -373,16 +399,23 @@ url_check(GtkCompletionLine *cl, struct gigi *g)
     string url_handler;
 
     if (configuration.get_string(string("URL_") + url_type, url_handler)) {
-      string::size_type j;
+      string::size_type j = 0;
 
-      j = url_handler.find("%s");
-      if (j != string::npos) {
-        url_handler.replace(j, 2, url);
-      }
-      j = url_handler.find("%u");
-      if (j != string::npos) {
-        url_handler.replace(j, 2, text);
-      }
+      do {
+        j = url_handler.find("%s", j);
+        if (j != string::npos) {
+          url_handler.replace(j, 2, url);
+        }
+      } while (j != string::npos);
+
+      j = 0;
+      do {
+        j = url_handler.find("%u", j);
+        if (j != string::npos) {
+          url_handler.replace(j, 2, text);
+        }
+      } while (j != string::npos);
+
       cl->hist->append(text.c_str());
       cl->hist->sync_the_file();
       run_the_command(url_handler.c_str(), g);
@@ -392,7 +425,7 @@ url_check(GtkCompletionLine *cl, struct gigi *g)
                          (string("No URL handler for [") +
                           url_type + "]").c_str());
       gtk_widget_set_style(g->w1, style_notfound(g->w1));
-      gtk_timeout_add(1000, GtkFunction(search_off_timeout), g);
+      add_search_off_timeout(1000, g);
       return true;
     }
   }
@@ -517,14 +550,15 @@ int main(int argc, char **argv)
   gtk_misc_set_padding(GTK_MISC(label_search), 10, 0);
   gtk_box_pack_start(GTK_BOX(hhbox), label_search, TRUE, TRUE, 0);
 
-  GtkAccelGroup *accels = gtk_accel_group_new();
-  gtk_window_add_accel_group(GTK_WINDOW(win), accels);
-
   compline = gtk_completion_line_new();
   gtk_widget_set_name(compline, "Msh_Run_Compline");
   int prefs_width;
   if (!configuration.get_int("Width", prefs_width))
     prefs_width = 500;
+
+  // don't show files starting with "." by default
+  if (!configuration.get_int("ShowDotFiles", GTK_COMPLETION_LINE(compline)->show_dot_files))
+    GTK_COMPLETION_LINE(compline)->show_dot_files = 0;
 
   {
     int tmp;
@@ -536,9 +570,7 @@ int main(int argc, char **argv)
   g.w2 = label_search;
 
   gtk_widget_set_usize(compline, prefs_width, -2);
-  gtk_widget_add_accelerator(compline, "destroy", accels,
-                             GDK_Escape, 0, (GtkAccelFlags)0);
-  gtk_signal_connect(GTK_OBJECT(compline), "destroy",
+  gtk_signal_connect(GTK_OBJECT(compline), "cancel",
                      GTK_SIGNAL_FUNC(gtk_main_quit), NULL);
   gtk_signal_connect(GTK_OBJECT(compline), "activate",
                      GTK_SIGNAL_FUNC(on_compline_activated), &g);
@@ -584,3 +616,8 @@ int main(int argc, char **argv)
 
   gtk_main();
 }
+
+// Local Variables: ***
+// mode: c++ ***
+// c-basic-offset: 2 ***
+// End: ***
