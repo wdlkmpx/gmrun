@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: main.cc,v 1.12 2001/07/17 16:09:00 mishoo Exp $
+ *  $Id: main.cc,v 1.13 2001/07/18 07:03:39 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -145,7 +145,7 @@ on_compline_incomplete(GtkCompletionLine *cl, GtkWidget *label)
 static gint
 search_off_timeout(GtkWidget *label)
 {
-  gtk_widget_hide(label);
+  gtk_label_set_text(GTK_LABEL(label), "Run program:");
   return FALSE;
 }
 
@@ -154,10 +154,10 @@ on_search_mode(GtkCompletionLine *cl, GtkWidget *label)
 {
   if (cl->hist_search_mode != GCL_SEARCH_OFF) {
     gtk_widget_show(label);
-    gtk_label_set_text(GTK_LABEL(label), "search mode ON");
+    gtk_label_set_text(GTK_LABEL(label), "Search:");
   } else {
     gtk_widget_show(label);
-    gtk_label_set_text(GTK_LABEL(label), "search mode OFF");
+    gtk_label_set_text(GTK_LABEL(label), "Search OFF");
     gtk_timeout_add(1000, GtkFunction(search_off_timeout), label);
   }
 }
@@ -165,38 +165,24 @@ on_search_mode(GtkCompletionLine *cl, GtkWidget *label)
 static void
 on_search_letter(GtkCompletionLine *cl, GtkWidget *label)
 {
-  gtk_widget_show(label);
   gtk_label_set_text(GTK_LABEL(label), cl->hist_word->c_str());
 }
 
-struct gigi
-{
-  GtkWidget *label;
-  GtkCompletionLine *cl;
-};
-
 static gint
-search_fail_timeout(struct gigi *data)
+search_fail_timeout(GtkWidget *label)
 {
-  gtk_label_set_text(GTK_LABEL(data->label), data->cl->hist_word->c_str());
-  gtk_widget_set_style(data->label, style_notunique(data->label));
+  gtk_label_set_text(GTK_LABEL(label), "Search:");
+  gtk_widget_set_style(label, style_notunique(label));
 
-  free(data);
   return FALSE;
 }
 
 static void
 on_search_not_found(GtkCompletionLine *cl, GtkWidget *label)
 {
-  struct gigi *gigi;
-
   gtk_label_set_text(GTK_LABEL(label), "Not Found!");
   gtk_widget_set_style(label, style_notfound(label));
-
-  gigi = (struct gigi*)malloc(sizeof(struct gigi));
-  gigi->label = label;
-  gigi->cl = cl;
-  gtk_timeout_add(1000, GtkFunction(search_fail_timeout), gigi);
+  gtk_timeout_add(1000, GtkFunction(search_fail_timeout), label);
 }
 
 int main(int argc, char **argv)
@@ -231,6 +217,9 @@ int main(int argc, char **argv)
   gtk_box_pack_start(GTK_BOX(hhbox), label, FALSE, FALSE, 0);
 
   label_search = gtk_label_new("");
+  gtk_widget_show(label_search);
+  gtk_misc_set_alignment(GTK_MISC(label_search), 0.0, 1.0);
+  gtk_misc_set_padding(GTK_MISC(label_search), 10, 0);
   gtk_box_pack_start(GTK_BOX(hhbox), label_search, TRUE, TRUE, 0);
 
   GtkAccelGroup *accels = gtk_accel_group_new();
@@ -260,9 +249,9 @@ int main(int argc, char **argv)
                      GTK_SIGNAL_FUNC(on_compline_incomplete), label);
 
   gtk_signal_connect(GTK_OBJECT(compline), "search_mode",
-                     GTK_SIGNAL_FUNC(on_search_mode), label_search);
+                     GTK_SIGNAL_FUNC(on_search_mode), label);
   gtk_signal_connect(GTK_OBJECT(compline), "search_not_found",
-                     GTK_SIGNAL_FUNC(on_search_not_found), label_search);
+                     GTK_SIGNAL_FUNC(on_search_not_found), label);
   gtk_signal_connect(GTK_OBJECT(compline), "search_letter",
                      GTK_SIGNAL_FUNC(on_search_letter), label_search);
   gtk_widget_show(compline);

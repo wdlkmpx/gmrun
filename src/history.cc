@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: history.cc,v 1.5 2001/07/02 09:12:16 mishoo Exp $
+ *  $Id: history.cc,v 1.6 2001/07/18 07:03:39 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -152,4 +152,10 @@ void
 HistoryFile::clear_default()
 {
   m_default_set = false;
+}
+
+void
+HistoryFile::reset_position()
+{
+  m_current = m_file_entries;
 }

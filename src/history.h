@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: history.h,v 1.4 2001/07/02 09:12:16 mishoo Exp $
+ *  $Id: history.h,v 1.5 2001/07/18 07:03:39 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -36,6 +36,8 @@ class HistoryFile
   void append(const char *entry);
   void set_default(const char *defstr);
   void clear_default();
+
+  void reset_position();
 	
   const char * operator [] (int index);
 	

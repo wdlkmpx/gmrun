@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: gtkcompletionline.cc,v 1.15 2001/07/17 16:23:33 mishoo Exp $
+ *  $Id: gtkcompletionline.cc,v 1.16 2001/07/18 07:03:39 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -728,16 +728,20 @@ down_history(GtkCompletionLine* cl)
 }
 
 static int
-search_back_history(GtkCompletionLine* cl)
+search_back_history(GtkCompletionLine* cl, bool avance)
 {
   if (!cl->hist_word->empty()) {
     const char * histext;
-    while (true) {
+    if (avance) {
       histext = cl->hist->prev_to_first();
-      if (cl == NULL || histext == NULL) {
+      if (histext == NULL) {
         gtk_signal_emit_by_name(GTK_OBJECT(cl), "search_not_found");
-        break;
+        return 0;
       }
+    } else {
+      histext = gtk_entry_get_text(GTK_ENTRY(cl));
+    }
+    while (true) {
       string s = histext;
       string::size_type i;
       i = s.find(*cl->hist_word);
@@ -748,23 +752,35 @@ search_back_history(GtkCompletionLine* cl)
         gtk_signal_emit_by_name(GTK_OBJECT(cl), "search_letter");
         return 1;
       }
+      histext = cl->hist->prev_to_first();
+      if (histext == NULL) {
+        gtk_signal_emit_by_name(GTK_OBJECT(cl), "search_not_found");
+        break;
+      }
     }
+  } else {
+    gtk_entry_select_region(GTK_ENTRY(cl), 0, 0);
+    gtk_signal_emit_by_name(GTK_OBJECT(cl), "search_letter");
   }
 
   return 0;
 }
 
 static int
-search_forward_history(GtkCompletionLine* cl)
+search_forward_history(GtkCompletionLine* cl, bool avance)
 {
   if (!cl->hist_word->empty()) {
     const char * histext;
-    while (true) {
+    if (avance) {
       histext = cl->hist->next_to_last();
-      if (cl == NULL || histext == NULL) {
+      if (histext == NULL) {
         gtk_signal_emit_by_name(GTK_OBJECT(cl), "search_not_found");
-        break;
+        return 0;
       }
+    } else {
+      histext = gtk_entry_get_text(GTK_ENTRY(cl));
+    }
+    while (true) {
       string s = histext;
       string::size_type i;
       i = s.find(*cl->hist_word);
@@ -775,21 +791,29 @@ search_forward_history(GtkCompletionLine* cl)
         gtk_signal_emit_by_name(GTK_OBJECT(cl), "search_letter");
         return 1;
       }
+      histext = cl->hist->next_to_last();
+      if (histext == NULL) {
+        gtk_signal_emit_by_name(GTK_OBJECT(cl), "search_not_found");
+        break;
+      }
     }
+  } else {
+    gtk_entry_select_region(GTK_ENTRY(cl), 0, 0);
+    gtk_signal_emit_by_name(GTK_OBJECT(cl), "search_letter");
   }
 
   return 0;
 }
 
 static int
-search_history(GtkCompletionLine* cl)
+search_history(GtkCompletionLine* cl, bool avance)
 {
   switch (cl->hist_search_mode) {
    case GCL_SEARCH_REW:
-    return search_back_history(cl);
+    return search_back_history(cl, avance);
 
    case GCL_SEARCH_FWD:
-    return search_forward_history(cl);
+    return search_forward_history(cl, avance);
 
    default:
     return -1;
@@ -797,18 +821,26 @@ search_history(GtkCompletionLine* cl)
 }
 
 static int
-inverse_search_history(GtkCompletionLine* cl)
+inverse_search_history(GtkCompletionLine* cl, bool avance)
 {
   switch (cl->hist_search_mode) {
    case GCL_SEARCH_FWD:
-    return search_back_history(cl);
+    return search_back_history(cl, avance);
 
    case GCL_SEARCH_REW:
-    return search_forward_history(cl);
+    return search_forward_history(cl, avance);
 
    default:
     return -1;
   }
+}
+
+static int
+search_off(GtkCompletionLine* cl)
+{
+  cl->hist_search_mode = GCL_SEARCH_OFF;
+  gtk_signal_emit_by_name(GTK_OBJECT(cl), "search_mode");
+  cl->hist->reset_position();
 }
 
 static gboolean
@@ -821,13 +853,22 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
 #define STOP_RELEASE \
   (gtk_signal_emit_stop_by_name(GTK_OBJECT(cl), "key_release_event"))
 
+  DEBUG_VAR(event->keyval);
+  DEBUG_VAR(gdk_keyval_name(event->keyval));
+
   switch (event->type) {
+
    case GDK_KEY_PRESS:
+
+
     switch (event->keyval) {
+
      case GDK_Tab:
+      search_off(cl);
       complete_line(cl);
       STOP_PRESS;
       return TRUE;
+
      case GDK_Up:
       if (cl->win_compl != NULL) {
         int &item = cl->list_compl_items_where;
@@ -841,11 +882,11 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
         up_history(cl);
       }
       if (cl->hist_search_mode != GCL_SEARCH_OFF) {
-        cl->hist_search_mode = GCL_SEARCH_OFF;
-        gtk_signal_emit_by_name(GTK_OBJECT(cl), "search_mode");
+        search_off(cl);
       }
       STOP_PRESS;
       return TRUE;
+
      case GDK_space:
      {
        int pos = gtk_editable_get_position(GTK_EDITABLE(cl));
@@ -856,6 +897,7 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
        }
        return TRUE;
      }
+
      case GDK_Down:
       if (cl->win_compl != NULL) {
         int &item = cl->list_compl_items_where;
@@ -869,11 +911,11 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
         down_history(cl);
       }
       if (cl->hist_search_mode != GCL_SEARCH_OFF) {
-        cl->hist_search_mode = GCL_SEARCH_OFF;
-        gtk_signal_emit_by_name(GTK_OBJECT(cl), "search_mode");
+        search_off(cl);
       }
       STOP_PRESS;
       return TRUE;
+
      case GDK_Return:
       if (cl->win_compl != NULL) {
         gtk_widget_destroy(cl->win_compl);
@@ -886,11 +928,12 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
       }
       STOP_PRESS;
       return TRUE;
+
      case GDK_R:
      case GDK_r:
       if (event->state & GDK_CONTROL_MASK) {
         if (cl->hist_search_mode != GCL_SEARCH_OFF) {
-          search_back_history(cl);
+          search_back_history(cl, true);
         } else {
           cl->hist_search_mode = GCL_SEARCH_REW;
           cl->hist_word->clear();
@@ -900,11 +943,12 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
         return TRUE;
       }
       return FALSE;
+
      case GDK_S:
      case GDK_s:
       if (event->state & GDK_CONTROL_MASK) {
         if (cl->hist_search_mode != GCL_SEARCH_OFF) {
-          search_forward_history(cl);
+          search_forward_history(cl, true);
         } else {
           cl->hist_search_mode = GCL_SEARCH_FWD;
           cl->hist_word->clear();
@@ -914,16 +958,18 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
         return TRUE;
       }
       return FALSE;
+
      case GDK_BackSpace:
       if (cl->hist_search_mode != GCL_SEARCH_OFF) {
         if (!cl->hist_word->empty()) {
           cl->hist_word->erase(cl->hist_word->length() - 1);
-          inverse_search_history(cl);
+          inverse_search_history(cl, true);
         }
         STOP_PRESS;
         return TRUE;
       }
       return FALSE;
+
      case GDK_Escape:
      case GDK_End:
      {
@@ -936,36 +982,44 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
          return TRUE;
        }
        if (cl->hist_search_mode != GCL_SEARCH_OFF) {
-         cl->hist_search_mode = GCL_SEARCH_OFF;
-         gtk_signal_emit_by_name(GTK_OBJECT(cl), "search_mode");
+         search_off(cl);
          STOP_PRESS;
          return TRUE;
        }
        return FALSE;
      }
+
+     case GDK_Control_R:
+     case GDK_Control_L:
+     case GDK_Shift_R:
+     case GDK_Shift_L:
+     case GDK_Alt_R:
+     case GDK_Alt_L:
+      break;
+
      default:
       if (cl->win_compl != NULL) {
         gtk_widget_destroy(cl->win_compl);
         cl->win_compl = NULL;
       }
       cl->where = NULL;
-      if (cl->hist_search_mode != GCL_SEARCH_OFF &&
-          event->keyval >= 32 && event->keyval <= 127) {
-        *cl->hist_word += (char)(event->keyval);
-        if (search_history(cl) <= 0) {
-          cl->hist_word->erase(cl->hist_word->length() - 1);
+      if (cl->hist_search_mode != GCL_SEARCH_OFF) {
+        if (event->length > 0) {
+          *cl->hist_word += event->string;
+          if (search_history(cl, false) <= 0) {
+            cl->hist_word->erase(cl->hist_word->length() - 1);
+          }
+          STOP_PRESS;
+          return TRUE;
+        } else {
+          search_off(cl);
         }
-        STOP_PRESS;
-        return TRUE;
       }
       break;
     }
     break;
-   case GDK_KEY_RELEASE:
-    switch (event->keyval) {
-     default:
-      break;
-    }
+
+   default:
     break;
   }
   return FALSE;
