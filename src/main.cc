@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: main.cc,v 1.18 2001/07/31 11:06:42 mishoo Exp $
+ *  $Id: main.cc,v 1.19 2001/07/31 11:11:51 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -23,8 +23,6 @@
 #include <vector>
 #include <algorithm>
 using namespace std;
-
-#define DEBUG
 
 #include <unistd.h>
 #include <errno.h>
@@ -142,7 +140,7 @@ run_the_command(const std::string& command, struct gigi* g)
      case ' ':
       if (context == CT_ESCAPE || context == CT_QUOTE) {
         goto ordinary;
-      } else {
+      } else if (!tmp.empty()) {
         if (prog.empty()) {
           prog = tmp;
         }
@@ -165,15 +163,12 @@ run_the_command(const std::string& command, struct gigi* g)
       }
     }
   }
-  char *p = (char*)malloc(tmp.length() + 1);
-  memcpy(p, tmp.c_str(), tmp.length() + 1);
-  argv.push_back(p);
   argv.push_back(NULL);
 
 #ifdef DEBUG
   for (vector<char*>::iterator i = argv.begin(); i != argv.end(); ++i) {
     if (*i) {
-      cerr << *i << endl;
+      cerr << "'" << *i << "'" << endl;
     }
   }
 #endif
