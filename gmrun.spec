@@ -1,5 +1,5 @@
 Name: gmrun
-Version: 0.5.4
+Version: 0.5.5
 Release: 1
 Summary: Small 'Run application' X11 utility based on GTK
 Group: X11/Utilities
@@ -31,6 +31,11 @@ make prefix=/usr install-strip
 /usr/share/gmrun/gmrunrc
 
 %changelog
+* Sun Jul 22 2001 Mihai Bazon <mishoo@infoiasi.ro>
+- added "!" history backward search; like in bash, it finds the last command
+  which begins with the entered text.
+- CTRL-R / CTRL-S don't show two identical consecutive records.
+
 * Thu Jul 19 2001 Mihai Bazon <mishoo@infoiasi.ro>
 - added history search capabilities (CTRL-R / CTRL-S, like in bash / Emacs)
 - small bug fixes
