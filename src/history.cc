@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: history.cc,v 1.3 2001/05/16 14:39:31 mishoo Exp $
+ *  $Id: history.cc,v 1.4 2001/06/27 07:00:55 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -11,6 +11,7 @@
 
 
 #include "history.h"
+#include "prefs.h"
 
 #include <glib.h>
 #include <stdio.h>
@@ -18,8 +19,6 @@
 
 #include <fstream>
 using namespace std;
-
-#define HIST_MAX_SIZE 20
 
 HistoryFile::HistoryFile()
 {
@@ -62,6 +61,12 @@ void
 HistoryFile::sync_the_file()
 {
   const char *filename = m_filename.c_str();
+	
+	int HIST_MAX_SIZE;
+	
+	if (!configuration.get_int("History", HIST_MAX_SIZE)) {
+		HIST_MAX_SIZE = 20;
+	}
 	
   ofstream f(filename, ios::out);
 	

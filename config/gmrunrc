@@ -12,3 +12,6 @@ TermExec = ${Terminal} -e
 Width = 250
 Top = 100
 Left = 50
+
+# History size
+History = 50

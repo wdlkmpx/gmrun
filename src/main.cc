@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: main.cc,v 1.7 2001/05/16 14:39:31 mishoo Exp $
+ *  $Id: main.cc,v 1.8 2001/06/27 07:00:55 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -28,7 +28,7 @@ GtkStyle* style_notfound(GtkWidget *w)
     
   if (!style) {
     style = gtk_style_copy(gtk_widget_get_style(w));
-    style->fg[GTK_STATE_NORMAL] = (GdkColor){0, 0x8000, 0x0000, 0x0000};
+    style->fg[GTK_STATE_NORMAL] = (GdkColor){0, 0xFFFF, 0x0000, 0x0000};
     gtk_style_ref(style);
   }
   return style;
@@ -40,7 +40,7 @@ GtkStyle* style_notunique(GtkWidget *w)
     
   if (!style) {
     style = gtk_style_copy(gtk_widget_get_style(w));
-    style->fg[GTK_STATE_NORMAL] = (GdkColor){0, 0x0000, 0x0000, 0x8000};
+    style->fg[GTK_STATE_NORMAL] = (GdkColor){0, 0x0000, 0x0000, 0xFFFF};
     gtk_style_ref(style);
   }
   return style;
@@ -52,7 +52,7 @@ GtkStyle* style_unique(GtkWidget *w)
     
   if (!style) {
     style = gtk_style_copy(gtk_widget_get_style(w));
-    style->fg[GTK_STATE_NORMAL] = (GdkColor){0, 0x0000, 0x8000, 0x0000};
+    style->fg[GTK_STATE_NORMAL] = (GdkColor){0, 0x0000, 0xFFFF, 0x0000};
     gtk_style_ref(style);
   }
   return style;
@@ -157,10 +157,11 @@ int main(int argc, char **argv)
 {
   GtkWidget *win;
   GtkWidget *compline;
-    
-  gtk_init(&argc, &argv);
 
-  win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+  gtk_init(&argc, &argv);
+	
+	win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+	gtk_widget_set_name(win, "Msh_Run_Window");
   gtk_window_set_title(GTK_WINDOW(win), "Execute program feat. completion");
   gtk_window_set_policy(GTK_WINDOW(win), FALSE, FALSE, TRUE);
   gtk_window_set_position(GTK_WINDOW(win), GTK_WIN_POS_CENTER);
@@ -182,6 +183,7 @@ int main(int argc, char **argv)
   gtk_window_add_accel_group(GTK_WINDOW(win), accels);
     
   compline = gtk_completion_line_new();
+	gtk_widget_set_name(compline, "Msh_Run_Compline");
   int prefs_width;
   if (!configuration.get_int("Width", prefs_width))
     prefs_width = 500;
