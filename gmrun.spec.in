@@ -33,6 +33,11 @@ make install-strip
 %{prefix}/share/gmrun/gmrunrc
 
 %changelog
+* Sat Aug 17 2002 Mihai Bazon <mishoo@infoiasi.ro>
+- Some bugs fixed, specifically the behavior of END/HOME keys (or C-E, C-A),
+  and the major one: you could not run a file that has an extension handler
+  with some other program than the extension handler :)
+
 * Fri Aug 16 2002 Mihai Bazon <mishoo@infoiasi.ro>
 - Fixed bug: filenames can now contain white spaces (will be backslash-ed)
 - New feature: can specify application handler per file extension, so you

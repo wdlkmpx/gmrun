@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 
 AC_INIT(configure.in)
-AM_INIT_AUTOMAKE(gmrun, 0.8)
+AM_INIT_AUTOMAKE(gmrun, 0.8.1)
 AM_CONFIG_HEADER(config.h)
 
 AC_ARG_ENABLE(debug,
@@ -20,6 +20,15 @@ AC_ARG_ENABLE(system,
 if [ ! test "x$enable_system" != "xyes"]; then
    CFLAGS="$CFLAGS -DUSE_SYSTEM"
    CXXFLAGS="$CXXFLAGS -DUSE_SYSTEM"
+fi
+
+AC_ARG_ENABLE(mtrace,
+    [  --enable-mtrace=[no/yes]  Trace memory (de)allocation calls to detect memory leaks ],,
+    enable_mtrace=no)
+
+if [ ! test "x$enable_mtrace" != "xyes"]; then
+   CFLAGS="$CFLAGS -DMTRACE"
+   CXXFLAGS="$CXXFLAGS -DMTRACE"
 fi
 
 AC_ISC_POSIX
