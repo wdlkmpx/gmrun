@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: gtkcompletionline.cc,v 1.4 2001/03/12 16:57:34 mishoo Exp $
+ *  $Id: gtkcompletionline.cc,v 1.5 2001/04/05 14:08:17 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -179,9 +179,15 @@ get_words(GtkCompletionLine *object, vector<string>& words)
 {
   DEBUG_FNC;
 
-  istrstream ss(gtk_entry_get_text(GTK_ENTRY(object)));
+  string content(gtk_entry_get_text(GTK_ENTRY(object)));
   int pos_in_text = gtk_editable_get_position(GTK_EDITABLE(object));
   int pos = 0;
+  {
+    string::iterator i = content.begin() + pos_in_text;
+    if (i != content.end())
+      content.insert(i, ' ');
+  }
+  istrstream ss(content.c_str());
   DEBUG_VAR(pos_in_text);
   while (!ss.eof()) {
     string s;
@@ -549,8 +555,13 @@ complete_line(GtkCompletionLine *object)
   } else if (g_list_length(ls) >  1) {
     gtk_signal_emit_by_name(GTK_OBJECT(object), "notunique");
 
-    if (strcmp(gtk_entry_get_text(GTK_ENTRY(object)),
-               ((GString*)ls->data)->str) == 0) {
+    vector<string> words;
+    int pos = get_words(object, words);
+
+    DEBUG_VAR(((GString*)ls->data)->str);
+    DEBUG_VAR(words[pos]);
+
+    if (words[pos] == ((GString*)ls->data)->str) {
 
       if (object->win_compl == NULL) {
         object->win_compl = gtk_window_new(GTK_WINDOW_POPUP);
