@@ -33,6 +33,12 @@ make install-strip
 %{prefix}/share/gmrun/gmrunrc
 
 %changelog
+* Fri Oct 19 2001 Mihai Bazon <mishoo@infoiasi.ro>
+- Fixed bug with sorting of completion list
+- Fixed bug with URL handling
+- New parameter: list of execs to be always run in terminal
+- New feature: last history line appears directly in edit line, selected
+
 * Wed Aug 01 2001 Mihai Bazon <mishoo@infoiasi.ro>
 - Programs are now executed using execv.  We don't use system anymore, thus
   avoiding forking another shell.
