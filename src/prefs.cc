@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: prefs.cc,v 1.6 2001/10/19 08:59:40 mishoo Exp $
+ *  $Id: prefs.cc,v 1.7 2002/08/15 10:00:25 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -30,20 +30,17 @@ Prefs configuration;
 
 Prefs::Prefs()
 {
-  string file_name = getenv("HOME");
+  string file_name = "/etc/";
+  file_name += GMRUNRC;
+  init(file_name);
+
+  file_name = getenv("HOME");
   if (!file_name.empty()) {
     string::iterator i = file_name.end() - 1;
     if (*i == '/') file_name.erase(i);
     file_name += "/.";
     file_name += GMRUNRC;
-    if (!init(file_name)) {
-      file_name = PACKAGE_DATA_DIR;
-      i = file_name.end() - 1;
-      if (*i == '/') file_name.erase(i);
-      file_name += '/';
-      file_name += GMRUNRC;
-      init(file_name);
-    }
+    init(file_name);
   }
 }
 
@@ -55,7 +52,7 @@ bool Prefs::get_string(const string& key, string& val) const
   CONFIG::const_iterator i;
   i = vals_.find(ci_string(key.c_str()));
   if (i != vals_.end()) {
-    val = i->second;
+    val = process(i->second);
     return true;
   } else {
     return false;
@@ -97,7 +94,7 @@ bool Prefs::init(const string& file_name)
     
     sscanf(line.c_str(), "%255[a-zA-Z_0-9] = %255[^\n]",
            key, val);
-    vals_[key] = process(val);
+    vals_[key] = val;
 
 #ifdef DEBUG
     std::cerr << "Key: " << key << ", val: " << vals_[key] << std::endl;
@@ -107,7 +104,7 @@ bool Prefs::init(const string& file_name)
   return true;
 }
 
-string Prefs::process(const std::string& cmd)
+string Prefs::process(const std::string& cmd) const
 {
   string::size_type i = cmd.find("${");
   string::size_type j = cmd.find("}", i);

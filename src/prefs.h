@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: prefs.h,v 1.4 2001/10/19 08:59:40 mishoo Exp $
+ *  $Id: prefs.h,v 1.5 2002/08/15 10:00:25 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -27,7 +27,7 @@ class Prefs
   CONFIG vals_;
 
   bool init(const std::string& file_name);
-  string process(const std::string& cmd);
+  string process(const std::string& cmd) const;
 
  public:
   Prefs();

@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: gtkcompletionline.cc,v 1.27 2002/06/05 19:39:18 sonofkojak Exp $
+ *  $Id: gtkcompletionline.cc,v 1.28 2002/08/15 10:00:25 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -943,6 +943,9 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
 
      case GDK_exclam:
       if (!MODE_BEG) {
+        if (!MODE_SRC) {
+          gtk_editable_delete_selection(GTK_EDITABLE(cl));
+        }
         const char *tmp = gtk_entry_get_text(GTK_ENTRY(cl));
         if (!(*tmp == '\0' || cl->first_key)) {
           goto ordinary;
