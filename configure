@@ -699,7 +699,7 @@ fi
 
 PACKAGE=gmrun
 
-VERSION=0.6.0
+VERSION=0.6.1
 
 if test "`cd $srcdir && pwd`" != "`pwd`" && test -f $srcdir/config.status; then
   { echo "configure: error: source directory already configured; run "make distclean" there first" 1>&2; exit 1; }
@@ -2068,6 +2068,7 @@ rm -f conftest*
 
 if test "x${datadir}" = 'x${prefix}/share'; then
   if test "x${prefix}" = "xNONE"; then
+    prefix=/usr/local
     cat >> confdefs.h <<EOF
 #define PACKAGE_DATA_DIR "${ac_default_prefix}/share/${PACKAGE}"
 EOF
@@ -2087,6 +2088,9 @@ EOF
 
     PACKAGE_DATA_DIR="${datadir}/${PACKAGE}"
 fi
+
+
+PREFIX=${prefix}
 
 
 packagesrcdir=`cd $srcdir && pwd`
@@ -2258,6 +2262,7 @@ s%@GTK_CONFIG@%$GTK_CONFIG%g
 s%@GTK_CFLAGS@%$GTK_CFLAGS%g
 s%@GTK_LIBS@%$GTK_LIBS%g
 s%@PACKAGE_DATA_DIR@%$PACKAGE_DATA_DIR%g
+s%@PREFIX@%$PREFIX%g
 
 CEOF
 EOF

@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 
 AC_INIT(configure.in)
-AM_INIT_AUTOMAKE(gmrun, 0.6.0)
+AM_INIT_AUTOMAKE(gmrun, 0.6.1)
 AM_CONFIG_HEADER(config.h)
 
 AC_ARG_ENABLE(debug,
@@ -26,6 +26,7 @@ AM_PATH_GTK(1.2.6, ,
 dnl Set PACKAGE_DATA_DIR in config.h.
 if test "x${datadir}" = 'x${prefix}/share'; then
   if test "x${prefix}" = "xNONE"; then
+    prefix=/usr/local
     AC_DEFINE_UNQUOTED(PACKAGE_DATA_DIR, "${ac_default_prefix}/share/${PACKAGE}")
     PACKAGE_DATA_DIR="${ac_default_prefix}/share/${PACKAGE}"
   else
@@ -37,6 +38,9 @@ else
     PACKAGE_DATA_DIR="${datadir}/${PACKAGE}"
 fi
 AC_SUBST(PACKAGE_DATA_DIR)
+
+PREFIX=${prefix}
+AC_SUBST(PREFIX)
 
 dnl Set PACKAGE_SOURCE_DIR in config.h.
 packagesrcdir=`cd $srcdir && pwd`

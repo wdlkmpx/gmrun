@@ -1,3 +1,5 @@
+%define prefix @PREFIX@
+
 Name: @PACKAGE@
 Version: @VERSION@
 Release: 1
@@ -19,18 +21,23 @@ BuildPrereq: gtk+ >= 1.2.6
 %setup -q
 %build
 %configure
-./configure
+./configure --prefix=%{prefix}
 make
 %install
-make prefix=/usr install-strip
+make install-strip
 
 %files
 %defattr(-,root,root)
 %{_bindir}/%{name}
-%doc AUTHORS COPYING INSTALL README README.icewm README.hints README.gmrunrc NEWS ChangeLog
+%doc AUTHORS COPYING INSTALL README NEWS ChangeLog
 %{prefix}/share/gmrun/gmrunrc
 
 %changelog
+* Wed Aug 01 2001 Mihai Bazon <mishoo@infoiasi.ro>
+- Programs are now executed using execv.  We don't use system anymore, thus
+  avoiding forking another shell.
+- gmrun.spec gets now generated automagically, at ./configure.
+
 * Sun Jul 22 2001 Mihai Bazon <mishoo@infoiasi.ro>
 - added "!" history backward search; like in bash, it finds the last command
   which begins with the entered text.
