@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: gtkcompletionline.cc,v 1.30 2002/08/17 13:19:31 mishoo Exp $
+ *  $Id: gtkcompletionline.cc,v 1.31 2002/09/24 08:13:03 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -1102,17 +1102,20 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
 
      case GDK_G:
      case GDK_g:
-      if ((event->state & GDK_CONTROL_MASK) && MODE_SRC) {
+      if (event->state & GDK_CONTROL_MASK) {
         search_off(cl);
-        STOP_PRESS;
+        if (MODE_SRC)
+          STOP_PRESS;
         return TRUE;
       } else goto ordinary;
 
      case GDK_E:
      case GDK_e:
-      if ((event->state & GDK_CONTROL_MASK) && MODE_SRC)
+      if (event->state & GDK_CONTROL_MASK) {
         search_off(cl);
-      clear_selection(cl);
+        if (MODE_SRC)
+          clear_selection(cl);
+      }
       goto ordinary;
 
      ordinary:
@@ -1157,3 +1160,8 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
 #undef MODE_REW
 #undef MODE_FWD
 #undef MODE_SRC
+
+// Local Variables: ***
+// mode: c++ ***
+// c-basic-offset: 2 ***
+// End: ***
