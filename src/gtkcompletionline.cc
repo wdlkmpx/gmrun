@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: gtkcompletionline.cc,v 1.14 2001/07/17 16:09:00 mishoo Exp $
+ *  $Id: gtkcompletionline.cc,v 1.15 2001/07/17 16:23:33 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -743,6 +743,8 @@ search_back_history(GtkCompletionLine* cl)
       i = s.find(*cl->hist_word);
       if (i != string::npos) {
         gtk_entry_set_text(GTK_ENTRY(cl), histext);
+        gtk_entry_select_region(GTK_ENTRY(cl),
+                                i, i + cl->hist_word->length());
         gtk_signal_emit_by_name(GTK_OBJECT(cl), "search_letter");
         return 1;
       }
@@ -768,6 +770,8 @@ search_forward_history(GtkCompletionLine* cl)
       i = s.find(*cl->hist_word);
       if (i != string::npos) {
         gtk_entry_set_text(GTK_ENTRY(cl), histext);
+        gtk_entry_select_region(GTK_ENTRY(cl),
+                                i, i + cl->hist_word->length());
         gtk_signal_emit_by_name(GTK_OBJECT(cl), "search_letter");
         return 1;
       }
