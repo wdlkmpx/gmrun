@@ -1,5 +1,5 @@
 // -*- c++ -*-
-// $Id: prefs.cc,v 1.3 2001/05/05 22:11:17 mishoo Exp $
+// $Id: prefs.cc,v 1.4 2001/05/06 11:39:24 mishoo Exp $
 
 #include <fstream>
 #include <iostream>
@@ -71,22 +71,28 @@ void Prefs::init(const string& file_name)
     if (i == string::npos) continue;
     if (line[i] == '#') continue;
     
-    sscanf(line.c_str(), "%30[a-zA-Z_0-9] = %255[^\n]",
+    sscanf(line.c_str(), "%255[a-zA-Z_0-9] = %255[^\n]",
            key, val);
     vals_[key] = process(val);
+
+#ifdef DEBUG
+    std::cerr << "Key: " << key << ", val: " << vals_[key] << std::endl;
+#endif
   }
 }
 
 string Prefs::process(const std::string& cmd)
 {
   string::size_type i = cmd.find("${");
-  string::size_type j = cmd.rfind("}");
+  string::size_type j = cmd.find("}", i);
   
-  if (i == string::npos || j == string::npos) return cmd;
+  if (i == string::npos || j == string::npos) {
+    return cmd;
+  }
 
   string val;
   if (!get_string(cmd.substr(i + 2, j - i - 2), val)) return cmd;
   string ret(cmd);
   ret.replace(i, j - i + 1, val);
-  return ret;
+  return process(ret);
 }

@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: main.cc,v 1.5 2001/05/05 22:11:17 mishoo Exp $
+ *  $Id: main.cc,v 1.6 2001/05/06 11:39:24 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -94,8 +94,12 @@ on_compline_runwithterm(GtkCompletionLine *cl, gpointer data)
     if (!configuration.get_string("Terminal", term)) {
       term = "xterm";
     }
-    tmp = term;
+    tmp = term + " &";
   }
+
+#ifdef DEBUG
+  cerr << tmp << endl;
+#endif
 
   system(tmp.c_str());
   history.append(command.c_str());

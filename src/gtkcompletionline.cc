@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: gtkcompletionline.cc,v 1.8 2001/05/06 09:48:19 mishoo Exp $
+ *  $Id: gtkcompletionline.cc,v 1.9 2001/05/06 11:39:24 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -584,6 +584,10 @@ complete_line(GtkCompletionLine *object)
       object->where = NULL;
     }
   }
+
+  complete_common(object);
+  object->where = object->cmpl;
+  
   // FUCK C! C++ Rules!
   if (object->where != NULL) {
     if (object->win_compl != NULL) {
@@ -760,7 +764,7 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
         gtk_signal_emit_by_name(GTK_OBJECT(cl), "runwithterm");
       } else {
         gtk_signal_emit_by_name(GTK_OBJECT(cl), "activate");
-      }      
+      }
       STOP_PRESS;
       return TRUE;
      case GDK_Escape:
