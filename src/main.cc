@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: main.cc,v 1.9 2001/06/28 13:40:04 mishoo Exp $
+ *  $Id: main.cc,v 1.10 2001/07/02 09:12:16 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -11,7 +11,6 @@
 
 
 #include "gtkcompletionline.h"
-#include "history.h"
 
 #include "prefs.h"
 
@@ -71,15 +70,16 @@ IsStringBlank(const char *str)
 
 
 static void
-on_compline_activated(GtkEntry *entry, gpointer data)
+on_compline_activated(GtkCompletionLine *cl, gpointer data)
 {
-  const char *progname = gtk_entry_get_text(entry);
+  const char *progname = gtk_entry_get_text(GTK_ENTRY(cl));
   if(!IsStringBlank(progname)) {
 	string tmp = progname;
 	tmp += " &";
 
 	system(tmp.c_str());
-	history.append(progname);
+	cl->hist->append(progname);
+    delete cl->hist;
   }
   gtk_main_quit();
 }
@@ -114,7 +114,8 @@ on_compline_runwithterm(GtkCompletionLine *cl, gpointer data)
 #endif
 
   system(tmp.c_str());
-  history.append(command.c_str());
+  cl->hist->append(command.c_str());
+  delete cl->hist;
   gtk_main_quit();
 }
 
@@ -137,20 +138,6 @@ on_compline_incomplete(GtkCompletionLine *cl, GtkWidget *label)
 {
   gtk_label_set_text(GTK_LABEL(label), "not found");
   gtk_widget_set_style(label, style_notfound(label));
-}
-
-static void
-on_compline_uparrow(GtkCompletionLine *cl, GtkWidget *label)
-{
-  history.set_default(gtk_entry_get_text(GTK_ENTRY(cl)));
-  gtk_entry_set_text(GTK_ENTRY(cl), history.prev());
-}
-
-static void
-on_compline_dnarrow(GtkCompletionLine *cl, GtkWidget *label)
-{
-  history.set_default(gtk_entry_get_text(GTK_ENTRY(cl)));
-  gtk_entry_set_text(GTK_ENTRY(cl), history.next());
 }
 
 int main(int argc, char **argv)
@@ -204,10 +191,6 @@ int main(int argc, char **argv)
                      GTK_SIGNAL_FUNC(on_compline_notunique), label);
   gtk_signal_connect(GTK_OBJECT(compline), "incomplete",
                      GTK_SIGNAL_FUNC(on_compline_incomplete), label);
-  gtk_signal_connect(GTK_OBJECT(compline), "uparrow",
-                     GTK_SIGNAL_FUNC(on_compline_uparrow), label);
-  gtk_signal_connect(GTK_OBJECT(compline), "dnarrow",
-                     GTK_SIGNAL_FUNC(on_compline_dnarrow), label);
   gtk_widget_show(compline);
     
   gtk_box_pack_start(GTK_BOX(hbox), compline, TRUE, TRUE, 0);

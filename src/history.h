@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: history.h,v 1.3 2001/05/16 14:39:31 mishoo Exp $
+ *  $Id: history.h,v 1.4 2001/07/02 09:12:16 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -41,12 +41,13 @@ class HistoryFile
 	
   const char * prev();
   const char * next();
+
+  const char * prev_to_first();
+  const char * next_to_last();
 	
  protected:
   void read_the_file();
   void sync_the_file();
 };
-
-extern "C++" HistoryFile history;
 
 #endif // __HISTORY_H__

@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: gtkcompletionline.h,v 1.6 2001/05/16 14:39:31 mishoo Exp $
+ *  $Id: gtkcompletionline.h,v 1.7 2001/07/02 09:12:16 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -15,16 +15,18 @@
 
 #include <gtk/gtkentry.h>
 
-#ifdef __cplusplus
+#include <string>
+
+#include "history.h"
+
 extern "C++" {
-#endif /* __cplusplus */
 
 #define GTK_COMPLETION_LINE(obj) \
-GTK_CHECK_CAST(obj, gtk_completion_line_get_type(), GtkCompletionLine)
+  GTK_CHECK_CAST(obj, gtk_completion_line_get_type(), GtkCompletionLine)
 #define GTK_COMPLETION_LINE_CLASS(klass) \
-GTK_CHECK_CLASS_CAST(klass, gtk_completion_line_get_type(), GtkCompletionLineClass)
+  GTK_CHECK_CLASS_CAST(klass, gtk_completion_line_get_type(), GtkCompletionLineClass)
 #define IS_GTK_COMPLETION_LINE(obj) \
-GTK_CHECK_TYPE(obj, gtk_completion_line_get_type())
+  GTK_CHECK_TYPE(obj, gtk_completion_line_get_type())
 
   typedef struct _GtkCompletionLine GtkCompletionLine;
   typedef struct _GtkCompletionLineClass GtkCompletionLineClass;
@@ -40,6 +42,10 @@ GTK_CHECK_TYPE(obj, gtk_completion_line_get_type())
     
     GList *cmpl;
     GList *where;
+
+    HistoryFile *hist;
+    bool hist_search_mode;
+    std::string hist_word;
   };
 
   struct _GtkCompletionLineClass
@@ -50,16 +56,13 @@ GTK_CHECK_TYPE(obj, gtk_completion_line_get_type())
     void (* unique)(GtkCompletionLine *cl);
     void (* notunique)(GtkCompletionLine *cl);
     void (* incomplete)(GtkCompletionLine *cl);
-    void (* uparrow)(GtkCompletionLine *cl);
-    void (* dnarrow)(GtkCompletionLine *cl);
     void (* runwithterm)(GtkCompletionLine *cl);
+    void (* search_mode)(GtkCompletionLine *cl);
   };
 
   guint gtk_completion_line_get_type(void);
   GtkWidget *gtk_completion_line_new();
 
-#ifdef __cplusplus
 }
-#endif /* __cplusplus */
 
 #endif /* __GTKCOMPLETIONLINE_H__ */
