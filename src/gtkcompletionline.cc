@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: gtkcompletionline.cc,v 1.10 2001/05/06 11:58:45 mishoo Exp $
+ *  $Id: gtkcompletionline.cc,v 1.11 2001/05/16 14:39:31 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -7,8 +7,6 @@
  *  free to use/modify/distribute this program as long as you comply to the
  *    terms of the GNU General Public License, version 2 or above, at your
  *      option, and provided that this copyright notice remains intact.
- *
- *  Dedicated to Marius Ologesa (my main man).
  *****************************************************************************/
 
 

@@ -27,12 +27,16 @@ dnl Set PACKAGE_DATA_DIR in config.h.
 if test "x${datadir}" = 'x${prefix}/share'; then
   if test "x${prefix}" = "xNONE"; then
     AC_DEFINE_UNQUOTED(PACKAGE_DATA_DIR, "${ac_default_prefix}/share/${PACKAGE}")
+    PACKAGE_DATA_DIR="${ac_default_prefix}/share/${PACKAGE}"
   else
     AC_DEFINE_UNQUOTED(PACKAGE_DATA_DIR, "${prefix}/share/${PACKAGE}")
+    PACKAGE_DATA_DIR="${prefix}/share/${PACKAGE}"
   fi
 else
   AC_DEFINE_UNQUOTED(PACKAGE_DATA_DIR, "${datadir}/${PACKAGE}")
+    PACKAGE_DATA_DIR="${datadir}/${PACKAGE}"
 fi
+AC_SUBST(PACKAGE_DATA_DIR)
 
 dnl Set PACKAGE_SOURCE_DIR in config.h.
 packagesrcdir=`cd $srcdir && pwd`
@@ -51,5 +55,6 @@ changequote([,])dnl
 AC_OUTPUT([
 Makefile
 src/Makefile
+config/Makefile
 ])
 

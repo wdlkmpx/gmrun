@@ -1,5 +1,5 @@
-gmrun 0.1.1                          Dedicated to Marius Ologesa (my main man).
-------------                        -------------------------------------------
+gmrun 0.1.1
+------------
 
             Short GtkEntry for file autocompletion + main.cc that does the
             needed stuff for running programs.  This is intended as a

@@ -2072,18 +2072,22 @@ if test "x${datadir}" = 'x${prefix}/share'; then
 #define PACKAGE_DATA_DIR "${ac_default_prefix}/share/${PACKAGE}"
 EOF
 
+    PACKAGE_DATA_DIR="${ac_default_prefix}/share/${PACKAGE}"
   else
     cat >> confdefs.h <<EOF
 #define PACKAGE_DATA_DIR "${prefix}/share/${PACKAGE}"
 EOF
 
+    PACKAGE_DATA_DIR="${prefix}/share/${PACKAGE}"
   fi
 else
   cat >> confdefs.h <<EOF
 #define PACKAGE_DATA_DIR "${datadir}/${PACKAGE}"
 EOF
 
+    PACKAGE_DATA_DIR="${datadir}/${PACKAGE}"
 fi
+
 
 packagesrcdir=`cd $srcdir && pwd`
 cat >> confdefs.h <<EOF
@@ -2202,6 +2206,7 @@ ac_given_INSTALL="$INSTALL"
 trap 'rm -fr `echo "
 Makefile
 src/Makefile
+config/Makefile
  config.h" | sed "s/:[^ ]*//g"` conftest*; exit 1' 1 2 15
 EOF
 cat >> $CONFIG_STATUS <<EOF
@@ -2251,6 +2256,7 @@ s%@CXX@%$CXX%g
 s%@GTK_CONFIG@%$GTK_CONFIG%g
 s%@GTK_CFLAGS@%$GTK_CFLAGS%g
 s%@GTK_LIBS@%$GTK_LIBS%g
+s%@PACKAGE_DATA_DIR@%$PACKAGE_DATA_DIR%g
 
 CEOF
 EOF
@@ -2294,6 +2300,7 @@ cat >> $CONFIG_STATUS <<EOF
 
 CONFIG_FILES=\${CONFIG_FILES-"Makefile
 src/Makefile
+config/Makefile
 "}
 EOF
 cat >> $CONFIG_STATUS <<\EOF

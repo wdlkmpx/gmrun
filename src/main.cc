@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: main.cc,v 1.6 2001/05/06 11:39:24 mishoo Exp $
+ *  $Id: main.cc,v 1.7 2001/05/16 14:39:31 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -7,8 +7,6 @@
  *  free to use/modify/distribute this program as long as you comply to the
  *    terms of the GNU General Public License, version 2 or above, at your
  *      option, and provided that this copyright notice remains intact.
- *
- *  Dedicated to Marius Ologesa (my main man).
  *****************************************************************************/
 
 
@@ -60,15 +58,29 @@ GtkStyle* style_unique(GtkWidget *w)
   return style;
 }
 
+int
+IsStringBlank(const char *str)
+{
+  int i=-1;
+  while(++i<strlen(str)) {
+	if( str[i] != ' ' )
+		return 0;
+  }
+  return 1;
+}
+
+
 static void
 on_compline_activated(GtkEntry *entry, gpointer data)
 {
   const char *progname = gtk_entry_get_text(entry);
-  string tmp = progname;
-  tmp += " &";
-    
-  system(tmp.c_str());
-  history.append(progname);
+  if(!IsStringBlank(progname)) {
+	string tmp = progname;
+	tmp += " &";
+
+	system(tmp.c_str());
+	history.append(progname);
+  }
   gtk_main_quit();
 }
 

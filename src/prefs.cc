@@ -1,16 +1,28 @@
-// -*- c++ -*-
-// $Id: prefs.cc,v 1.4 2001/05/06 11:39:24 mishoo Exp $
+/*****************************************************************************
+ *  $Id: prefs.cc,v 1.5 2001/05/16 14:39:31 mishoo Exp $
+ *  Copyright (C) 2000, Mishoo
+ *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
+ *
+ *   Distributed under the terms of the GNU General Public License. You are
+ *  free to use/modify/distribute this program as long as you comply to the
+ *    terms of the GNU General Public License, version 2 or above, at your
+ *      option, and provided that this copyright notice remains intact.
+ *****************************************************************************/
+
 
 #include <fstream>
 #include <iostream>
-
 #include <stdio.h>
+
+#define GMRUNRC "gmrunrc"
+
 
 using std::ifstream;
 using std::getline;
 using std::string;
 
 #include "prefs.h"
+#include "config.h"
 
 Prefs configuration;
 
@@ -18,10 +30,18 @@ Prefs::Prefs()
 {
   string file_name = getenv("HOME");
   if (!file_name.empty()) {
-    string::iterator i = file_name.end();
+    string::iterator i = file_name.end() - 1;
     if (*i == '/') file_name.erase(i);
-    file_name += "/.gmrun_config";
-    init(file_name);
+    file_name += "/.";
+    file_name += GMRUNRC;
+    if (!init(file_name)) {
+      file_name = PACKAGE_DATA_DIR;
+      i = file_name.end() - 1;
+      if (*i == '/') file_name.erase(i);
+      file_name += '/';
+      file_name += GMRUNRC;
+      init(file_name);
+    }
   }
 }
 
@@ -56,9 +76,11 @@ bool Prefs::get_int(const std::string& key, int& val) const
   }
 }
 
-void Prefs::init(const string& file_name)
+bool Prefs::init(const string& file_name)
 {
   ifstream f(file_name.c_str());
+
+  if (!f.good() || f.eof()) return false;
 
   while (f.good() && !f.eof()) {
     string line;
@@ -79,6 +101,8 @@ void Prefs::init(const string& file_name)
     std::cerr << "Key: " << key << ", val: " << vals_[key] << std::endl;
 #endif
   }
+
+  return true;
 }
 
 string Prefs::process(const std::string& cmd)

@@ -1,3 +1,11 @@
+// $Id: ci_string.h,v 1.2 2001/05/16 14:39:31 mishoo Exp $
+
+// This is a very nice class, probably because it's not coded by me ;=]~
+// Provide a case-insensitive std::string-like class.
+
+#ifndef __CI_STRING_H__
+#define __CI_STRING_H__
+
 #include <string>
 #include <ctype.h>
 
@@ -29,3 +37,5 @@ struct ci_char_traits : public std::char_traits<char>
 };
 
 typedef std::basic_string<char, ci_char_traits> ci_string;
+
+#endif // __CI_STRING_H__
