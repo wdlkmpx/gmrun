@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: gtkcompletionline.cc,v 1.24 2001/10/19 09:19:35 mishoo Exp $
+ *  $Id: gtkcompletionline.cc,v 1.25 2001/11/02 15:49:11 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -180,11 +180,16 @@ gtk_completion_line_init(GtkCompletionLine *object)
 
   object->hist = new HistoryFile();
 
+  object->first_key = 1;
+}
+
+void gtk_completion_line_last_history_item(GtkCompletionLine* object) {
   const char *last_item = object->hist->last_item();
   if (last_item) {
-    gtk_entry_set_text(GTK_ENTRY(object), last_item);
-    gtk_entry_select_region(GTK_ENTRY(object), 0, 
-                            strlen(object->hist->last_item()));
+    object->hist->set_default("");
+    const char* txt = object->hist->prev();
+    gtk_entry_set_text(GTK_ENTRY(object), txt);
+    gtk_entry_select_region(GTK_ENTRY(object), 0, strlen(txt));
   }
 }
 
@@ -878,6 +883,7 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
 
      case GDK_space:
      {
+       cl->first_key = 0;
        bool search = MODE_SRC;
        if (search) {
          search_off(cl);
@@ -927,7 +933,7 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
      case GDK_exclam:
       if (!MODE_BEG) {
         const char *tmp = gtk_entry_get_text(GTK_ENTRY(cl));
-        if (*tmp != '\0') {
+        if (!(*tmp == '\0' || cl->first_key)) {
           goto ordinary;
         }
         cl->hist_search_mode = GCL_SEARCH_BEG;
@@ -1018,6 +1024,7 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
 
      ordinary:
      default:
+      cl->first_key = 0;
       if (cl->win_compl != NULL) {
         gtk_widget_destroy(cl->win_compl);
         cl->win_compl = NULL;

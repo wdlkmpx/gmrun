@@ -23,6 +23,11 @@ History = 256
 
 
 
+# Shows last history line selected when invoked
+ShowLast = 1
+
+
+
 # URL handlers
 # If the entered text is "http://www.google.com" then:
 #   - %u gets replaced with the whole URL ("http://www.google.com")

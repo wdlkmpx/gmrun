@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: main.cc,v 1.20 2001/10/19 08:59:40 mishoo Exp $
+ *  $Id: main.cc,v 1.21 2001/11/02 15:49:11 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -447,6 +447,14 @@ int main(int argc, char **argv)
   gtk_signal_connect(GTK_OBJECT(compline), "search_letter",
                      GTK_SIGNAL_FUNC(on_search_letter), label_search);
   gtk_widget_show(compline);
+
+  int shows_last_history_item;
+  if (!configuration.get_int("ShowLast", shows_last_history_item)) {
+    shows_last_history_item = 0;
+  }
+  if (shows_last_history_item) {
+    gtk_completion_line_last_history_item(GTK_COMPLETION_LINE(compline));
+  }
 
   gtk_box_pack_start(GTK_BOX(hbox), compline, TRUE, TRUE, 0);
 
