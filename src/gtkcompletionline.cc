@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: gtkcompletionline.cc,v 1.9 2001/05/06 11:39:24 mishoo Exp $
+ *  $Id: gtkcompletionline.cc,v 1.10 2001/05/06 11:58:45 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -585,8 +585,10 @@ complete_line(GtkCompletionLine *object)
     }
   }
 
-  complete_common(object);
-  object->where = object->cmpl;
+  if (object->cmpl != NULL) {
+    complete_common(object);
+    object->where = object->cmpl;
+  }
   
   // FUCK C! C++ Rules!
   if (object->where != NULL) {
