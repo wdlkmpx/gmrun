@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: gtkcompletionline.cc,v 1.22 2001/07/30 15:30:39 mishoo Exp $
+ *  $Id: gtkcompletionline.cc,v 1.23 2001/10/19 08:59:40 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -29,21 +29,10 @@
 #include <strstream>
 #include <string>
 #include <vector>
-#include <iostream>
 using namespace std;
 
 static int on_row_selected_handler = 0;
 static int on_key_press_handler = 0;
-
-#ifdef DEBUG
-#define DEBUG_VAR(x) cerr << "-v- " << #x << " = " << x << endl
-#define DEBUG_MSG(x) cerr << x << endl
-#define DEBUG_FNC cerr << "-f- " << __PRETTY_FUNCTION__ << endl
-#else
-#define DEBUG_VAR
-#define DEBUG_MSG
-#define DEBUG_FNC
-#endif
 
 /* GLOBALS */
 
@@ -66,6 +55,7 @@ enum {
 static guint gtk_completion_line_signals[LAST_SIGNAL];
 
 typedef set<string> StrSet;
+typedef vector<string> StrList;
 
 static StrSet path;
 static StrSet execs;
@@ -82,10 +72,6 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data);
 /* get_type */
 guint gtk_completion_line_get_type(void)
 {
-#ifdef DEBUG
-  DEBUG_FNC;
-#endif
-
   static guint type = 0;
   if (type == 0)
   {
@@ -108,10 +94,6 @@ guint gtk_completion_line_get_type(void)
 static void
 gtk_completion_line_class_init(GtkCompletionLineClass *klass)
 {
-#ifdef DEBUG
-  DEBUG_FNC;
-#endif
-
   GtkObjectClass *object_class;
 
   object_class = (GtkObjectClass*)klass;
@@ -181,10 +163,6 @@ gtk_completion_line_class_init(GtkCompletionLineClass *klass)
 static void
 gtk_completion_line_init(GtkCompletionLine *object)
 {
-#ifdef DEBUG
-  DEBUG_FNC;
-#endif
-
   /* Add object initialization / creation stuff here */
 
   object->where = NULL;
@@ -201,15 +179,15 @@ gtk_completion_line_init(GtkCompletionLine *object)
                      GTK_SIGNAL_FUNC(on_key_press), NULL);
 
   object->hist = new HistoryFile();
+
+  gtk_entry_set_text(GTK_ENTRY(object), object->hist->last_item());
+  gtk_entry_select_region(GTK_ENTRY(object), 0, 
+                          strlen(object->hist->last_item()));
 }
 
 static int
 get_words(GtkCompletionLine *object, vector<string>& words)
 {
-#ifdef DEBUG
-  DEBUG_FNC;
-#endif
-
   string content(gtk_entry_get_text(GTK_ENTRY(object)));
   int pos_in_text = gtk_editable_get_position(GTK_EDITABLE(object));
   int pos = 0;
@@ -219,40 +197,23 @@ get_words(GtkCompletionLine *object, vector<string>& words)
       content.insert(i, ' ');
   }
   istrstream ss(content.c_str());
-#ifdef DEBUG
-  DEBUG_VAR(pos_in_text);
-#endif
+
   while (!ss.eof()) {
     string s;
-#ifdef DEBUG
-    DEBUG_VAR(s);
-#endif
     ss >> s;
     words.push_back(s);
     if (ss.eof()) break;
-#ifdef DEBUG
-    DEBUG_VAR(ss.tellg());
-#endif
     if (ss.tellg() < pos_in_text && ss.tellg() >= 0) {
       pos++;
-#ifdef DEBUG
-      DEBUG_VAR(pos);
-#endif
     }
   }
-#ifdef DEBUG
-  DEBUG_MSG("*** END of function");
-#endif
+
   return pos;
 }
 
 static int
 set_words(GtkCompletionLine *object, const vector<string>& words, int pos = -1)
 {
-#ifdef DEBUG
-  DEBUG_FNC;
-#endif
-
   strstream ss;
   bool first = true;
   if (pos == -1) {
@@ -265,7 +226,7 @@ set_words(GtkCompletionLine *object, const vector<string>& words, int pos = -1)
     if (first) {
       first = false;
     } else {
-      ss << "  ";
+      ss << " ";
     }
     ss << *i;
     if (pos == 0 && where == 0) {
@@ -277,6 +238,7 @@ set_words(GtkCompletionLine *object, const vector<string>& words, int pos = -1)
   ss << ends;
 
   gtk_entry_set_text(GTK_ENTRY(object), ss.str());
+  delete[] ss.str();
   gtk_editable_set_position(GTK_EDITABLE(object), where);
   return where;
 }
@@ -284,10 +246,6 @@ set_words(GtkCompletionLine *object, const vector<string>& words, int pos = -1)
 static void
 generate_path()
 {
-#ifdef DEBUG
-  DEBUG_FNC;
-#endif
-
   char *path_cstr = (char*)getenv("PATH");
 
   istrstream path_ss(path_cstr);
@@ -330,18 +288,38 @@ select_executables_only(const struct dirent* dent)
   return 0;
 }
 
+int my_alphasort(const void* va, const void* vb) {
+  const struct dirent** a = (const struct dirent**)va;
+  const struct dirent** b = (const struct dirent**)vb;
+
+  const char* s1 = (*a)->d_name;
+  const char* s2 = (*b)->d_name;
+  
+  int l1 = strlen(s1);
+  int l2 = strlen(s2);
+  int result = strcmp(s1, s2);
+
+  if (result == 0) return 0;
+
+  if (l1 < l2) {
+    int res2 = strncmp(s1, s2, l1);
+    if (res2 == 0) return -1;
+  } else {
+    int res2 = strncmp(s1, s2, l2);
+    if (res2 == 0) return 1;
+  }
+
+  return result;
+}
+
 static void
 generate_execs()
 {
-#ifdef DEBUG
-  DEBUG_FNC;
-#endif
-
   execs.clear();
 
   for (StrSet::iterator i = path.begin(); i != path.end(); i++) {
     struct dirent **eps;
-    int n = scandir(i->c_str(), &eps, select_executables_only, alphasort);
+    int n = scandir(i->c_str(), &eps, select_executables_only, my_alphasort);
     if (n >= 0) {
       for (int j = 0; j < n; j++) {
         execs.insert(eps[j]->d_name);
@@ -355,15 +333,11 @@ generate_execs()
 static int
 generate_completion_from_execs(GtkCompletionLine *object)
 {
-#ifdef DEBUG
-  DEBUG_FNC;
-#endif
-
   g_list_foreach(object->cmpl, (GFunc)g_string_free, NULL);
   g_list_free(object->cmpl);
   object->cmpl = NULL;
 
-  for (StrSet::iterator i = execs.begin(); i != execs.end(); i++) {
+  for (StrSet::const_iterator i = execs.begin(); i != execs.end(); i++) {
     GString *the_fucking_gstring = g_string_new(i->c_str());
     object->cmpl = g_list_append(object->cmpl, the_fucking_gstring);
   }
@@ -374,10 +348,6 @@ generate_completion_from_execs(GtkCompletionLine *object)
 static string
 get_common_part(const char *s1, const char *s2)
 {
-#ifdef DEBUG
-  DEBUG_FNC;
-#endif
-
   string ret;
 
   const char *p1 = s1;
@@ -395,10 +365,6 @@ get_common_part(const char *s1, const char *s2)
 static int
 complete_common(GtkCompletionLine *object)
 {
-#ifdef DEBUG
-  DEBUG_FNC;
-#endif
-
   GList *l;
   GList *ls = object->cmpl;
   vector<string> words;
@@ -416,24 +382,20 @@ complete_common(GtkCompletionLine *object)
 
   ls = object->cmpl;
   l = ls;
-
+/*
   if (words[pos] == ((GString*)(l->data))->str) {
     ls = g_list_remove_link(ls, l);
     ls = g_list_append(ls, l->data);
     g_list_free_1(l);
     object->cmpl = ls;
   }
-
+*/
   return 0;
 }
 
 static int
 generate_dirlist(const char *what)
 {
-#ifdef DEBUG
-  DEBUG_FNC;
-#endif
-
   char *str = strdup(what);
   char *p = str + 1;
   char *filename = str;
@@ -459,7 +421,7 @@ generate_dirlist(const char *what)
   dirlist.clear();
   struct dirent **eps;
   prefix = filename;
-  n = scandir(dest.c_str(), &eps, select_executables_only, alphasort);
+  n = scandir(dest.c_str(), &eps, select_executables_only, my_alphasort);
   if (n >= 0) {
     for (int j = 0; j < n; j++) {
       {
@@ -485,15 +447,11 @@ generate_dirlist(const char *what)
 static int
 generate_completion_from_dirlist(GtkCompletionLine *object)
 {
-#ifdef DEBUG
-  DEBUG_FNC;
-#endif
-
   g_list_foreach(object->cmpl, (GFunc)g_string_free, NULL);
   g_list_free(object->cmpl);
   object->cmpl = NULL;
 
-  for (StrSet::iterator i = dirlist.begin(); i != dirlist.end(); i++) {
+  for (StrSet::const_iterator i = dirlist.begin(); i != dirlist.end(); i++) {
     GString *the_fucking_gstring = g_string_new(i->c_str());
     object->cmpl = g_list_append(object->cmpl, the_fucking_gstring);
   }
@@ -504,10 +462,6 @@ generate_completion_from_dirlist(GtkCompletionLine *object)
 static int
 parse_tilda(GtkCompletionLine *object)
 {
-#ifdef DEBUG
-  DEBUG_FNC;
-#endif
-
   string text = gtk_entry_get_text(GTK_ENTRY(object));
   int where = text.find("~");
   if (where != string::npos) {
@@ -528,18 +482,10 @@ parse_tilda(GtkCompletionLine *object)
 static void
 complete_from_list(GtkCompletionLine *object)
 {
-#ifdef DEBUG
-  DEBUG_FNC;
-#endif
-
   parse_tilda(object);
   vector<string> words;
   int pos = get_words(object, words);
 
-#ifdef DEBUG
-  DEBUG_VAR(pos);
-  DEBUG_VAR(words.size());
-#endif
   prefix = words[pos];
 
   if (object->win_compl != NULL) {
@@ -571,9 +517,6 @@ on_row_selected(GtkWidget *ls, gint row, gint col, GdkEvent *ev, gpointer data)
   GtkCompletionLine *cl = GTK_COMPLETION_LINE(data);
 
   cl->list_compl_items_where = row;
-#ifdef DEBUG
-  DEBUG_VAR(row);
-#endif
   gtk_signal_handler_block(GTK_OBJECT(cl->list_compl),
                            on_row_selected_handler);
   complete_from_list(cl);
@@ -606,27 +549,14 @@ get_prefix(GtkCompletionLine *object)
   vector<string> words;
   int pos = get_words(object, words);
   prefix = words[pos];
-#ifdef DEBUG
-  DEBUG_VAR(pos);
-  DEBUG_VAR(words.size());
-  DEBUG_VAR(prefix);
-#endif
 }
 
 static int
 complete_line(GtkCompletionLine *object)
 {
-#ifdef DEBUG
-  DEBUG_FNC;
-#endif
-
   parse_tilda(object);
   vector<string> words;
   int pos = get_words(object, words);
-#ifdef DEBUG
-  DEBUG_VAR(pos);
-  DEBUG_VAR(words.size());
-#endif
   prefix = words[pos];
 
   if (prefix[0] != '/') {
@@ -677,11 +607,6 @@ complete_line(GtkCompletionLine *object)
 
     vector<string> words;
     int pos = get_words(object, words);
-
-#ifdef DEBUG
-    DEBUG_VAR(((GString*)ls->data)->str);
-    DEBUG_VAR(words[pos]);
-#endif
 
     if (words[pos] == ((GString*)ls->data)->str) {
 
@@ -758,10 +683,6 @@ complete_line(GtkCompletionLine *object)
 GtkWidget *
 gtk_completion_line_new()
 {
-#ifdef DEBUG
-  DEBUG_FNC;
-#endif
-
   return GTK_WIDGET(gtk_type_new(gtk_completion_line_get_type()));
 }
 
@@ -908,10 +829,6 @@ search_off(GtkCompletionLine* cl)
 static gboolean
 on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
 {
-#ifdef DEBUG
-  DEBUG_FNC;
-#endif
-
 #define STOP_PRESS \
   (gtk_signal_emit_stop_by_name(GTK_OBJECT(cl),   "key_press_event"))
 #define MODE_BEG \
@@ -922,11 +839,6 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
   (cl->hist_search_mode == GCL_SEARCH_FWD)
 #define MODE_SRC \
   (cl->hist_search_mode != GCL_SEARCH_OFF)
-
-#ifdef DEBUG
-  DEBUG_VAR(event->keyval);
-  DEBUG_VAR(gdk_keyval_name(event->keyval));
-#endif
 
   switch (event->type) {
 

@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: main.cc,v 1.19 2001/07/31 11:11:51 mishoo Exp $
+ *  $Id: main.cc,v 1.20 2001/10/19 08:59:40 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -294,10 +294,16 @@ url_check(GtkCompletionLine *cl, struct gigi *g)
 {
   string text(gtk_entry_get_text(GTK_ENTRY(cl)));
   string::size_type i;
+  string::size_type sp;
 
+  sp = text.find_first_not_of(" \t");
+  if (sp == string::npos) return true;
+  text = text.substr(sp);
+
+  sp = text.find_first_of(" \t");
   i = text.find(":");
 
-  if (i != string::npos) {
+  if (i != string::npos && i < sp) {
     // URL entered...
     string url(text.substr(i + 1));
     string url_type(text.substr(0, i));
@@ -342,9 +348,26 @@ on_compline_activated(GtkCompletionLine *cl, struct gigi *g)
   i = command.find_first_not_of(" \t");
 
   if (i != string::npos) {
+    string::size_type j = command.find_first_of(" \t", i);
+    string progname = command.substr(i, j - i);
+    list<string> term_progs;
+    if (configuration.get_string_list("AlwaysInTerm", term_progs)) {
+#ifdef DEBUG
+      cerr << "---" << std::endl;
+      std::copy(term_progs.begin(), term_progs.end(),
+                std::ostream_iterator<string>(cerr, "\n"));
+      cerr << "---" << std::endl;
+#endif
+      list<string>::const_iterator w = 
+        std::find(term_progs.begin(), term_progs.end(), progname);
+      if (w != term_progs.end()) {
+        on_compline_runwithterm(cl, g);
+        return;
+      }
+    }
     cl->hist->append(command.c_str());
     cl->hist->sync_the_file();
-	run_the_command(command, g);
+    run_the_command(command, g);
   }
 }
 

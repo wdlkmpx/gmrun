@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: prefs.h,v 1.3 2001/05/16 14:39:31 mishoo Exp $
+ *  $Id: prefs.h,v 1.4 2001/10/19 08:59:40 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -15,6 +15,7 @@
 
 #include "ci_string.h"
 #include <map>
+#include <list>
 
 class Prefs
 {
@@ -34,6 +35,7 @@ class Prefs
 
   bool get_string(const std::string& key, std::string& val) const;
   bool get_int(const std::string& key, int& val) const;
+  bool get_string_list(const std::string& ket, std::list<string>& val) const;
 };
 
 extern Prefs configuration;

@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: prefs.cc,v 1.5 2001/05/16 14:39:31 mishoo Exp $
+ *  $Id: prefs.cc,v 1.6 2001/10/19 08:59:40 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -14,12 +14,14 @@
 #include <iostream>
 #include <stdio.h>
 
-#define GMRUNRC "gmrunrc"
+#include <list>
 
+#define GMRUNRC "gmrunrc"
 
 using std::ifstream;
 using std::getline;
 using std::string;
+using std::list;
 
 #include "prefs.h"
 #include "config.h"
@@ -120,3 +122,26 @@ string Prefs::process(const std::string& cmd)
   ret.replace(i, j - i + 1, val);
   return process(ret);
 }
+
+bool Prefs::get_string_list(const string& key, list<string>& val) const
+{
+  string sval;
+  if (get_string(key, sval)) {
+    const char *q, *p = sval.c_str();
+    for (q = sval.c_str(); *q; ++q) {
+      if (::isspace(*q)) {
+        string s(p, q - p);
+        val.push_back(s);
+        while (*q && ::isspace(*q)) ++q;
+        p = q;
+      }
+    }
+    if (p != q) {
+      string s(p, q - p);
+      val.push_back(s);
+    }
+    return (val.size() > 0);
+  }
+  return false;
+}
+
