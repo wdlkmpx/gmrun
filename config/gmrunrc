@@ -1,0 +1,14 @@
+# set terminal
+TermOptions = -cr green -C -fn 9x15 -sl 8912
+TermGeometry = -geometry 100x40
+
+MyTerm = rxvt
+
+Terminal = ${MyTerm} ${TermOptions} ${TermGeometry}
+
+TermExec = ${Terminal} -e
+
+# set width
+Width = 250
+Top = 100
+Left = 50
