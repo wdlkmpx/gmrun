@@ -1,15 +1,14 @@
 // -*- c++ -*-
-// $Id: prefs.cc,v 1.2 2001/05/04 09:24:51 mishoo Exp $
+// $Id: prefs.cc,v 1.3 2001/05/05 22:11:17 mishoo Exp $
 
-#include <string>
 #include <fstream>
 #include <iostream>
 
 #include <stdio.h>
 
-using std::string;
 using std::ifstream;
 using std::getline;
+using std::string;
 
 #include "prefs.h"
 
@@ -32,7 +31,7 @@ Prefs::~Prefs()
 bool Prefs::get_string(const string& key, string& val) const
 {
   CONFIG::const_iterator i;
-  i = vals_.find(key);
+  i = vals_.find(ci_string(key.c_str()));
   if (i != vals_.end()) {
     val = i->second;
     return true;
@@ -74,6 +73,20 @@ void Prefs::init(const string& file_name)
     
     sscanf(line.c_str(), "%30[a-zA-Z_0-9] = %255[^\n]",
            key, val);
-    vals_[key] = val;
+    vals_[key] = process(val);
   }
+}
+
+string Prefs::process(const std::string& cmd)
+{
+  string::size_type i = cmd.find("${");
+  string::size_type j = cmd.rfind("}");
+  
+  if (i == string::npos || j == string::npos) return cmd;
+
+  string val;
+  if (!get_string(cmd.substr(i + 2, j - i - 2), val)) return cmd;
+  string ret(cmd);
+  ret.replace(i, j - i + 1, val);
+  return ret;
 }

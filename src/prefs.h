@@ -1,22 +1,23 @@
 // -*- c++ -*-
-// $Id: prefs.h,v 1.1 2001/05/04 09:05:44 mishoo Exp $
+// $Id: prefs.h,v 1.2 2001/05/05 22:11:17 mishoo Exp $
 
 #ifndef __PREFS_H__
 #define __PREFS_H__
 
+#include "ci_string.h"
 #include <map>
-#include <string>
 
 class Prefs
 {
  public:
-  typedef std::map<string, string> CONFIG;
-  typedef std::pair<string, string> PAIR;
+  typedef std::map<ci_string, std::string> CONFIG;
+  typedef std::pair<ci_string, std::string> PAIR;
 
  private:
   CONFIG vals_;
 
   void init(const std::string& file_name);
+  string process(const std::string& cmd);
 
  public:
   Prefs();

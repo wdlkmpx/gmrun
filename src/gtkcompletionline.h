@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: gtkcompletionline.h,v 1.4 2001/05/03 07:44:14 mishoo Exp $
+ *  $Id: gtkcompletionline.h,v 1.5 2001/05/05 22:11:17 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -38,6 +38,7 @@ GTK_CHECK_TYPE(obj, gtk_completion_line_get_type())
     GtkWidget *list_compl;
     int list_compl_items_where;
     int list_compl_nr_rows;
+    int pos_in_text;
     
     GList *cmpl;
     GList *where;

@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: main.cc,v 1.4 2001/05/04 09:05:44 mishoo Exp $
+ *  $Id: main.cc,v 1.5 2001/05/05 22:11:17 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -21,6 +21,7 @@
 #include <gdk/gdkkeysyms.h>
 
 #include <string>
+#include <iostream>
 using namespace std;
 
 GtkStyle* style_notfound(GtkWidget *w)
@@ -74,19 +75,30 @@ on_compline_activated(GtkEntry *entry, gpointer data)
 static void
 on_compline_runwithterm(GtkCompletionLine *cl, gpointer data)
 {
-  const char *progname = gtk_entry_get_text(GTK_ENTRY(cl));
-
+  string command(gtk_entry_get_text(GTK_ENTRY(cl)));
+  string tmp;
   string term;
-  if (!configuration.get_string("Terminal", term)) {
-    term = "xterm -e";
+
+  string::size_type i;
+  i = command.find_first_not_of(" \t");
+
+  if (i != string::npos) {
+    if (!configuration.get_string("TermExec", term)) {
+      term = "xterm -e";
+    }
+    tmp = term;
+    tmp += " ";
+    tmp += command;
+    tmp += " &";
+  } else {
+    if (!configuration.get_string("Terminal", term)) {
+      term = "xterm";
+    }
+    tmp = term;
   }
-  string tmp(term);
-  tmp += " ";
-  tmp += progname;
-  tmp += " &";
-    
+
   system(tmp.c_str());
-  history.append(progname);
+  history.append(command.c_str());
   gtk_main_quit();
 }
 
@@ -183,6 +195,14 @@ int main(int argc, char **argv)
   gtk_box_pack_start(GTK_BOX(hbox), compline, TRUE, TRUE, 0);
 
   gtk_widget_show(win);
+  
+  int prefs_top;
+  int prefs_left;
+  gdk_window_get_position(win->window, &prefs_top, &prefs_left);
+  configuration.get_int("Top", prefs_top);
+  configuration.get_int("Left", prefs_left);
+  gdk_window_move(win->window, prefs_left, prefs_top);
+
   gtk_window_set_focus(GTK_WINDOW(win), compline);
     
   gtk_main();
