@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: main.cc,v 1.16 2001/07/27 08:01:02 mishoo Exp $
+ *  $Id: main.cc,v 1.17 2001/07/31 10:56:44 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -19,13 +19,21 @@
 
 #include <string>
 #include <iostream>
+#include <strstream>
+#include <vector>
+#include <algorithm>
 using namespace std;
+
+#include <unistd.h>
+#include <errno.h>
 
 struct gigi
 {
   GtkWidget *w1;
   GtkWidget *w2;
 };
+
+static gint search_off_timeout(struct gigi *g);
 
 GtkStyle* style_normal(GtkWidget *w)
 {
@@ -75,19 +83,112 @@ GtkStyle* style_unique(GtkWidget *w)
   return style;
 }
 
-int
-IsStringBlank(const char *str)
+static void
+run_the_command(const std::string& command, struct gigi* g)
 {
-  int i=-1;
-  while(++i<strlen(str)) {
-	if( str[i] != ' ' )
-      return 0;
+  string prog;
+  std::vector<char*> argv;
+
+  istrstream iss(command.c_str());
+#ifdef DEBUG
+  cerr << command << endl;
+#endif
+  char what_quote = '"';
+  enum TYPE_CONTEXT {
+    CT_NORMAL = 0,
+    CT_QUOTE,
+    CT_ESCAPE
+  };
+  TYPE_CONTEXT context = CT_NORMAL;
+  string tmp;
+  char c;
+
+  while (!iss.eof()) {
+    c = (char)iss.get();
+    if (iss.eof()) {
+      char *p = (char*)malloc(tmp.length() + 1);
+      memcpy(p, tmp.c_str(), tmp.length() + 1);
+      argv.push_back(p);
+      break;
+    }
+
+    switch (c) {
+     case '\\':
+      if (context != CT_ESCAPE) {
+        context = CT_ESCAPE;
+      } else {
+        goto ordinary;
+      }
+      break;
+
+     case '\'':
+     case '"':
+      if (context == CT_ESCAPE) {
+        goto ordinary;
+      } else {
+        if (context == CT_QUOTE) {
+          if (what_quote == c) {
+            context = CT_NORMAL;
+          } else {
+            goto ordinary;
+          }
+        } else {
+          context = CT_QUOTE;
+          what_quote = c;
+        }
+      }
+      break;
+
+     case ' ':
+      if (context == CT_ESCAPE || context == CT_QUOTE) {
+        goto ordinary;
+      } else {
+        if (prog.empty()) {
+          prog = tmp;
+        }
+        char *p = (char*)malloc(tmp.length() + 1);
+        memcpy(p, tmp.c_str(), tmp.length() + 1);
+        argv.push_back(p);
+        tmp.clear();
+      }
+      break;
+
+     ordinary:
+     default:
+      if (context == CT_ESCAPE) {
+        context = CT_NORMAL;
+        tmp += c;
+      } else if (context == CT_QUOTE) {
+        tmp += c;
+      } else if (c != ' ') {
+        tmp += c;
+      }
+    }
   }
-  return 1;
+  argv.push_back(NULL);
+
+#ifdef DEBUG
+  for (vector<char*>::iterator i = argv.begin(); i != argv.end(); ++i) {
+    if (*i) {
+      cerr << *i << endl;
+    }
+  }
+#endif
+
+  execvp(prog.c_str(), (char**)&(*argv.begin()));
+  string error("ERROR: ");
+  error += strerror(errno);
+#ifdef DEBUG
+  cerr << error << endl;
+#endif
+
+  gtk_label_set_text(GTK_LABEL(g->w1), error.c_str());
+  gtk_widget_set_style(g->w1, style_notfound(g->w1));
+  gtk_timeout_add(2000, GtkFunction(search_off_timeout), g);
 }
 
 static void
-on_compline_runwithterm(GtkCompletionLine *cl, gpointer data)
+on_compline_runwithterm(GtkCompletionLine *cl, struct gigi* g)
 {
   string command(gtk_entry_get_text(GTK_ENTRY(cl)));
   string tmp;
@@ -102,24 +203,22 @@ on_compline_runwithterm(GtkCompletionLine *cl, gpointer data)
     }
     tmp = term;
     tmp += " \"";
-    tmp += command;
-    tmp += "\" &";
+    tmp += command + "\"";
   } else {
     if (!configuration.get_string("Terminal", term)) {
-      term = "xterm";
+      tmp = "xterm";
+    } else {
+      tmp = term;
     }
-    tmp = term + " &";
   }
 
 #ifdef DEBUG
   cerr << tmp << endl;
 #endif
 
-  system(tmp.c_str());
   cl->hist->append(command.c_str());
-  delete cl->hist;
-  delete cl->hist_word;
-  gtk_main_quit();
+  cl->hist->sync_the_file();
+  run_the_command(tmp.c_str(), g);
 }
 
 static gint
@@ -211,18 +310,15 @@ url_check(GtkCompletionLine *cl, struct gigi *g)
 
       j = url_handler.find("%s");
       if (j != string::npos) {
-        url_handler.replace(j, 2, string("\"") + url + "\"");
+        url_handler.replace(j, 2, url);
       }
       j = url_handler.find("%u");
       if (j != string::npos) {
-        url_handler.replace(j, 2, string("\"") + text + "\"");
+        url_handler.replace(j, 2, text);
       }
-      url_handler += " &";
-      system(url_handler.c_str());
       cl->hist->append(text.c_str());
-      delete cl->hist;
-      delete cl->hist_word;
-      gtk_main_quit();
+      cl->hist->sync_the_file();
+      run_the_command(url_handler.c_str(), g);
       return true;
     } else {
       gtk_label_set_text(GTK_LABEL(g->w1),
@@ -240,20 +336,18 @@ url_check(GtkCompletionLine *cl, struct gigi *g)
 static void
 on_compline_activated(GtkCompletionLine *cl, struct gigi *g)
 {
-  const char *progname = gtk_entry_get_text(GTK_ENTRY(cl));
   if (url_check(cl, g))
     return;
 
-  if(!IsStringBlank(progname)) {
-	string tmp = progname;
-	tmp += " &";
+  string command = gtk_entry_get_text(GTK_ENTRY(cl));
+  string::size_type i;
+  i = command.find_first_not_of(" \t");
 
-	system(tmp.c_str());
-	cl->hist->append(progname);
-    delete cl->hist;
-    delete cl->hist_word;
+  if (i != string::npos) {
+    cl->hist->append(command.c_str());
+    cl->hist->sync_the_file();
+	run_the_command(command, g);
   }
-  gtk_main_quit();
 }
 
 int main(int argc, char **argv)
@@ -316,7 +410,7 @@ int main(int argc, char **argv)
   gtk_signal_connect(GTK_OBJECT(compline), "activate",
                      GTK_SIGNAL_FUNC(on_compline_activated), &g);
   gtk_signal_connect(GTK_OBJECT(compline), "runwithterm",
-                     GTK_SIGNAL_FUNC(on_compline_runwithterm), NULL);
+                     GTK_SIGNAL_FUNC(on_compline_runwithterm), &g);
 
   gtk_signal_connect(GTK_OBJECT(compline), "unique",
                      GTK_SIGNAL_FUNC(on_compline_unique), &g);
