@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: main.cc,v 1.17 2001/07/31 10:56:44 mishoo Exp $
+ *  $Id: main.cc,v 1.18 2001/07/31 11:06:42 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -23,6 +23,8 @@
 #include <vector>
 #include <algorithm>
 using namespace std;
+
+#define DEBUG
 
 #include <unistd.h>
 #include <errno.h>
@@ -89,9 +91,10 @@ run_the_command(const std::string& command, struct gigi* g)
   string prog;
   std::vector<char*> argv;
 
-  istrstream iss(command.c_str());
+  string cmd = command + ' ';
+  istrstream iss(cmd.c_str());
 #ifdef DEBUG
-  cerr << command << endl;
+  cerr << cmd << endl;
 #endif
   char what_quote = '"';
   enum TYPE_CONTEXT {
@@ -106,9 +109,6 @@ run_the_command(const std::string& command, struct gigi* g)
   while (!iss.eof()) {
     c = (char)iss.get();
     if (iss.eof()) {
-      char *p = (char*)malloc(tmp.length() + 1);
-      memcpy(p, tmp.c_str(), tmp.length() + 1);
-      argv.push_back(p);
       break;
     }
 
@@ -165,6 +165,9 @@ run_the_command(const std::string& command, struct gigi* g)
       }
     }
   }
+  char *p = (char*)malloc(tmp.length() + 1);
+  memcpy(p, tmp.c_str(), tmp.length() + 1);
+  argv.push_back(p);
   argv.push_back(NULL);
 
 #ifdef DEBUG
