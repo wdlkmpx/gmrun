@@ -23,3 +23,4 @@ dist-hook:
 	  done \
 	fi
 
+EXTRA_DIST = gmrun.spec
