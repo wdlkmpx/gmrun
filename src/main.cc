@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: main.cc,v 1.14 2001/07/18 07:24:11 mishoo Exp $
+ *  $Id: main.cc,v 1.15 2001/07/26 07:47:41 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -20,6 +20,18 @@
 #include <string>
 #include <iostream>
 using namespace std;
+
+GtkStyle* style_normal(GtkWidget *w)
+{
+  static GtkStyle *style;
+
+  if (!style) {
+    style = gtk_style_copy(gtk_widget_get_style(w));
+    style->fg[GTK_STATE_NORMAL] = (GdkColor){0, 0x0000, 0x0000, 0x0000};
+    gtk_style_ref(style);
+  }
+  return style;
+}
 
 GtkStyle* style_notfound(GtkWidget *w)
 {
@@ -121,27 +133,6 @@ on_compline_runwithterm(GtkCompletionLine *cl, gpointer data)
   gtk_main_quit();
 }
 
-static void
-on_compline_unique(GtkCompletionLine *cl, GtkWidget *label)
-{
-  gtk_label_set_text(GTK_LABEL(label), "unique");
-  gtk_widget_set_style(label, style_unique(label));
-}
-
-static void
-on_compline_notunique(GtkCompletionLine *cl, GtkWidget *label)
-{
-  gtk_label_set_text(GTK_LABEL(label), "not unique");
-  gtk_widget_set_style(label, style_notunique(label));
-}
-
-static void
-on_compline_incomplete(GtkCompletionLine *cl, GtkWidget *label)
-{
-  gtk_label_set_text(GTK_LABEL(label), "not found");
-  gtk_widget_set_style(label, style_notfound(label));
-}
-
 struct gigi
 {
   GtkWidget *w1;
@@ -152,8 +143,33 @@ static gint
 search_off_timeout(struct gigi *g)
 {
   gtk_label_set_text(GTK_LABEL(g->w1), "Run program:");
+  gtk_widget_set_style(g->w1, style_normal(g->w1));
   gtk_widget_hide(g->w2);
   return FALSE;
+}
+
+static void
+on_compline_unique(GtkCompletionLine *cl, struct gigi *g)
+{
+  gtk_label_set_text(GTK_LABEL(g->w1), "unique");
+  gtk_widget_set_style(g->w1, style_unique(g->w1));
+  gtk_timeout_add(1000, GtkFunction(search_off_timeout), g);
+}
+
+static void
+on_compline_notunique(GtkCompletionLine *cl, struct gigi *g)
+{
+  gtk_label_set_text(GTK_LABEL(g->w1), "not unique");
+  gtk_widget_set_style(g->w1, style_notunique(g->w1));
+  gtk_timeout_add(1000, GtkFunction(search_off_timeout), g);
+}
+
+static void
+on_compline_incomplete(GtkCompletionLine *cl, struct gigi *g)
+{
+  gtk_label_set_text(GTK_LABEL(g->w1), "not found");
+  gtk_widget_set_style(g->w1, style_notfound(g->w1));
+  gtk_timeout_add(1000, GtkFunction(search_off_timeout), g);
 }
 
 static void
@@ -203,6 +219,8 @@ int main(int argc, char **argv)
   gtk_init(&argc, &argv);
 
   win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+  gtk_widget_realize(win);
+  gdk_window_set_decorations(win->window, GDK_DECOR_BORDER);
   gtk_widget_set_name(win, "Msh_Run_Window");
   gtk_window_set_title(GTK_WINDOW(win), "Execute program feat. completion");
   gtk_window_set_policy(GTK_WINDOW(win), FALSE, FALSE, TRUE);
@@ -227,7 +245,7 @@ int main(int argc, char **argv)
 
   label_search = gtk_label_new("");
   gtk_widget_show(label_search);
-  gtk_misc_set_alignment(GTK_MISC(label_search), 0.0, 1.0);
+  gtk_misc_set_alignment(GTK_MISC(label_search), 1.0, 0.5);
   gtk_misc_set_padding(GTK_MISC(label_search), 10, 0);
   gtk_box_pack_start(GTK_BOX(hhbox), label_search, TRUE, TRUE, 0);
 
@@ -254,11 +272,11 @@ int main(int argc, char **argv)
                      GTK_SIGNAL_FUNC(on_compline_runwithterm), NULL);
 
   gtk_signal_connect(GTK_OBJECT(compline), "unique",
-                     GTK_SIGNAL_FUNC(on_compline_unique), label);
+                     GTK_SIGNAL_FUNC(on_compline_unique), &g);
   gtk_signal_connect(GTK_OBJECT(compline), "notunique",
-                     GTK_SIGNAL_FUNC(on_compline_notunique), label);
+                     GTK_SIGNAL_FUNC(on_compline_notunique), &g);
   gtk_signal_connect(GTK_OBJECT(compline), "incomplete",
-                     GTK_SIGNAL_FUNC(on_compline_incomplete), label);
+                     GTK_SIGNAL_FUNC(on_compline_incomplete), &g);
 
   gtk_signal_connect(GTK_OBJECT(compline), "search_mode",
                      GTK_SIGNAL_FUNC(on_search_mode), &g);
