@@ -1,0 +1,38 @@
+This file contains any messages produced by compilers while
+running configure, to aid debugging if configure makes a mistake.
+
+configure:564: checking for a BSD compatible install
+configure:617: checking whether build environment is sane
+configure:674: checking whether make sets ${MAKE}
+configure:720: checking for working aclocal
+configure:733: checking for working autoconf
+configure:746: checking for working automake
+configure:759: checking for working autoheader
+configure:772: checking for working makeinfo
+configure:806: checking for gcc
+configure:919: checking whether the C compiler (gcc  ) works
+configure:935: gcc -o conftest    conftest.c  1>&5
+configure:961: checking whether the C compiler (gcc  ) is a cross-compiler
+configure:966: checking whether we are using GNU C
+configure:994: checking whether gcc accepts -g
+configure:1026: checking for POSIXized ISC
+configure:1049: checking for gcc
+configure:1162: checking whether the C compiler (gcc -g -O2 ) works
+configure:1178: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:1204: checking whether the C compiler (gcc -g -O2 ) is a cross-compiler
+configure:1209: checking whether we are using GNU C
+configure:1237: checking whether gcc accepts -g
+configure:1272: checking for gcc option to accept ANSI C
+configure:1353: checking for dirent.h that defines DIR
+configure:1391: checking for opendir in -ldir
+configure:1474: checking how to run the C preprocessor
+configure:1554: checking for ANSI C header files
+configure:1662: checking for c++
+configure:1694: checking whether the C++ compiler (c++  ) works
+configure:1710: c++ -o conftest    conftest.C  1>&5
+configure:1736: checking whether the C++ compiler (c++  ) is a cross-compiler
+configure:1741: checking whether we are using GNU C++
+configure:1769: checking whether c++ accepts -g
+configure:1851: checking for gtk-config
+configure:1886: checking for GTK - version >= 1.2.6
+configure:1987: gcc -o conftest -g -O2 -I/usr/lib/glib/include -I/usr/X11R6/include   conftest.c -L/usr/lib -L/usr/X11R6/lib -lgtk -lgdk -rdynamic -lgmodule -lglib -ldl -lXi -lXext -lX11 -lm  1>&5

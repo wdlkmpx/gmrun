@@ -1,0 +1,126 @@
+gmrun 0.1.1                          Dedicated to Marius Ologesa (my main man).
+------------                        -------------------------------------------
+
+            Short GtkEntry for file autocompletion + main.cc that does the
+            needed stuff for running programs.  This is intended as a
+            replacement to grun, which (sorry) sucks.  The idea comes from the
+            KDE Window Manager (ALT-F2 in KDE).  Though, GNOME is better :)
+
+
+Copyright (c) 2000 Mishoo.
+Author: Mihai Bazon <mishoo@infoiasi.ro>.
+
+send postcards to:
+
+     Mihai Bazon,
+     str. Republicii, nr. 350, sc. E, ap. 9, cod 6500 VASLUI - VASLUI
+     Romania
+
+This program falls under the GNU General Public License version 2 or above.
+
+
+For code critics
+-----------------
+
+    This program is written in 2 hours.  The code might seem a little weird,
+    but it works, and is that I'm interested in.  Code completion is written in
+    C++, although GTK+ is written in standard C.  This has the disadvantage of
+    being unlinkable to standard C modules, I mean the GtkCompletionLine widget
+    may be only used from C++ modules.  Should you think this is a problem,
+    feel free to rewrite the code in C (it could be at least 4 times bigger).
+
+    It uses some static data (I know, I'm a too lasy programmer to think about
+    something better); this means that if you're having *two or more*
+    (GtkCompletionLine)s in a program, you're looking for trouble.  The static
+    data will be *shared* between them, and completion might not work
+    correctly.  However, I don't know for sure, and I'm not going to test this.
+
+    Running programs is done with "system" libc function.  I dunno if it's The
+    Right Thing, but it works.  It might have some problems when running suid
+    programs.  This could be reimplemented using gnome-exec, but a lot of code
+    should be rewritten, so don't bother ask me to do this.
+    
+    Having all that said, you should know that I'm not actually a bad
+    programmer; the problem being too simple for huge code complications, I
+    preferred the easy way of doing different kind of things.  It works pretty
+    fine, so "don't expect tons of C code for completion" (quoted from some
+    sources in mini-commander applet of GNOME).
+
+    And, yes, this is written in Emacs.
+
+
+Compilation, installation
+--------------------------
+
+    Use the configure script:
+
+        $ ./configure
+        $ make
+        $ make install
+
+    After this the executable goes usually in /usr/local/bin, make sure this is
+    in your path.  Put this in your .sawmillrc:
+
+        (require 'sawmill-defaults)
+        (bind-keys global-keymap "S-C-M-RET" '(system "gmrun &"))
+
+    Note that if you're using sawfish you have other ways to customize your
+    keyboard, through the control panel.
+
+Bugs
+-----
+
+    * Writting this README took me more time than writting the program.
+
+    * As I mentioned before, the code is written in C++, although GTK+ is a C
+      library.  This leads to the impossibility of linking
+      "gtkcompletionline.o" against a standard C module which uses a
+      GtkCompletionLine widget.  This is not actually a bug; I like C++ because
+      programs become clearer and easier to maintain, not to mention the source
+      file size is smaller.  So, if anyone cares to port this to standard C,
+      feel free to do it, but I fear the code should be rewritten (almost) from
+      scratch.
+
+    * Documentation is inexistent (however, it would be useless).
+
+    Should you have any problems mail me a detailed description; please put the
+    text "ignore_me" in the subject line, for easy message filtering. :)
+
+    Never send me cores!  My mail box is limited to 4 Mb.  Use instead:
+
+        $  cat core > /dev/null
+
+    if you feel like you *have* to send it somewhere.. :)
+
+
+Disclaimer
+-----------
+
+    * The Short Way:
+        NO WARRANTIES OF ANY KIND.  USE IT AT YOUR OWN RISK.
+
+    * The Right Way:
+        Please read the GNU General Public License.  This program falls under
+        its terms.
+
+
+                       (: END OF TERMS AND CONDITIONS :)
+
+
+Changes since writing this file:
+---------------------------------
+
+    * Tilda completion (~/ <==> $HOME/)
+
+    * Completion works for separate words (e.g. you can type em<TAB> which
+      turns to emacs, type a SPACE, and write the file you want to open using
+      completion).
+
+	* I added history capability (limited to 20 entries, change history.cc for
+	  more, #define HIST_MAX_SIZE).  History is maintained in the file "
+	  ~/.gmrun_history ".
+	
+	* Actually I worked more than 2 hours.  Anyway, the completion code took
+	  about 2-3 h to design and implement.
+	
+	These changes should appear in the ChangeLog.
