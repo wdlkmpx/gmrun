@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: gtkcompletionline.h,v 1.7 2001/07/02 09:12:16 mishoo Exp $
+ *  $Id: gtkcompletionline.h,v 1.8 2001/07/17 15:57:19 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -31,6 +31,13 @@ extern "C++" {
   typedef struct _GtkCompletionLine GtkCompletionLine;
   typedef struct _GtkCompletionLineClass GtkCompletionLineClass;
 
+  enum GCL_SEARCH_MODE
+  {
+    GCL_SEARCH_OFF = 0,
+    GCL_SEARCH_REW = 1,
+    GCL_SEARCH_FWD = 2
+  };
+
   struct _GtkCompletionLine
   {
 	GtkEntry parent;
@@ -44,8 +51,8 @@ extern "C++" {
     GList *where;
 
     HistoryFile *hist;
-    bool hist_search_mode;
-    std::string hist_word;
+    GCL_SEARCH_MODE hist_search_mode;
+    std::string *hist_word;
   };
 
   struct _GtkCompletionLineClass
@@ -58,6 +65,8 @@ extern "C++" {
     void (* incomplete)(GtkCompletionLine *cl);
     void (* runwithterm)(GtkCompletionLine *cl);
     void (* search_mode)(GtkCompletionLine *cl);
+    void (* search_letter)(GtkCompletionLine *cl);
+    void (* search_not_found)(GtkCompletionLine *cl);
   };
 
   guint gtk_completion_line_get_type(void);

@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: main.cc,v 1.10 2001/07/02 09:12:16 mishoo Exp $
+ *  $Id: main.cc,v 1.11 2001/07/17 15:57:19 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -24,7 +24,7 @@ using namespace std;
 GtkStyle* style_notfound(GtkWidget *w)
 {
   static GtkStyle *style;
-    
+
   if (!style) {
     style = gtk_style_copy(gtk_widget_get_style(w));
     style->fg[GTK_STATE_NORMAL] = (GdkColor){0, 0xFFFF, 0x0000, 0x0000};
@@ -36,7 +36,7 @@ GtkStyle* style_notfound(GtkWidget *w)
 GtkStyle* style_notunique(GtkWidget *w)
 {
   static GtkStyle *style;
-    
+
   if (!style) {
     style = gtk_style_copy(gtk_widget_get_style(w));
     style->fg[GTK_STATE_NORMAL] = (GdkColor){0, 0x0000, 0x0000, 0xFFFF};
@@ -48,7 +48,7 @@ GtkStyle* style_notunique(GtkWidget *w)
 GtkStyle* style_unique(GtkWidget *w)
 {
   static GtkStyle *style;
-    
+
   if (!style) {
     style = gtk_style_copy(gtk_widget_get_style(w));
     style->fg[GTK_STATE_NORMAL] = (GdkColor){0, 0x0000, 0xFFFF, 0x0000};
@@ -63,7 +63,7 @@ IsStringBlank(const char *str)
   int i=-1;
   while(++i<strlen(str)) {
 	if( str[i] != ' ' )
-		return 0;
+      return 0;
   }
   return 1;
 }
@@ -80,6 +80,7 @@ on_compline_activated(GtkCompletionLine *cl, gpointer data)
 	system(tmp.c_str());
 	cl->hist->append(progname);
     delete cl->hist;
+    delete cl->hist_word;
   }
   gtk_main_quit();
 }
@@ -116,6 +117,7 @@ on_compline_runwithterm(GtkCompletionLine *cl, gpointer data)
   system(tmp.c_str());
   cl->hist->append(command.c_str());
   delete cl->hist;
+  delete cl->hist_word;
   gtk_main_quit();
 }
 
@@ -140,13 +142,68 @@ on_compline_incomplete(GtkCompletionLine *cl, GtkWidget *label)
   gtk_widget_set_style(label, style_notfound(label));
 }
 
+static gint
+search_off_timeout(GtkWidget *label)
+{
+  gtk_widget_hide(label);
+}
+
+static void
+on_search_mode(GtkCompletionLine *cl, GtkWidget *label)
+{
+  if (cl->hist_search_mode != GCL_SEARCH_OFF) {
+    gtk_widget_show(label);
+    gtk_label_set_text(GTK_LABEL(label), "search mode ON");
+  } else {
+    gtk_label_set_text(GTK_LABEL(label), "search mode OFF");
+    gtk_timeout_add(1000, GtkFunction(search_off_timeout), label);
+  }
+}
+
+static void
+on_search_letter(GtkCompletionLine *cl, GtkWidget *label)
+{
+  gtk_label_set_text(GTK_LABEL(label), cl->hist_word->c_str());
+}
+
+struct gigi
+{
+  GtkWidget *label;
+  GtkCompletionLine *cl;
+};
+
+static gint
+search_fail_timeout(struct gigi *data)
+{
+  gtk_label_set_text(GTK_LABEL(data->label), data->cl->hist_word->c_str());
+  gtk_widget_set_style(data->label, style_notunique(data->label));
+
+  free(data);
+  return FALSE;
+}
+
+static void
+on_search_not_found(GtkCompletionLine *cl, GtkWidget *label)
+{
+  struct gigi *gigi;
+
+  gtk_label_set_text(GTK_LABEL(label), "Not Found!");
+  gtk_widget_set_style(label, style_notfound(label));
+
+  gigi = (struct gigi*)malloc(sizeof(struct gigi));
+  gigi->label = label;
+  gigi->cl = cl;
+  gtk_timeout_add(1000, GtkFunction(search_fail_timeout), gigi);
+}
+
 int main(int argc, char **argv)
 {
   GtkWidget *win;
   GtkWidget *compline;
+  GtkWidget *label_search;
 
   gtk_init(&argc, &argv);
-	
+
   win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   gtk_widget_set_name(win, "Msh_Run_Window");
   gtk_window_set_title(GTK_WINDOW(win), "Execute program feat. completion");
@@ -160,17 +217,24 @@ int main(int argc, char **argv)
   gtk_widget_show(hbox);
   gtk_container_add(GTK_CONTAINER(win), hbox);
 
+  GtkWidget *hhbox = gtk_hbox_new(FALSE, 2);
+  gtk_widget_show(hhbox);
+  gtk_box_pack_start(GTK_BOX(hbox), hhbox, FALSE, FALSE, 0);
+
   GtkWidget *label = gtk_label_new("Run program:");
   gtk_widget_show(label);
   gtk_misc_set_alignment(GTK_MISC(label), 0.0, 1.0);
   gtk_misc_set_padding(GTK_MISC(label), 10, 0);
-  gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, FALSE, 0);
+  gtk_box_pack_start(GTK_BOX(hhbox), label, FALSE, FALSE, 0);
+
+  label_search = gtk_label_new("");
+  gtk_box_pack_start(GTK_BOX(hhbox), label_search, TRUE, TRUE, 0);
 
   GtkAccelGroup *accels = gtk_accel_group_new();
   gtk_window_add_accel_group(GTK_WINDOW(win), accels);
-    
+
   compline = gtk_completion_line_new();
-	gtk_widget_set_name(compline, "Msh_Run_Compline");
+  gtk_widget_set_name(compline, "Msh_Run_Compline");
   int prefs_width;
   if (!configuration.get_int("Width", prefs_width))
     prefs_width = 500;
@@ -191,10 +255,17 @@ int main(int argc, char **argv)
                      GTK_SIGNAL_FUNC(on_compline_notunique), label);
   gtk_signal_connect(GTK_OBJECT(compline), "incomplete",
                      GTK_SIGNAL_FUNC(on_compline_incomplete), label);
+
+  gtk_signal_connect(GTK_OBJECT(compline), "search_mode",
+                     GTK_SIGNAL_FUNC(on_search_mode), label_search);
+  gtk_signal_connect(GTK_OBJECT(compline), "search_not_found",
+                     GTK_SIGNAL_FUNC(on_search_not_found), label_search);
+  gtk_signal_connect(GTK_OBJECT(compline), "search_letter",
+                     GTK_SIGNAL_FUNC(on_search_letter), label_search);
   gtk_widget_show(compline);
-    
+
   gtk_box_pack_start(GTK_BOX(hbox), compline, TRUE, TRUE, 0);
-  
+
   int prefs_top = 80;
   int prefs_left = 100;
   configuration.get_int("Top", prefs_top);
@@ -203,6 +274,6 @@ int main(int argc, char **argv)
   gtk_widget_show(win);
 
   gtk_window_set_focus(GTK_WINDOW(win), compline);
-    
+
   gtk_main();
 }
