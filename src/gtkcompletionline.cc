@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: gtkcompletionline.cc,v 1.16 2001/07/18 07:03:39 mishoo Exp $
+ *  $Id: gtkcompletionline.cc,v 1.17 2001/07/18 07:24:11 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -889,6 +889,7 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
 
      case GDK_space:
      {
+       search_off(cl);
        int pos = gtk_editable_get_position(GTK_EDITABLE(cl));
        gtk_entry_select_region(GTK_ENTRY(cl), pos, pos);
        if (cl->win_compl != NULL) {
@@ -941,8 +942,7 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
         }
         STOP_PRESS;
         return TRUE;
-      }
-      return FALSE;
+      } else goto ordinary;
 
      case GDK_S:
      case GDK_s:
@@ -956,14 +956,13 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
         }
         STOP_PRESS;
         return TRUE;
-      }
-      return FALSE;
+      } else goto ordinary;
 
      case GDK_BackSpace:
       if (cl->hist_search_mode != GCL_SEARCH_OFF) {
         if (!cl->hist_word->empty()) {
           cl->hist_word->erase(cl->hist_word->length() - 1);
-          inverse_search_history(cl, true);
+          gtk_signal_emit_by_name(GTK_OBJECT(cl), "search_letter");
         }
         STOP_PRESS;
         return TRUE;
@@ -989,6 +988,14 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
        return FALSE;
      }
 
+     case GDK_G:
+     case GDK_g:
+      if (event->state & GDK_CONTROL_MASK) {
+        search_off(cl);
+        STOP_PRESS;
+        return TRUE;
+      } else goto ordinary;
+
      case GDK_Control_R:
      case GDK_Control_L:
      case GDK_Shift_R:
@@ -997,6 +1004,7 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
      case GDK_Alt_L:
       break;
 
+     ordinary:
      default:
       if (cl->win_compl != NULL) {
         gtk_widget_destroy(cl->win_compl);
