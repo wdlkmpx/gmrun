@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: gtkcompletionline.cc,v 1.32 2003/11/16 10:43:32 andreas99 Exp $
+ *  $Id: gtkcompletionline.cc,v 1.33 2003/11/16 10:55:07 andreas99 Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -214,7 +214,8 @@ void gtk_completion_line_last_history_item(GtkCompletionLine* object) {
   if (last_item) {
     object->hist->set_default("");
     const char* txt = object->hist->prev();
-    gtk_entry_set_text(GTK_ENTRY(object), txt);
+    gtk_entry_set_text(GTK_ENTRY(object),
+		       g_locale_to_utf8 (txt, -1, NULL, NULL, NULL));
     gtk_entry_select_region(GTK_ENTRY(object), 0, strlen(txt));
   }
 }
@@ -320,7 +321,8 @@ set_words(GtkCompletionLine *object, const vector<string>& words, int pos = -1)
       gtk_signal_emit_by_name(GTK_OBJECT(object), "ext_handler", NULL);
   }
 
-  gtk_entry_set_text(GTK_ENTRY(object), ss.str().c_str());
+  gtk_entry_set_text(GTK_ENTRY(object), 
+		     g_locale_to_utf8 (ss.str().c_str(), -1, NULL, NULL, NULL));
   gtk_editable_set_position(GTK_EDITABLE(object), where);
   return where;
 }
@@ -782,14 +784,16 @@ static void
 up_history(GtkCompletionLine* cl)
 {
   cl->hist->set_default(gtk_entry_get_text(GTK_ENTRY(cl)));
-  gtk_entry_set_text(GTK_ENTRY(cl), cl->hist->prev());
+  gtk_entry_set_text(GTK_ENTRY(cl), 
+		     g_locale_to_utf8 (cl->hist->prev(), -1, NULL, NULL, NULL));
 }
 
 static void
 down_history(GtkCompletionLine* cl)
 {
   cl->hist->set_default(gtk_entry_get_text(GTK_ENTRY(cl)));
-  gtk_entry_set_text(GTK_ENTRY(cl), cl->hist->next());
+  gtk_entry_set_text(GTK_ENTRY(cl), 
+		     g_locale_to_utf8 (cl->hist->next(), -1, NULL, NULL, NULL));
 }
 
 static int
@@ -813,7 +817,8 @@ search_back_history(GtkCompletionLine* cl, bool avance, bool begin)
       if (i != string::npos && !(begin && i != 0)) {
         const char *tmp = gtk_entry_get_text(GTK_ENTRY(cl));
         if (!(avance && strcmp(tmp, histext) == 0)) {
-          gtk_entry_set_text(GTK_ENTRY(cl), histext);
+          gtk_entry_set_text(GTK_ENTRY(cl), 
+			     g_locale_to_utf8 (histext, -1, NULL, NULL, NULL));
           gtk_entry_select_region(GTK_ENTRY(cl),
                                   i, i + cl->hist_word->length());
           gtk_signal_emit_by_name(GTK_OBJECT(cl), "search_letter");
@@ -855,7 +860,8 @@ search_forward_history(GtkCompletionLine* cl, bool avance, bool begin)
       if (i != string::npos && !(begin && i != 0)) {
         const char *tmp = gtk_entry_get_text(GTK_ENTRY(cl));
         if (!(avance && strcmp(tmp, histext) == 0)) {
-          gtk_entry_set_text(GTK_ENTRY(cl), histext);
+          gtk_entry_set_text(GTK_ENTRY(cl), 
+			     g_locale_to_utf8 (histext, -1, NULL, NULL, NULL));
           gtk_entry_select_region(GTK_ENTRY(cl),
                                   i, i + cl->hist_word->length());
           gtk_signal_emit_by_name(GTK_OBJECT(cl), "search_letter");

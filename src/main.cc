@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: main.cc,v 1.25 2003/11/16 10:43:32 andreas99 Exp $
+ *  $Id: main.cc,v 1.26 2003/11/16 10:55:07 andreas99 Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -19,6 +19,8 @@
 #include <vector>
 #include <algorithm>
 #include <iterator>
+#include <popt.h>
+
 using namespace std;
 
 #ifdef MTRACE
@@ -155,7 +157,7 @@ run_the_command(const std::string& command, struct gigi* g)
 {
   string prog;
   std::vector<char*> argv;
-
+ 
   string cmd = command + ' ';
   istringstream iss(cmd);
 #ifdef DEBUG
@@ -277,7 +279,11 @@ on_ext_handler(GtkCompletionLine *cl, const char* ext, struct gigi* g)
 static void
 on_compline_runwithterm(GtkCompletionLine *cl, struct gigi* g)
 {
-  string command(gtk_entry_get_text(GTK_ENTRY(cl)));
+  string command(g_locale_from_utf8 (gtk_entry_get_text(GTK_ENTRY(cl)),
+				     -1,
+				     NULL,
+				     NULL,
+				     NULL));
   string tmp;
   string term;
 
@@ -381,7 +387,12 @@ on_search_not_found(GtkCompletionLine *cl, struct gigi *g)
 static bool
 url_check(GtkCompletionLine *cl, struct gigi *g)
 {
-  string text(gtk_entry_get_text(GTK_ENTRY(cl)));
+  string text(g_locale_from_utf8 (gtk_entry_get_text(GTK_ENTRY(cl)),
+				  -1,
+				  NULL,
+				  NULL,
+				  NULL));
+
   string::size_type i;
   string::size_type sp;
 
@@ -478,7 +489,12 @@ on_compline_activated(GtkCompletionLine *cl, struct gigi *g)
   if (ext_check(cl, g))
     return;
 
-  string command = gtk_entry_get_text(GTK_ENTRY(cl));
+  string command = g_locale_from_utf8 (gtk_entry_get_text(GTK_ENTRY(cl)),
+				       -1,
+				       NULL,
+				       NULL,
+				       NULL);
+
   string::size_type i;
   i = command.find_first_not_of(" \t");
 
@@ -512,7 +528,7 @@ int main(int argc, char **argv)
   GtkWidget *compline;
   GtkWidget *label_search;
   struct gigi g;
-
+  
 #ifdef MTRACE
   mtrace();
 #endif
@@ -604,12 +620,42 @@ int main(int argc, char **argv)
   }
 
   gtk_box_pack_start(GTK_BOX(hbox), compline, TRUE, TRUE, 0);
-
+  
   int prefs_top = 80;
   int prefs_left = 100;
   configuration.get_int("Top", prefs_top);
-  configuration.get_int("Left", prefs_left);
-  gtk_widget_set_uposition(win, prefs_left, prefs_top);
+  configuration.get_int("Left", prefs_left);  
+
+  // parse commandline options
+  gboolean geo_parsed;
+  char geo_option[30] = "";
+  char *geoptr;
+  poptContext context;
+  int option;
+  
+  geoptr = geo_option;
+  
+  struct poptOption options[] = {
+    { "geometry", 'g', POPT_ARG_STRING | POPT_ARGFLAG_ONEDASH,
+      &geoptr, 0, "This option specifies the initial " 
+      "size and location of the window.", NULL },
+    POPT_AUTOHELP
+    { NULL, '\0', 0, NULL, 0 } 
+  };  
+
+  context = poptGetContext("popt1", argc, (const char**) argv, options, 0);
+  option = poptGetNextOpt (context);
+
+  if (strcmp (geoptr, ""))
+  {
+    geo_parsed = gtk_window_parse_geometry (GTK_WINDOW (win),
+					    geoptr);
+  }
+  else
+  {
+    gtk_widget_set_uposition(win, prefs_left, prefs_top);
+  }
+
   gtk_widget_show(win);
 
   gtk_window_set_focus(GTK_WINDOW(win), compline);

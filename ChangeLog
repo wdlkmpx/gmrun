@@ -1,3 +1,11 @@
+2003-11-16  AV  <andreas99@users.sourceforge.net>
+	* configure.in: added support for libpopt
+
+	* src/gtkcompletionline.cc: added UTF-8 support for input and output
+
+	* src/main.cc: added UTF-8 support for input and output and
+          added an option to place gmrun (-geometry)
+
 2002-06-05  EJ  <sonofkojak@users.sourceforge.net>
 
 	* src/history.cc (append): Previously, an item was not placed in
