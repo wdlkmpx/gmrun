@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: gtkcompletionline.cc,v 1.26 2001/11/02 16:33:21 mishoo Exp $
+ *  $Id: gtkcompletionline.cc,v 1.27 2002/06/05 19:39:18 sonofkojak Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -10,7 +10,6 @@
  *****************************************************************************/
 
 
-#include "gtkcompletionline.h"
 #include <gdk/gdkkeysyms.h>
 #include <gtk/gtksignal.h>
 #include <gtk/gtkclist.h>
@@ -26,11 +25,14 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include <iostream>
 #include <set>
 #include <strstream>
 #include <string>
 #include <vector>
 using namespace std;
+
+#include "gtkcompletionline.h"
 
 static int on_row_selected_handler = 0;
 static int on_key_press_handler = 0;

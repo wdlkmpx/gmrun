@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 
 INCLUDES = \
-	@GTK_CFLAGS@
+	@GTK_CFLAGS@ @STLPORT_CXXFLAGS@
 
 bin_PROGRAMS = gmrun
 
@@ -13,5 +13,5 @@ gmrun_SOURCES = \
 
 # gmrun_LDFLAGS = -s
 
-gmrun_LDADD = @GTK_LIBS@
+gmrun_LDADD = @GTK_LIBS@ @STLPORT_LDFLAGS@
 

@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: history.h,v 1.8 2001/10/19 09:19:35 mishoo Exp $
+ *  $Id: history.h,v 1.9 2002/06/05 19:39:18 sonofkojak Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -59,6 +59,13 @@ class HistoryFile
 	
  protected:
   void read_the_file();
+ private:
+  struct DumpString {
+    DumpString(std::ostream& o) : _out(o) {}
+    void operator()(std::string& str) { _out << str << endl; }
+  private:
+    std::ostream& _out;
+  };
 };
 
 #endif // __HISTORY_H__

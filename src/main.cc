@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: main.cc,v 1.21 2001/11/02 15:49:11 mishoo Exp $
+ *  $Id: main.cc,v 1.22 2002/06/05 19:39:18 sonofkojak Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -9,10 +9,6 @@
  *      option, and provided that this copyright notice remains intact.
  *****************************************************************************/
 
-
-#include "gtkcompletionline.h"
-
-#include "prefs.h"
 
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
@@ -26,6 +22,10 @@ using namespace std;
 
 #include <unistd.h>
 #include <errno.h>
+
+#include "gtkcompletionline.h"
+#include "prefs.h"
+
 
 struct gigi
 {

@@ -1,6 +1,6 @@
-dnl aclocal.m4 generated automatically by aclocal 1.4
+dnl aclocal.m4 generated automatically by aclocal 1.4-p5
 
-dnl Copyright (C) 1994, 1995-8, 1999 Free Software Foundation, Inc.
+dnl Copyright (C) 1994, 1995-8, 1999, 2001 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
@@ -9,6 +9,144 @@ dnl This program is distributed in the hope that it will be useful,
 dnl but WITHOUT ANY WARRANTY, to the extent permitted by law; without
 dnl even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 dnl PARTICULAR PURPOSE.
+
+#
+# $Id: aclocal.m4,v 1.2 2002/06/05 19:39:18 sonofkojak Exp $
+#
+
+#
+# STLPort definitions
+#
+AC_DEFUN(AC_PATH_STLPORT_INC,
+[
+	AC_REQUIRE_CPP()
+	AC_MSG_CHECKING(for stlport headers)
+
+	ac_stlport_includes="no"
+	ac_enable_stlport="yes"
+
+	AC_ARG_ENABLE(stlport,
+	[ --enable-stlport		do we need stlport ],
+	[ ac_enable_stlport="$enableval" ])
+	if test "$ac_enable_stlport" = "no"; then
+		AC_SUBST(STLPORT_INCDIR)
+		AC_SUBST(STLPORT_CXXFLAGS)
+		have_stlport_inc="no"
+	else
+			
+		AC_ARG_WITH(stlport-includes,
+		[ --with-stlport-includes        where stlport headers are located],
+		[ ac_stlport_includes="$withval"])
+
+
+		AC_CACHE_VAL(ac_cv_header_stlport_includes, [
+
+		dnl did user give --with-stlport-includes?
+		
+		if test "$ac_stlport_includes" = "no"; then
+			
+			stlport_include_dirs="\
+				$LIBCONFIGDIR/include/stlport \
+				/usr/include/stlport \
+				/usr/local/include/stlport \
+				/usr/local/include/ 
+				/usr/local/stlport/include"
+
+			for dir in $stlport_include_dirs; do
+				if test -r "$dir/algorithm"; then
+					ac_stlport_includes=$dir
+					break
+				fi
+			done
+		fi
+		
+		dnl caching
+		ac_cv_header_stlport_includes=$ac_stlport_includes
+		])
+
+		if test "$ac_cv_header_stlport_includes" = "no"; then
+			have_stlport_inc="no"
+			STLPORT_INCDIR=""
+			STLPORT_CXXFLAGS=""
+		else
+			have_stlport_inc="yes"
+			STLPORT_INCDIR="$ac_cv_header_stlport_includes"
+			STLPORT_CXXFLAGS="-I$STLPORT_INCDIR"
+		fi
+			
+
+		AC_SUBST(STLPORT_INCDIR)
+		AC_SUBST(STLPORT_CXXFLAGS)
+	fi
+
+	AC_MSG_RESULT([$ac_cv_header_stlport_includes])
+])
+
+
+AC_DEFUN(AC_PATH_STLPORT_LIB,
+[
+	AC_REQUIRE_CPP()
+	AC_MSG_CHECKING(for stlport libraries)
+
+	ac_stlport_lib="no"
+
+	ac_enable_stlport="yes"
+
+	AC_ARG_ENABLE(stlport,
+	[ --enable-stlport		do we need stlport ],
+	[ ac_enable_stlport="$enableval" ])
+	if test "$ac_enable_stlport" = "no"; then
+		AC_SUBST(STLPORT_INCDIR)
+		AC_SUBST(STLPORT_INCLUDES)
+		have_stlport_inc="no"
+	else
+		
+		AC_ARG_WITH(stlport-lib,
+		[ --with-stlport-lib        where stlport library is located],
+		[ ac_stlport_lib="$withval"])
+
+		
+		AC_CACHE_VAL(ac_cv_lib_stlport_lib, [
+
+		dnl did user give --with-stlport-lib?
+		
+		if test "$ac_stlport_lib" = "no"; then
+			
+			stlport_lib_dirs="\
+				$STLPORTDIR/lib \
+				/usr/lib \
+				/usr/local/lib \
+				/usr/local/tiit/lib"
+
+			for dir in $stlport_lib_dirs; do
+				if test -r "$dir/libstlport_gcc.so"; then
+					ac_stlport_lib=$dir
+					break
+				fi
+			done
+		fi
+		
+		dnl caching
+		ac_cv_lib_stlport_lib=$ac_stlport_lib
+		])
+
+		if test "$ac_cv_lib_stlport_lib" = "no"; then
+			have_stlport_lib="no"
+			STLPORT_LIBDIR=""
+			STLPORT_LDFLAGS=""
+		else
+			have_stlport_lib="yes"
+			STLPORT_LIBDIR="$ac_cv_lib_stlport_lib"
+			STLPORT_LDFLAGS="-L$STLPORT_LIBDIR -lstlport_gcc -lpthread"
+		fi
+
+		AC_SUBST(STLPORT_LIBDIR)
+		AC_SUBST(STLPORT_LDFLAGS)
+	fi
+
+	AC_MSG_RESULT([$ac_cv_lib_stlport_lib])	
+])
+
 
 # Do all the work for Automake.  This macro actually does too much --
 # some checks are only needed if your package does certain things.
@@ -19,7 +157,7 @@ dnl PARTICULAR PURPOSE.
 dnl Usage:
 dnl AM_INIT_AUTOMAKE(package,version, [no-define])
 
-AC_DEFUN(AM_INIT_AUTOMAKE,
+AC_DEFUN([AM_INIT_AUTOMAKE],
 [AC_REQUIRE([AC_PROG_INSTALL])
 PACKAGE=[$1]
 AC_SUBST(PACKAGE)
@@ -47,7 +185,7 @@ AC_REQUIRE([AC_PROG_MAKE_SET])])
 # Check to make sure that the build environment is sane.
 #
 
-AC_DEFUN(AM_SANITY_CHECK,
+AC_DEFUN([AM_SANITY_CHECK],
 [AC_MSG_CHECKING([whether build environment is sane])
 # Just in case
 sleep 1
@@ -88,7 +226,7 @@ AC_MSG_RESULT(yes)])
 
 dnl AM_MISSING_PROG(NAME, PROGRAM, DIRECTORY)
 dnl The program must properly implement --version.
-AC_DEFUN(AM_MISSING_PROG,
+AC_DEFUN([AM_MISSING_PROG],
 [AC_MSG_CHECKING(for working $2)
 # Run test in a subshell; some versions of sh will print an error if
 # an executable is not found, even if stderr is redirected.
@@ -104,7 +242,7 @@ AC_SUBST($1)])
 
 # Like AC_CONFIG_HEADER, but automatically create stamp file.
 
-AC_DEFUN(AM_CONFIG_HEADER,
+AC_DEFUN([AM_CONFIG_HEADER],
 [AC_PREREQ([2.12])
 AC_CONFIG_HEADER([$1])
 dnl When config.status generates a header, we must update the stamp-h file.
@@ -125,6 +263,31 @@ for am_file in <<$1>>; do
 done<<>>dnl>>)
 changequote([,]))])
 
+# isc-posix.m4 serial 1 (gettext-0.10.40)
+dnl Copyright (C) 1995-2002 Free Software Foundation, Inc.
+dnl This file is free software, distributed under the terms of the GNU
+dnl General Public License.  As a special exception to the GNU General
+dnl Public License, this file may be distributed as part of a program
+dnl that contains a configuration script generated by Autoconf, under
+dnl the same distribution terms as the rest of that program.
+
+# This test replaces the one in autoconf.
+# Currently this macro should have the same name as the autoconf macro
+# because gettext's gettext.m4 (distributed in the automake package)
+# still uses it.  Otherwise, the use in gettext.m4 makes autoheader
+# give these diagnostics:
+#   configure.in:556: AC_TRY_COMPILE was called before AC_ISC_POSIX
+#   configure.in:556: AC_TRY_RUN was called before AC_ISC_POSIX
+
+undefine([AC_ISC_POSIX])
+
+AC_DEFUN([AC_ISC_POSIX],
+  [
+    dnl This test replaces the obsolescent AC_ISC_POSIX kludge.
+    AC_CHECK_LIB(cposix, strerror, [LIBS="$LIBS -lcposix"])
+  ]
+)
+
 
 # serial 1
 
@@ -143,7 +306,7 @@ changequote([,]))])
 # program @code{ansi2knr}, which comes with Ghostscript.
 # @end defmac
 
-AC_DEFUN(AM_PROG_CC_STDC,
+AC_DEFUN([AM_PROG_CC_STDC],
 [AC_REQUIRE([AC_PROG_CC])
 AC_BEFORE([$0], [AC_C_INLINE])
 AC_BEFORE([$0], [AC_C_CONST])

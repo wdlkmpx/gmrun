@@ -1,0 +1,15 @@
+2002-06-05  EJ  <sonofkojak@users.sourceforge.net>
+
+	* src/history.cc (append): Previously, an item was not placed in
+	  the history when it was the last item. Now, if we find an entry,
+	  we move it to the end of the list.
+
+2002-06-05  EJ  <sonofkojak@users.sourceforge.net>
+
+	* acinclude.m4: Added stlport detection code. When using an old
+	  version of g++/stdc++ you can get this code to compile only with
+	  the stlport. gcc-2.9[56] don't have a definition for
+	  char_traits.
+
+	  
+

@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: history.cc,v 1.7 2001/07/31 10:56:44 mishoo Exp $
+ *  $Id: history.cc,v 1.8 2002/06/05 19:39:18 sonofkojak Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -10,15 +10,16 @@
  *****************************************************************************/
 
 
+#include <glib.h>
+#include <cstdlib>
+#include <cstdio>
+#include <iostream>
+#include <fstream>
+#include <algorithm>
+using namespace std;
+
 #include "history.h"
 #include "prefs.h"
-
-#include <glib.h>
-#include <stdio.h>
-#include <stdlib.h>
-
-#include <fstream>
-using namespace std;
 
 HistoryFile::HistoryFile()
 {
@@ -82,13 +83,19 @@ HistoryFile::sync_the_file()
 void
 HistoryFile::append(const char *entry)
 {
+  std::string ent = std::string(entry);
   if (!history.empty()) {
-    StrArray::iterator i = history.end();
-    i--;
-    if (*i != entry) history.push_back(entry);
-  } else {    
-    history.push_back(entry);
+    StrArray::reverse_iterator i;
+#ifdef DEBUG	
+    for_each(history.begin(), history.end(), DumpString(cerr));
+#endif	
+    i = find(history.rbegin(), history.rend(), ent);
+    if (i != history.rend()) {
+      cerr << "erasing "<< ent << endl;
+      history.erase(remove(history.begin(), history.end(), ent));
+    }
   }
+  history.push_back(ent);
 }
 
 void
