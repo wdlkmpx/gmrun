@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: main.cc,v 1.3 2001/05/03 07:44:14 mishoo Exp $
+ *  $Id: main.cc,v 1.4 2001/05/04 09:05:44 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -14,6 +14,8 @@
 
 #include "gtkcompletionline.h"
 #include "history.h"
+
+#include "prefs.h"
 
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
@@ -73,7 +75,13 @@ static void
 on_compline_runwithterm(GtkCompletionLine *cl, gpointer data)
 {
   const char *progname = gtk_entry_get_text(GTK_ENTRY(cl));
-  string tmp("xterm -e ");
+
+  string term;
+  if (!configuration.get_string("Terminal", term)) {
+    term = "xterm -e";
+  }
+  string tmp(term);
+  tmp += " ";
   tmp += progname;
   tmp += " &";
     
@@ -146,7 +154,11 @@ int main(int argc, char **argv)
   gtk_window_add_accel_group(GTK_WINDOW(win), accels);
     
   compline = gtk_completion_line_new();
-  gtk_widget_set_usize(compline, 500, -2);
+  int prefs_width;
+  if (!configuration.get_int("Width", prefs_width))
+    prefs_width = 500;
+
+  gtk_widget_set_usize(compline, prefs_width, -2);
   gtk_widget_add_accelerator(compline, "destroy", accels,
                              GDK_Escape, 0, (GtkAccelFlags)0);
   gtk_signal_connect(GTK_OBJECT(compline), "destroy",

@@ -8,7 +8,8 @@ bin_PROGRAMS = gmrun
 gmrun_SOURCES = \
 	gtkcompletionline.cc gtkcompletionline.h \
 	history.cc history.h \
-	main.cc main.h
+	main.cc main.h \
+	prefs.cc prefs.h
 
 gmrun_LDFLAGS = -s
 
