@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: gtkcompletionline.cc,v 1.5 2001/04/05 14:08:17 mishoo Exp $
+ *  $Id: gtkcompletionline.cc,v 1.6 2001/05/03 07:44:14 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -25,6 +25,7 @@
 #include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 #include <set>
 #include <strstream>
@@ -54,6 +55,7 @@ enum {
   INCOMPLETE,
   UPARROW,
   DNARROW,
+  RUNWITHTERM,
   LAST_SIGNAL
 };
 
@@ -145,6 +147,13 @@ gtk_completion_line_class_init(GtkCompletionLineClass *klass)
                                      dnarrow),
                    gtk_signal_default_marshaller, GTK_TYPE_NONE, 0);
 
+  gtk_completion_line_signals[RUNWITHTERM] =
+    gtk_signal_new("runwithterm",
+                   GTK_RUN_FIRST, object_class->type,
+                   GTK_SIGNAL_OFFSET(GtkCompletionLineClass,
+                                     runwithterm),
+                   gtk_signal_default_marshaller, GTK_TYPE_NONE, 0);
+
   gtk_object_class_add_signals(object_class,
                                gtk_completion_line_signals, LAST_SIGNAL);
     
@@ -153,6 +162,7 @@ gtk_completion_line_class_init(GtkCompletionLineClass *klass)
   klass->incomplete = NULL;
   klass->uparrow = NULL;
   klass->dnarrow = NULL;
+  klass->runwithterm = NULL;
 }
 
 /* init */
@@ -265,6 +275,7 @@ select_executables_only(const struct dirent* dent)
 {
   int len = strlen(dent->d_name);
   int lenp = prefix.length();
+  struct stat stat_data;
 
   if (dent->d_name[0] == '.') {
     if (dent->d_name[1] == '\0') return 0;
@@ -275,8 +286,10 @@ select_executables_only(const struct dirent* dent)
   if (dent->d_name[len - 1] == '~') return 0;
   if (lenp == 0) return 1;
   if (lenp > len) return 0;
-    
-  if (strncmp(dent->d_name, prefix.c_str(), lenp) == 0) return 1;
+
+  if (strncmp(dent->d_name, prefix.c_str(), lenp) == 0) {
+    return 1;
+  }
     
   return 0;
 }
@@ -448,6 +461,9 @@ parse_tilda(GtkCompletionLine *object)
   string text = gtk_entry_get_text(GTK_ENTRY(object));
   int where = text.find("~");
   if (where != string::npos) {
+    if (where > 0) {
+      if (text[where - 1] != ' ') return 0;
+    }
     if (where < text.size() - 1 && text[where + 1] != '/') {
       // Parse user's home
     } else {
@@ -614,7 +630,8 @@ complete_line(GtkCompletionLine *object)
         int x, y;
         gdk_window_get_position(top, &x, &y);
         x += GTK_WIDGET(object)->allocation.x;
-        y += GTK_WIDGET(object)->allocation.y + GTK_WIDGET(object)->allocation.height;
+        y += GTK_WIDGET(object)->allocation.y +
+          GTK_WIDGET(object)->allocation.height;
 
         gtk_widget_popup(object->win_compl, x, y);
         // gtk_widget_show(object->win_compl);
@@ -690,7 +707,11 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
         gtk_widget_destroy(cl->win_compl);
         cl->win_compl = NULL;
       }
-      gtk_signal_emit_by_name(GTK_OBJECT(cl), "activate");
+      if (event->state & GDK_CONTROL_MASK) {
+        gtk_signal_emit_by_name(GTK_OBJECT(cl), "runwithterm");
+      } else {
+        gtk_signal_emit_by_name(GTK_OBJECT(cl), "activate");
+      }      
       STOP_PRESS;
       return TRUE;
      case GDK_Escape:

@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: gtkcompletionline.h,v 1.3 2001/03/12 16:58:50 mishoo Exp $
+ *  $Id: gtkcompletionline.h,v 1.4 2001/05/03 07:44:14 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -53,6 +53,7 @@ GTK_CHECK_TYPE(obj, gtk_completion_line_get_type())
     void (* incomplete)(GtkCompletionLine *cl);
     void (* uparrow)(GtkCompletionLine *cl);
     void (* dnarrow)(GtkCompletionLine *cl);
+    void (* runwithterm)(GtkCompletionLine *cl);
   };
 
   guint gtk_completion_line_get_type(void);

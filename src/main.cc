@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id: main.cc,v 1.2 2001/03/12 09:23:21 mishoo Exp $
+ *  $Id: main.cc,v 1.3 2001/05/03 07:44:14 mishoo Exp $
  *  Copyright (C) 2000, Mishoo
  *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
  *
@@ -62,6 +62,19 @@ on_compline_activated(GtkEntry *entry, gpointer data)
 {
   const char *progname = gtk_entry_get_text(entry);
   string tmp = progname;
+  tmp += " &";
+    
+  system(tmp.c_str());
+  history.append(progname);
+  gtk_main_quit();
+}
+
+static void
+on_compline_runwithterm(GtkCompletionLine *cl, gpointer data)
+{
+  const char *progname = gtk_entry_get_text(GTK_ENTRY(cl));
+  string tmp("xterm -e ");
+  tmp += progname;
   tmp += " &";
     
   system(tmp.c_str());
@@ -140,6 +153,8 @@ int main(int argc, char **argv)
                      GTK_SIGNAL_FUNC(gtk_main_quit), NULL);
   gtk_signal_connect(GTK_OBJECT(compline), "activate",
                      GTK_SIGNAL_FUNC(on_compline_activated), NULL);
+  gtk_signal_connect(GTK_OBJECT(compline), "runwithterm",
+                     GTK_SIGNAL_FUNC(on_compline_runwithterm), NULL);
 
   gtk_signal_connect(GTK_OBJECT(compline), "unique",
                      GTK_SIGNAL_FUNC(on_compline_unique), label);
