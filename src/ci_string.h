@@ -6,7 +6,7 @@
 #ifndef __CI_STRING_H__
 #define __CI_STRING_H__
 
-#include <string>
+#include <string.h>
 #include <ctype.h>
 
 struct ci_char_traits : public std::char_traits<char>
@@ -26,7 +26,7 @@ struct ci_char_traits : public std::char_traits<char>
   static int compare( const char* s1,
                       const char* s2,
                       size_t n ) {
-    return ::strncasecmp( s1, s2, n );
+    return strncasecmp( s1, s2, n );
   }
 
   static const char*
