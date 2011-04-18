@@ -295,8 +295,8 @@ on_compline_runwithterm(GtkCompletionLine *cl, struct gigi* g)
       term = "xterm -e";
     }
     tmp = term;
-    tmp += " '";
-    tmp += command + "'";
+    tmp += " ";
+    tmp += command;
   } else {
     if (!configuration.get_string("Terminal", term)) {
       tmp = "xterm";
