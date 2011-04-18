@@ -377,10 +377,7 @@ select_executables_only(const struct dirent* dent)
   return 0;
 }
 
-int my_alphasort(const void* va, const void* vb) {
-  const struct dirent** a = (const struct dirent**)va;
-  const struct dirent** b = (const struct dirent**)vb;
-
+int my_alphasort(const struct dirent **a, const struct dirent **b) {
   const char* s1 = (*a)->d_name;
   const char* s2 = (*b)->d_name;
 
