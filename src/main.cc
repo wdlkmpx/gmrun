@@ -9,9 +9,11 @@
  *      option, and provided that this copyright notice remains intact.
  *****************************************************************************/
 
+#include <X11/Xlib.h>
 
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
+#include <gdk/gdkx.h>
 
 #include <string>
 #include <iostream>
@@ -157,7 +159,7 @@ run_the_command(const std::string& command, struct gigi* g)
 {
   string prog;
   std::vector<char*> argv;
- 
+
   string cmd = command + ' ';
   istringstream iss(cmd);
 #ifdef DEBUG
@@ -522,13 +524,146 @@ on_compline_activated(GtkCompletionLine *cl, struct gigi *g)
   }
 }
 
+/**
+ Check if screen contain ponter and return coords
+ Taked from Xfce: libxfcegui4
+ */
+static gboolean
+screen_contains_pointer (GdkScreen *screen,
+                         int       *x,
+                         int       *y)
+{
+    GdkWindow    *root_window;
+    Window        root, child;
+    Bool          retval;
+    int           rootx, rooty;
+    int           winx, winy;
+    unsigned int  xmask;
+
+    root_window = gdk_screen_get_root_window (screen);
+
+    retval = XQueryPointer (GDK_SCREEN_XDISPLAY (screen),
+                            GDK_DRAWABLE_XID (root_window),
+                            &root, &child, &rootx, &rooty,
+                            &winx, &winy, &xmask);
+
+    if (x)
+        *x = retval ? rootx : -1;
+    if (y)
+        *y = retval ? rooty : -1;
+
+    return retval;
+}
+
+/**
+ Found monitor that contain mouse pointer
+ Taked from Xfce: libxfcegui4
+ */
+static GdkScreen*
+gmrun_gdk_display_locate_monitor_with_pointer (GdkDisplay *display,
+                                               gint       *monitor_return)
+{
+    int n_screens, i;
+
+    if (display == NULL)
+        display = gdk_display_get_default ();
+
+    n_screens = gdk_display_get_n_screens (display);
+    for (i = 0; i < n_screens; i++)
+    {
+        GdkScreen  *screen;
+        int         x, y;
+
+        screen = gdk_display_get_screen (display, i);
+
+        if (screen_contains_pointer (screen, &x, &y))
+        {
+            if (monitor_return)
+                *monitor_return = gdk_screen_get_monitor_at_point (screen, x, y);
+
+            return screen;
+        }
+    }
+
+    if (monitor_return)
+        *monitor_return = 0;
+
+    return NULL;
+}
+
+/**
+ Center window on given monitor
+  Taked from Xfce: libxfcegui4
+ */
+static void
+gmrun_gtk_window_center_on_monitor (GtkWindow *window,
+                                   GdkScreen *screen,
+                                   gint       monitor)
+{
+    GtkRequisition requisition;
+    GdkRectangle   geometry;
+    GdkScreen     *widget_screen;
+    gint           x, y;
+
+    gdk_screen_get_monitor_geometry (screen, monitor, &geometry);
+
+    /*
+     * Getting a size request requires the widget
+     * to be associated with a screen, because font
+     * information may be needed (Olivier).
+     */
+    widget_screen = gtk_widget_get_screen (GTK_WIDGET (window));
+    if (screen != widget_screen)
+    {
+        gtk_window_set_screen (GTK_WINDOW (window), screen);
+    }
+    /*
+     * We need to be realized, otherwise we may get
+     * some odd side effects (Olivier).
+     */
+    if (!GTK_WIDGET_REALIZED (GTK_WIDGET (window)))
+    {
+        gtk_widget_realize (GTK_WIDGET (window));
+    }
+    /*
+     * Yes, I know -1 is useless here (Olivier).
+     */
+    requisition.width = requisition.height = -1;
+    gtk_widget_size_request (GTK_WIDGET (window), &requisition);
+
+    x = geometry.x + (geometry.width - requisition.width) / 2;
+    y = geometry.y + (geometry.height - requisition.height - 200) / 2;
+
+    gtk_window_move (window, x, y);
+}
+
+/**
+ Move window to center
+ Taked from Xfce: libxfcegui4
+ */
+static void
+gmrun_gtk_window_center_on_monitor_with_pointer (GtkWindow *window)
+{
+    GdkScreen *screen;
+    gint       monitor;
+
+    screen = gmrun_gdk_display_locate_monitor_with_pointer (NULL, &monitor);
+    if (screen == NULL)
+    {
+        screen = gdk_screen_get_default ();
+        monitor = 0;
+    }
+
+    gmrun_gtk_window_center_on_monitor (window, screen, monitor);
+}
+
 int main(int argc, char **argv)
 {
   GtkWidget *win;
   GtkWidget *compline;
   GtkWidget *label_search;
   struct gigi g;
-  
+
 #ifdef MTRACE
   mtrace();
 #endif
@@ -620,11 +755,13 @@ int main(int argc, char **argv)
   }
 
   gtk_box_pack_start(GTK_BOX(hbox), compline, TRUE, TRUE, 0);
-  
+
   int prefs_top = 80;
   int prefs_left = 100;
+  int prefs_centrize = 0;
   configuration.get_int("Top", prefs_top);
-  configuration.get_int("Left", prefs_left);  
+  configuration.get_int("Left", prefs_left);
+  configuration.get_int("Centrize", prefs_centrize);
 
   // parse commandline options
   gboolean geo_parsed;
@@ -632,21 +769,26 @@ int main(int argc, char **argv)
   char *geoptr;
   poptContext context;
   int option;
-  
+
   geoptr = geo_option;
-  
+
   struct poptOption options[] = {
     { "geometry", 'g', POPT_ARG_STRING | POPT_ARGFLAG_ONEDASH,
-      &geoptr, 0, "This option specifies the initial " 
+      &geoptr, 0, "This option specifies the initial "
       "size and location of the window.", NULL },
     POPT_AUTOHELP
-    { NULL, '\0', 0, NULL, 0 } 
-  };  
+    { NULL, '\0', 0, NULL, 0 }
+  };
 
   context = poptGetContext("popt1", argc, (const char**) argv, options, 0);
   option = poptGetNextOpt (context);
 
-  if (strcmp (geoptr, ""))
+  if (prefs_centrize != 0)
+  {
+      /* Center window on screen */
+      gmrun_gtk_window_center_on_monitor_with_pointer(GTK_WINDOW(win));
+  }
+  else if (strcmp (geoptr, ""))
   {
     geo_parsed = gtk_window_parse_geometry (GTK_WINDOW (win),
 					    geoptr);
