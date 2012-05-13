@@ -282,10 +282,10 @@ static void
 on_compline_runwithterm(GtkCompletionLine *cl, struct gigi* g)
 {
   string command(g_locale_from_utf8 (gtk_entry_get_text(GTK_ENTRY(cl)),
-				     -1,
-				     NULL,
-				     NULL,
-				     NULL));
+                     -1,
+                     NULL,
+                     NULL,
+                     NULL));
   string tmp;
   string term;
 
@@ -390,10 +390,10 @@ static bool
 url_check(GtkCompletionLine *cl, struct gigi *g)
 {
   string text(g_locale_from_utf8 (gtk_entry_get_text(GTK_ENTRY(cl)),
-				  -1,
-				  NULL,
-				  NULL,
-				  NULL));
+                  -1,
+                  NULL,
+                  NULL,
+                  NULL));
 
   string::size_type i;
   string::size_type sp;
@@ -492,10 +492,10 @@ on_compline_activated(GtkCompletionLine *cl, struct gigi *g)
     return;
 
   string command = g_locale_from_utf8 (gtk_entry_get_text(GTK_ENTRY(cl)),
-				       -1,
-				       NULL,
-				       NULL,
-				       NULL);
+                       -1,
+                       NULL,
+                       NULL,
+                       NULL);
 
   string::size_type i;
   i = command.find_first_not_of(" \t");
@@ -596,9 +596,13 @@ gmrun_gdk_display_locate_monitor_with_pointer (GdkDisplay *display,
   Taked from Xfce: libxfcegui4
  */
 static void
-gmrun_gtk_window_center_on_monitor (GtkWindow *window,
+//gmrun_gtk_window_center_on_monitor (GtkWindow *window,
+gmrun_gtk_window_place_on_monitor (GtkWindow *window,
                                    GdkScreen *screen,
-                                   gint       monitor)
+                                   gint       monitor,
+                                   int        request_x = -1,
+                                   int        request_y = -1)
+
 {
     GtkRequisition requisition;
     GdkRectangle   geometry;
@@ -631,30 +635,64 @@ gmrun_gtk_window_center_on_monitor (GtkWindow *window,
     requisition.width = requisition.height = -1;
     gtk_widget_size_request (GTK_WIDGET (window), &requisition);
 
-    x = geometry.x + (geometry.width - requisition.width) / 2;
-    y = geometry.y + (geometry.height - requisition.height - 200) / 2;
+    if( request_x < 0 )
+    {
+        x = geometry.x + (geometry.width - requisition.width) / 2;
+    }
+    else
+    {
+        x = geometry.x + request_x;
+    }
+
+    if( request_y < 0 )
+    {
+        y = geometry.y + (geometry.height - requisition.height - 200) / 2;
+    }
+    else
+    {
+        y = geometry.y + request_y;
+    }
 
     gtk_window_move (window, x, y);
 }
 
-/**
- Move window to center
- Taked from Xfce: libxfcegui4
- */
 static void
-gmrun_gtk_window_center_on_monitor_with_pointer (GtkWindow *window)
+gmrun_gtk_window_place_at(GtkWindow *window,
+                        int request_x,
+                        int request_y,
+                        int centered_width = 0,
+                        int centered_height = 0,
+                        int on_active = 0)
 {
-    GdkScreen *screen;
-    gint       monitor;
+    GdkScreen *screen = NULL;
+    gint       monitor = 0;
 
-    screen = gmrun_gdk_display_locate_monitor_with_pointer (NULL, &monitor);
-    if (screen == NULL)
+    if(on_active != 0)
     {
-        screen = gdk_screen_get_default ();
+        screen = gmrun_gdk_display_locate_monitor_with_pointer(NULL, &monitor);
+    }
+
+    if( screen == NULL )
+    {
+        screen = gdk_screen_get_default();
         monitor = 0;
     }
 
-    gmrun_gtk_window_center_on_monitor (window, screen, monitor);
+    if(centered_width != 0)
+    {
+        request_x = -1;
+    }
+
+    if(centered_height != 0)
+    {
+        request_y = -1;
+    }
+
+    gmrun_gtk_window_place_on_monitor(window,
+                                      screen,
+                                      monitor,
+                                      request_x,
+                                      request_y);
 }
 
 int main(int argc, char **argv)
@@ -758,10 +796,14 @@ int main(int argc, char **argv)
 
   int prefs_top = 80;
   int prefs_left = 100;
-  int prefs_centrize = 0;
+  int prefs_centred_by_width = 0;
+  int prefs_centred_by_height = 0;
+  int prefs_use_active_monitor = 0;
   configuration.get_int("Top", prefs_top);
   configuration.get_int("Left", prefs_left);
-  configuration.get_int("Centrize", prefs_centrize);
+  configuration.get_int("CenteredByWidth", prefs_centred_by_width);
+  configuration.get_int("CenteredByHeight", prefs_centred_by_height);
+  configuration.get_int("UseActiveMonitor", prefs_use_active_monitor);
 
   // parse commandline options
   gboolean geo_parsed;
@@ -783,19 +825,19 @@ int main(int argc, char **argv)
   context = poptGetContext("popt1", argc, (const char**) argv, options, 0);
   option = poptGetNextOpt (context);
 
-  if (prefs_centrize != 0)
-  {
-      /* Center window on screen */
-      gmrun_gtk_window_center_on_monitor_with_pointer(GTK_WINDOW(win));
-  }
-  else if (strcmp (geoptr, ""))
+  if (strcmp (geoptr, ""))
   {
     geo_parsed = gtk_window_parse_geometry (GTK_WINDOW (win),
-					    geoptr);
+                        geoptr);
   }
   else
   {
-    gtk_widget_set_uposition(win, prefs_left, prefs_top);
+      gmrun_gtk_window_place_at(GTK_WINDOW(win),
+                                prefs_left,
+                                prefs_top,
+                                prefs_centred_by_width,
+                                prefs_centred_by_height,
+                                prefs_use_active_monitor);
   }
 
   gtk_widget_show(win);
