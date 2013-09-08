@@ -697,7 +697,7 @@ gmrun_gtk_window_place_at(GtkWindow *window,
 
 int main(int argc, char **argv)
 {
-  GtkWidget *win;
+  GtkWidget *dialog;
   GtkWidget *compline;
   GtkWidget *label_search;
   struct gigi g;
@@ -708,24 +708,20 @@ int main(int argc, char **argv)
 
   gtk_init(&argc, &argv);
 
-  win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-  gtk_widget_realize(win);
-  gdk_window_set_decorations(win->window, GDK_DECOR_BORDER);
-  gtk_widget_set_name(win, "Msh_Run_Window");
-  gtk_window_set_title(GTK_WINDOW(win), "Execute program feat. completion");
-  gtk_window_set_policy(GTK_WINDOW(win), FALSE, FALSE, TRUE);
+  dialog = gtk_dialog_new();
+  gtk_widget_realize(dialog);
+  gdk_window_set_decorations(dialog->window, GDK_DECOR_BORDER);
+  gtk_widget_set_name(dialog, "Msh_Run_Window");
+  gtk_window_set_title(GTK_WINDOW(dialog), "Execute program feat. completion");
+  gtk_window_set_policy(GTK_WINDOW(dialog), FALSE, FALSE, TRUE);
   // gtk_window_set_position(GTK_WINDOW(win), GTK_WIN_POS_CENTER);
-  gtk_container_set_border_width(GTK_CONTAINER(win), 4);
-  gtk_signal_connect(GTK_OBJECT(win), "destroy",
+  gtk_container_set_border_width(GTK_CONTAINER(dialog), 4);
+  gtk_signal_connect(GTK_OBJECT(dialog), "destroy",
                      GTK_SIGNAL_FUNC(gtk_main_quit), NULL);
-
-  GtkWidget *hbox = gtk_vbox_new(FALSE, 2);
-  gtk_widget_show(hbox);
-  gtk_container_add(GTK_CONTAINER(win), hbox);
 
   GtkWidget *hhbox = gtk_hbox_new(FALSE, 2);
   gtk_widget_show(hhbox);
-  gtk_box_pack_start(GTK_BOX(hbox), hhbox, FALSE, FALSE, 0);
+  gtk_box_pack_start(GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(dialog))), hhbox, FALSE, FALSE, 0);
 
   GtkWidget *label = gtk_label_new("Run program:");
   gtk_widget_show(label);
@@ -792,7 +788,7 @@ int main(int argc, char **argv)
     gtk_completion_line_last_history_item(GTK_COMPLETION_LINE(compline));
   }
 
-  gtk_box_pack_start(GTK_BOX(hbox), compline, TRUE, TRUE, 0);
+  gtk_box_pack_start(GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(dialog))), compline, TRUE, TRUE, 0);
 
   int prefs_top = 80;
   int prefs_left = 100;
@@ -827,12 +823,12 @@ int main(int argc, char **argv)
 
   if (strcmp (geoptr, ""))
   {
-    geo_parsed = gtk_window_parse_geometry (GTK_WINDOW (win),
+    geo_parsed = gtk_window_parse_geometry (GTK_WINDOW (dialog),
                         geoptr);
   }
   else
   {
-      gmrun_gtk_window_place_at(GTK_WINDOW(win),
+      gmrun_gtk_window_place_at(GTK_WINDOW(dialog),
                                 prefs_left,
                                 prefs_top,
                                 prefs_centred_by_width,
@@ -840,9 +836,9 @@ int main(int argc, char **argv)
                                 prefs_use_active_monitor);
   }
 
-  gtk_widget_show(win);
+  gtk_widget_show(dialog);
 
-  gtk_window_set_focus(GTK_WINDOW(win), compline);
+  gtk_window_set_focus(GTK_WINDOW(dialog), compline);
 
   gtk_main();
 }
