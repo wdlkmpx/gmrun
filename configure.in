@@ -50,6 +50,15 @@ AC_CHECK_FUNC( poptGetContext,
                            )
               )
 
+AC_CHECK_FUNC( XQueryPointer,
+              ,
+              AC_CHECK_LIB(X11,
+                           XQueryPointer,
+                           LIBS="${LIBS} -lX11",
+                           echo "*** You need to get libX11 ***";exit
+                           )
+              )
+
 PKG_CHECK_MODULES(GLIB, glib-2.0 >= 2.0.4
                         gobject-2.0 >= 2.0.4
                         gthread-2.0 >= 2.0.4)
