@@ -1,4 +1,8 @@
-Copyright (c) 2000-2003 GPLv2+ Mihai Bazon <mishoo@infoiasi.ro>
+GMRUN
+-----
+A run utiliy featuring a slim design and bash style auto-completion. 
+
+see AUTHORS file
 
 Features
 ---------

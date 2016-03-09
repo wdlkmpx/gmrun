@@ -42,13 +42,15 @@ extern "C++" {
   {
     GtkEntry parent;
     GtkWidget *win_compl;
-    GtkWidget *list_compl;
-    int list_compl_items_where;
-    int list_compl_nr_rows;
-    int pos_in_text;
-
-    GList *cmpl;
-    GList *where;
+    GtkListStore *list_compl;
+    GtkTreeModel *sort_list_compl;
+    GtkWidget *tree_compl;
+    GtkTreeIter list_compl_it;
+    int list_compl_nr_rows; /* completion list size */
+    int pos_in_text; /* Cursor position in main "line" */
+ 
+    GList *cmpl; /* Completion list */
+    GList *where; /* current row pointer ??? */
 
     HistoryFile *hist;
     GCL_SEARCH_MODE hist_search_mode;

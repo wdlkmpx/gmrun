@@ -27,11 +27,14 @@
 #include <sstream>
 #include <string>
 #include <vector>
+
+#include "config.h"
+
 using namespace std;
 
 #include "gtkcompletionline.h"
 
-static int on_row_selected_handler = 0;
+static int on_cursor_changed_handler = 0;
 static int on_key_press_handler = 0;
 
 /* GLOBALS */
@@ -233,6 +236,8 @@ gtk_completion_line_init(GtkCompletionLine *object)
   object->cmpl = NULL;
   object->win_compl = NULL;
   object->list_compl = NULL;
+  object->sort_list_compl = NULL;
+  object->tree_compl = NULL;
   object->hist_search_mode = GCL_SEARCH_OFF;
   object->hist_word = new string;
   object->tabtimeout = 0;
@@ -338,7 +343,7 @@ set_words(GtkCompletionLine *object, const vector<string>& words, int pos = -1)
   ostringstream ss;
   if (pos == -1)
     pos = words.size() - 1;
-  int where = 0;
+  int cur = 0;
 
   vector<string>::const_iterator
     i     = words.begin(),
@@ -348,8 +353,8 @@ set_words(GtkCompletionLine *object, const vector<string>& words, int pos = -1)
     ss << quote_string(*i++);
     if (i != i_end)
       ss << ' ';
-    if (!pos && !where)
-      where = ss.tellp();
+    if (!pos && !cur)
+      cur = ss.tellp();
     else
       --pos;
   }
@@ -367,8 +372,8 @@ set_words(GtkCompletionLine *object, const vector<string>& words, int pos = -1)
 
   gtk_entry_set_text(GTK_ENTRY(object), 
 		     g_locale_to_utf8 (ss.str().c_str(), -1, NULL, NULL, NULL));
-  gtk_editable_set_position(GTK_EDITABLE(object), where);
-  return where;
+  gtk_editable_set_position(GTK_EDITABLE(object), cur);
+  return cur;
 }
 
 static void
@@ -583,19 +588,19 @@ static int
 parse_tilda(GtkCompletionLine *object)
 {
   string text = gtk_entry_get_text(GTK_ENTRY(object));
-  gint where = (gint)text.find("~");
-  if (where != string::npos) {
-    if ((where > 0) && (text[where - 1] != ' '))
+  gint cur = (gint)text.find("~");
+  if (cur != string::npos) {
+    if ((cur > 0) && (text[cur - 1] != ' '))
       return 0;
-    if (where < text.size() - 1 && text[where + 1] != '/') {
+    if (cur < text.size() - 1 && text[cur + 1] != '/') {
       // FIXME: Parse another user's home
     } else {
       string home = g_get_home_dir();
       size_t i = home.length() - 1;
       while ((i >= 0) && (home[i] == '/'))
         home.erase(i--);
-      gtk_editable_insert_text(GTK_EDITABLE(object), home.c_str(), home.length(), &where);
-      gtk_editable_delete_text(GTK_EDITABLE(object), where, where + 1);
+      gtk_editable_insert_text(GTK_EDITABLE(object), home.c_str(), home.length(), &cur);
+      gtk_editable_delete_text(GTK_EDITABLE(object), cur, cur + 1);
     }
   }
 
@@ -611,18 +616,21 @@ complete_from_list(GtkCompletionLine *object)
 
   prefix = words[pos];
 
+  /* Completion list is opened */
   if (object->win_compl != NULL) {
-#if ! GTK_CHECK_VERSION(3, 0, 0)
-    object->where = (GList*)gtk_clist_get_row_data(
-      GTK_CLIST(object->list_compl), object->list_compl_items_where);
-#endif
+	int current_pos;
+	gpointer data;
+	gtk_tree_model_get(object->sort_list_compl, &(object->list_compl_it), 0, &data, -1);
+	object->where=(GList *)data;
     words[pos] = ((GString*)object->where->data)->str;
-    int current_pos = set_words(object, words, pos);
-    int &item = object->list_compl_items_where;
-#if ! GTK_CHECK_VERSION(3, 0, 0)
-    gtk_clist_select_row(GTK_CLIST(object->list_compl), item, 0);
-    gtk_clist_moveto(GTK_CLIST(object->list_compl), item, 0, 0.5, 0.0);
-#endif
+    current_pos = set_words(object, words, pos);
+
+    GtkTreePath *path = gtk_tree_model_get_path(object->sort_list_compl, &(object->list_compl_it));
+    gtk_tree_view_set_cursor(GTK_TREE_VIEW(object->tree_compl), path, NULL, FALSE);
+    gtk_tree_view_scroll_to_cell(GTK_TREE_VIEW(object->tree_compl), path, NULL, TRUE, 0.5, 0.5);
+    gtk_tree_path_free(path);
+
+    gtk_editable_select_region(GTK_EDITABLE(object), object->pos_in_text, current_pos);
   } else {
     words[pos] = ((GString*)object->where->data)->str;
     object->pos_in_text = gtk_editable_get_position(GTK_EDITABLE(object));
@@ -631,27 +639,30 @@ complete_from_list(GtkCompletionLine *object)
   }
 }
 
-static void
-on_row_selected(GtkWidget *ls, gint row, gint col, GdkEvent *ev, gpointer data)
-{
-  GtkCompletionLine *cl = GTK_COMPLETION_LINE(data);
+static void on_cursor_changed(GtkTreeView *tree, gpointer data) {
+  GtkCompletionLine *object = GTK_COMPLETION_LINE(data);
 
-  cl->list_compl_items_where = row;
-  g_signal_handler_block(GTK_WIDGET(cl->list_compl),
-                           on_row_selected_handler);
-  complete_from_list(cl);
-  g_signal_handler_block(GTK_WIDGET(cl->list_compl),
-                             on_row_selected_handler);
+  GtkTreeSelection *selection;
+  selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(object->tree_compl));
+  gtk_tree_selection_get_selected (selection, &(object->sort_list_compl), &(object->list_compl_it));
+
+  g_signal_handler_block(G_OBJECT(object->tree_compl),
+                      on_cursor_changed_handler);
+  complete_from_list(object);
+  g_signal_handler_unblock(G_OBJECT(object->tree_compl),
+                         on_cursor_changed_handler);
 }
 
-static void
-get_prefix(GtkCompletionLine *object)
-{
-  parse_tilda(object);
-  vector<string> words;
-  int pos = get_words(object, words);
-  prefix = words[pos];
+static void cell_data_func( GtkTreeViewColumn *col, GtkCellRenderer *renderer,
+                         GtkTreeModel *model, GtkTreeIter *iter, gpointer user_data) {
+  gpointer data;
+  gchar *str;
+
+  gtk_tree_model_get(model, iter, 0, &data, -1);
+  str = ((GString*)(((GList *)data)->data))->str;
+  g_object_set(renderer, "text", str, NULL);
 }
+
 
 static int
 complete_line(GtkCompletionLine *object)
@@ -680,18 +691,13 @@ complete_line(GtkCompletionLine *object)
     object->where = object->cmpl;
   }
 
-  // FUCK C! C++ Rules!
   if (object->where != NULL) {
     if (object->win_compl != NULL) {
-      int &item = object->list_compl_items_where;
-      ++item;
-      if (item >= object->list_compl_nr_rows)
-        item = object->list_compl_nr_rows - 1;
+      gboolean valid = gtk_tree_model_iter_next(object->sort_list_compl, &(object->list_compl_it));
+      if(!valid) 
+        gtk_tree_model_get_iter_first(object->sort_list_compl, &(object->list_compl_it));
     }
     complete_from_list(object);
-  } else if (object->cmpl != NULL) {
-    complete_common(object);
-    object->where = object->cmpl;
   }
 
   GList *ls = object->cmpl;
@@ -717,27 +723,40 @@ complete_line(GtkCompletionLine *object)
         /*gtk_window_set_position(GTK_WINDOW(object->win_compl),
           GTK_WIN_POS_MOUSE);*/
 
-#if ! GTK_CHECK_VERSION(3, 0, 0)
-        object->list_compl = gtk_clist_new(1);
-#endif
+        object->list_compl = gtk_list_store_new (2, G_TYPE_POINTER, G_TYPE_INT);
+        object->sort_list_compl = gtk_tree_model_sort_new_with_model(GTK_TREE_MODEL(object->list_compl));
+        object->tree_compl = gtk_tree_view_new_with_model(GTK_TREE_MODEL(object->sort_list_compl));
+        g_object_unref(object->list_compl);
+        g_object_unref(object->sort_list_compl);
+        GtkTreeViewColumn *col;
+        GtkCellRenderer *renderer;
+        col = gtk_tree_view_column_new();
+        gtk_tree_view_append_column(GTK_TREE_VIEW(object->tree_compl), col);
+        renderer = gtk_cell_renderer_text_new();
+        gtk_tree_view_column_pack_start(col, renderer, TRUE);
+        gtk_tree_view_column_set_cell_data_func(col, renderer, cell_data_func, NULL, NULL);
+ 
+        col = gtk_tree_view_column_new();
+        gtk_tree_view_append_column(GTK_TREE_VIEW(object->tree_compl), col);
+        gtk_tree_view_column_set_visible(col, FALSE);
+ 
+        GtkTreeSelection *selection;
+        selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(object->tree_compl));
+        gtk_tree_selection_set_mode(selection, GTK_SELECTION_BROWSE);
+        gtk_tree_view_set_headers_visible(GTK_TREE_VIEW(object->tree_compl), FALSE);
 
-        on_row_selected_handler =
-          g_signal_connect(GTK_WIDGET(object->list_compl), "select_row",
-                             G_CALLBACK(on_row_selected), object);
+        on_cursor_changed_handler = g_signal_connect(GTK_TREE_VIEW(object->tree_compl), "cursor-changed",
+                                            G_CALLBACK(on_cursor_changed), object);
 
-        g_signal_handler_block(GTK_WIDGET(object->list_compl),
-                                 on_row_selected_handler);
+        g_signal_handler_block(G_OBJECT(object->tree_compl),
+                              on_cursor_changed_handler);
 
         GList *p = ls;
         object->list_compl_nr_rows = 0;
         while (p) {
-          char *tmp[2];
-          tmp[0] = ((GString*)p->data)->str;
-          tmp[1] = NULL;
-#if ! GTK_CHECK_VERSION(3, 0, 0)
-          int row = gtk_clist_append(GTK_CLIST(object->list_compl), tmp);
-          gtk_clist_set_row_data(GTK_CLIST(object->list_compl), row, p);
-#endif
+          GtkTreeIter it;
+          gtk_list_store_append(object->list_compl, &it);
+          gtk_list_store_set (object->list_compl, &it, 0, p, 1, object->list_compl_nr_rows, -1);
           object->list_compl_nr_rows++;
           p = g_list_next(p);
         }
@@ -749,18 +768,12 @@ complete_line(GtkCompletionLine *object)
                                        GTK_POLICY_NEVER,
                                        GTK_POLICY_AUTOMATIC);
 
-        gtk_container_set_border_width(GTK_CONTAINER(object->list_compl), 2);
-        gtk_container_add(GTK_CONTAINER (scroll), object->list_compl);
+        gtk_container_set_border_width(GTK_CONTAINER(object->tree_compl), 2);
+        gtk_container_add(GTK_CONTAINER (scroll), object->tree_compl);
 
-        object->list_compl_items_where = 0;
+        gtk_tree_model_get_iter_first(object->sort_list_compl, &(object->list_compl_it));
 
-        gtk_widget_show(object->list_compl);
-#if ! GTK_CHECK_VERSION(3, 0, 0)
-        int w = gtk_clist_optimal_column_width(GTK_CLIST(object->list_compl), 0);
-#else
-        int w = 200;
-#endif
-        gtk_widget_set_size_request(scroll, w + 40, 150);
+        gtk_widget_show(object->tree_compl);
 
         gtk_container_add(GTK_CONTAINER(object->win_compl), scroll);
 
@@ -768,22 +781,25 @@ complete_line(GtkCompletionLine *object)
         int x, y;
         gdk_window_get_position(top, &x, &y);
         // https://developer.gnome.org/gdk2/stable/gdk2-Points-Rectangles-and-Regions.html#GdkRectangle
-        GtkAllocation rect;
-        gtk_widget_get_allocation( GTK_WIDGET(object), &rect );
-        x += rect.x;
-        y += rect.y + rect.height;
+        GtkAllocation al;
+        gtk_widget_get_allocation( GTK_WIDGET(object), &al );
+        x += al.x;
+        y += al.y + al.height;
 
         // gtk_widget_popup(object->win_compl, x, y);
         gtk_window_move(GTK_WINDOW(object->win_compl), x, y);
-        gtk_widget_show(object->win_compl);
+        gtk_widget_show_all(object->win_compl);
 
-#if ! GTK_CHECK_VERSION(3, 0, 0)
-        gtk_clist_select_row(GTK_CLIST(object->list_compl),
-                             object->list_compl_items_where, 0);
-#endif
+        GtkTreePath *path = gtk_tree_model_get_path(object->sort_list_compl, &(object->list_compl_it));
+        gtk_tree_view_set_cursor(GTK_TREE_VIEW(object->tree_compl), path, NULL, FALSE);
+        gtk_tree_path_free(path);
+ 
+        gtk_tree_view_columns_autosize(GTK_TREE_VIEW(object->tree_compl));
+        gtk_widget_get_allocation(object->tree_compl, &al);
+        gtk_widget_set_size_request(scroll, al.width + 40, 150);
 
-        g_signal_handler_block(GTK_WIDGET(object->list_compl),
-                                   on_row_selected_handler);
+        g_signal_handler_unblock(G_OBJECT(object->tree_compl),
+                                on_cursor_changed_handler);
       }
 
       return GEN_COMPLETION_OK;
@@ -959,13 +975,20 @@ on_scroll(GtkCompletionLine *cl, GdkEventScroll *event, gpointer data)
   direction = event->direction;
   if (direction == GDK_SCROLL_UP) {
     if (cl->win_compl != NULL) {
-      int &item = cl->list_compl_items_where;
-      item--;
-      if (item < 0) {
-        item = 0;
-      } else {
-        complete_from_list(cl);
+      gboolean valid;
+#if GTK_CHECK_VERSION(3, 0, 0)
+      valid = gtk_tree_model_iter_previous(cl->sort_list_compl, &(cl->list_compl_it));
+#else
+      int pos;
+      gtk_tree_model_get(cl->sort_list_compl, &(cl->list_compl_it), 1, &pos, -1);
+      if(pos!=0) pos--;
+      else       pos = cl->list_compl_nr_rows - 1;
+      valid = gtk_tree_model_iter_nth_child(cl->sort_list_compl, &(cl->list_compl_it), NULL, pos);
+#endif
+      if(!valid) {
+        gtk_tree_model_iter_nth_child(cl->sort_list_compl, &(cl->list_compl_it), NULL, cl->list_compl_nr_rows - 1);
       }
+      complete_from_list(cl);
     } else {
       up_history(cl);
     }
@@ -975,13 +998,11 @@ on_scroll(GtkCompletionLine *cl, GdkEventScroll *event, gpointer data)
     return TRUE;
   } else if (direction == GDK_SCROLL_DOWN) {
     if (cl->win_compl != NULL) {
-      int &item = cl->list_compl_items_where;
-      item++;
-      if (item >= cl->list_compl_nr_rows) {
-        item = cl->list_compl_nr_rows - 1;
-      } else {
-        complete_from_list(cl);
+      gboolean valid = gtk_tree_model_iter_next(cl->sort_list_compl, &(cl->list_compl_it));
+      if(!valid) {
+        gtk_tree_model_get_iter_first(cl->sort_list_compl, &(cl->list_compl_it));
       }
+      complete_from_list(cl);
     } else {
       down_history(cl);
     }
@@ -1024,13 +1045,20 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
 
      case GDK_KEY_Up:
       if (cl->win_compl != NULL) {
-        int &item = cl->list_compl_items_where;
-        item--;
-        if (item < 0) {
-          item = 0;
-        } else {
-          complete_from_list(cl);
+        gboolean valid;
+#if GTK_CHECK_VERSION(3, 0, 0)
+        valid = gtk_tree_model_iter_previous(cl->sort_list_compl, &(cl->list_compl_it));
+#else
+        int pos;
+        gtk_tree_model_get(cl->sort_list_compl, &(cl->list_compl_it), 1, &pos, -1);
+        if(pos!=0) pos--;
+        else       pos = cl->list_compl_nr_rows - 1;
+        valid = gtk_tree_model_iter_nth_child(cl->sort_list_compl, &(cl->list_compl_it), NULL, pos);
+#endif
+        if(!valid) {
+          gtk_tree_model_iter_nth_child(cl->sort_list_compl, &(cl->list_compl_it), NULL, cl->list_compl_nr_rows - 1);
         }
+        complete_from_list(cl);
       } else {
         up_history(cl);
       }
@@ -1058,13 +1086,11 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
 
      case GDK_KEY_Down:
       if (cl->win_compl != NULL) {
-        int &item = cl->list_compl_items_where;
-        item++;
-        if (item >= cl->list_compl_nr_rows) {
-          item = cl->list_compl_nr_rows - 1;
-        } else {
-          complete_from_list(cl);
+        gboolean valid = gtk_tree_model_iter_next(cl->sort_list_compl, &(cl->list_compl_it));
+        if(!valid) {
+          gtk_tree_model_get_iter_first(cl->sort_list_compl, &(cl->list_compl_it));
         }
+        complete_from_list(cl);
       } else {
         down_history(cl);
       }
