@@ -25,15 +25,6 @@ if [ ! test "x$enable_debug" != "xyes"]; then
 	CXXFLAGS="-g3 -O0 -DDEBUG"
 fi
 
-AC_ARG_ENABLE(system,
-    [  --enable-system=[yes/no]  Use "system" libc function to run commands ],[],
-    enable_system=no)
-
-if [ ! test "x$enable_system" != "xyes"]; then
-   CFLAGS="$CFLAGS -DUSE_SYSTEM"
-   CXXFLAGS="$CXXFLAGS -DUSE_SYSTEM"
-fi
-
 AC_ARG_ENABLE(mtrace,
     [  --enable-mtrace=[no/yes]  Trace memory (de)allocation calls to detect memory leaks ],[],
     enable_mtrace=no)

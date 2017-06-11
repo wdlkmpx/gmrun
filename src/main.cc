@@ -118,7 +118,7 @@ GtkStyle* style_unique(GtkWidget *w)
 }
 
 static void
-run_with_system(const std::string& command, struct gigi* g)
+run_the_command(const std::string& command, struct gigi* g)
 {
   string cmd(command);
   cmd += '&';
@@ -139,125 +139,6 @@ run_with_system(const std::string& command, struct gigi* g)
     add_search_off_timeout(2000, g);
   }
 }
-
-#ifdef USE_SYSTEM
-
-// this version uses the "system" libc function to execute commands.
-static void
-run_the_command(const std::string& command, struct gigi* g)
-{
-  run_with_system(command, g);
-}
-
-#else
-
-// a more elaborate function to avoid system..  though I think that most will
-// prefer the above one.  I don't even remember why I coded this... but let it
-// be there.
-static void
-run_the_command(const std::string& command, struct gigi* g)
-{
-  string prog;
-  std::vector<char*> argv;
-
-  string cmd = command + ' ';
-  istringstream iss(cmd);
-#ifdef DEBUG
-  cerr << cmd << endl;
-#endif
-  char what_quote = '"';
-  enum TYPE_CONTEXT {
-    CT_NORMAL = 0,
-    CT_QUOTE,
-    CT_ESCAPE
-  };
-  TYPE_CONTEXT context = CT_NORMAL;
-  TYPE_CONTEXT save_context = CT_NORMAL;
-  string tmp;
-  char c;
-
-  while (!iss.eof()) {
-    c = (char)iss.get();
-    if (iss.eof()) {
-      break;
-    }
-
-    switch (c) {
-     case '\\':
-      if (context != CT_ESCAPE) {
-        save_context = context;
-        context = CT_ESCAPE;
-      } else {
-        goto ordinary;
-      }
-      break;
-
-     case '\'':
-     case '"':
-      if (context == CT_ESCAPE) {
-        goto ordinary;
-      } else {
-        if (context == CT_QUOTE) {
-          if (what_quote == c) {
-            context = CT_NORMAL;
-          } else {
-            goto ordinary;
-          }
-        } else {
-          context = CT_QUOTE;
-          what_quote = c;
-        }
-      }
-      break;
-
-     case ' ':
-      if (context == CT_ESCAPE || context == CT_QUOTE) {
-        goto ordinary;
-      } else if (!tmp.empty()) {
-        if (prog.empty()) {
-          prog = tmp;
-        }
-        char *p = (char*)malloc(tmp.length() + 1);
-        memcpy(p, tmp.c_str(), tmp.length() + 1);
-        argv.push_back(p);
-        tmp.clear();
-      }
-      break;
-
-     ordinary:
-     default:
-      if (context == CT_ESCAPE) {
-        context = save_context;
-        tmp += c;
-      } else if (context == CT_QUOTE) {
-        tmp += c;
-      } else if (c != ' ') {
-        tmp += c;
-      }
-    }
-  }
-  argv.push_back(NULL);
-
-#ifdef DEBUG
-  for (vector<char*>::iterator i = argv.begin(); i != argv.end(); ++i) {
-    if (*i) {
-      cerr << "'" << *i << "'" << endl;
-    }
-  }
-#endif
-
-  execvp(prog.c_str(), (char**)&(*argv.begin()));
-  string error("ERROR: ");
-  error += strerror(errno);
-#ifdef DEBUG
-  cerr << error << endl;
-#endif
-
-  gtk_label_set_text(GTK_LABEL(g->w1), error.c_str());
-  gtk_widget_set_style(g->w1, style_notfound(g->w1));
-  add_search_off_timeout(2000, g);
-}
-#endif
 
 static void
 on_ext_handler(GtkCompletionLine *cl, const char* ext, struct gigi* g)
@@ -313,7 +194,7 @@ on_compline_runwithterm(GtkCompletionLine *cl, struct gigi* g)
 
   cl->hist->append(command.c_str());
   cl->hist->sync_the_file();
-  run_with_system(tmp.c_str(), g);
+  run_the_command(tmp.c_str(), g);
 }
 
 static gint
