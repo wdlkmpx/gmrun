@@ -1,11 +1,23 @@
-dnl Process this file with autoconf to produce a configure script.
+# Process this file with autoconf to produce a configure script.
 
-AC_INIT(configure.in)
-AM_INIT_AUTOMAKE(gmrun, 0.9.2)
-AM_CONFIG_HEADER(config.h)
+AC_INIT([gmrun], [0.9.2])
+AM_CONFIG_HEADER([config.h])
+#AC_CONFIG_HEADERS([config.h])
+AM_INIT_AUTOMAKE
+AC_CONFIG_MACRO_DIR([m4])
+AM_MAINTAINER_MODE
+AM_PROG_AR([ar])
+LT_INIT
+
+AC_ISC_POSIX
+AC_PROG_CC
+AM_PROG_CC_STDC
+AC_HEADER_DIRENT
+AC_HEADER_STDC
+AC_PROG_CXX
 
 AC_ARG_ENABLE(debug,
-	[  --enable-debug=[no/yes]	Debugging information == no <--> optimization == yes],,
+	[  --enable-debug=[no/yes]	Debugging information == no <--> optimization == yes],[],
 	enable_debug=no)
 
 if [ ! test "x$enable_debug" != "xyes"]; then
@@ -14,7 +26,7 @@ if [ ! test "x$enable_debug" != "xyes"]; then
 fi
 
 AC_ARG_ENABLE(system,
-    [  --enable-system=[yes/no]  Use "system" libc function to run commands ],,
+    [  --enable-system=[yes/no]  Use "system" libc function to run commands ],[],
     enable_system=no)
 
 if [ ! test "x$enable_system" != "xyes"]; then
@@ -23,23 +35,13 @@ if [ ! test "x$enable_system" != "xyes"]; then
 fi
 
 AC_ARG_ENABLE(mtrace,
-    [  --enable-mtrace=[no/yes]  Trace memory (de)allocation calls to detect memory leaks ],,
+    [  --enable-mtrace=[no/yes]  Trace memory (de)allocation calls to detect memory leaks ],[],
     enable_mtrace=no)
 
 if [ ! test "x$enable_mtrace" != "xyes"]; then
    CFLAGS="$CFLAGS -DMTRACE"
    CXXFLAGS="$CXXFLAGS -DMTRACE"
 fi
-
-AC_ISC_POSIX
-AC_PROG_CC
-AM_PROG_CC_STDC
-AC_HEADER_DIRENT
-AC_HEADER_STDC
-AC_PROG_CXX
-AC_PATH_STLPORT_LIB
-AC_PATH_STLPORT_INC
-
 
 AC_CHECK_FUNC( poptGetContext,
               ,
@@ -69,28 +71,18 @@ PKG_CHECK_MODULES(GTK, gtk+-2.0 >= 2.0.5)
 AC_SUBST(GTK_CFLAGS)
 AC_SUBST(GTK_LIBS)
 
-dnl Set PACKAGE_DATA_DIR in config.h.
+# Set PACKAGE_DATA_DIR in config.h.
 if test "x${datadir}" = 'x${prefix}/share'; then
-  if test "x${prefix}" = "xNONE"; then
-    prefix=/usr/local
-    AC_DEFINE_UNQUOTED(PACKAGE_DATA_DIR, "${ac_default_prefix}/share/${PACKAGE}")
-    PACKAGE_DATA_DIR="${ac_default_prefix}/share/${PACKAGE}"
-  else
-    AC_DEFINE_UNQUOTED(PACKAGE_DATA_DIR, "${prefix}/share/${PACKAGE}")
-    PACKAGE_DATA_DIR="${prefix}/share/${PACKAGE}"
-  fi
+  AC_DEFINE_UNQUOTED(PACKAGE_DATA_DIR, "${prefix}/share/${PACKAGE}", "PACKAGE_DATA_DIR")
+  PACKAGE_DATA_DIR="${prefix}/share/${PACKAGE}"
 else
-  AC_DEFINE_UNQUOTED(PACKAGE_DATA_DIR, "${datadir}/${PACKAGE}")
-    PACKAGE_DATA_DIR="${datadir}/${PACKAGE}"
+  AC_DEFINE_UNQUOTED(PACKAGE_DATA_DIR, "${datadir}/${PACKAGE}", "PACKAGE_DATA_DIR")
+  PACKAGE_DATA_DIR="${datadir}/${PACKAGE}"
 fi
 AC_SUBST(PACKAGE_DATA_DIR)
 
 PREFIX=${prefix}
 AC_SUBST(PREFIX)
-
-dnl Set PACKAGE_SOURCE_DIR in config.h.
-packagesrcdir=`cd $srcdir && pwd`
-AC_DEFINE_UNQUOTED(PACKAGE_SOURCE_DIR, "${packagesrcdir}")
 
 dnl Use -Wall if we have gcc.
 changequote(,)dnl
@@ -101,6 +93,7 @@ if test "x$GCC" = "xyes"; then
   esac
 fi
 changequote([,])dnl
+
 
 AC_OUTPUT([
 Makefile
