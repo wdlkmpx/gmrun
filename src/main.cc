@@ -404,37 +404,6 @@ on_compline_activated(GtkCompletionLine *cl, struct gigi *g)
   }
 }
 
-/**
- Check if screen contain ponter and return coords
- Taked from Xfce: libxfcegui4
- */
-static gboolean
-screen_contains_pointer (GdkScreen *screen,
-                         int       *x,
-                         int       *y)
-{
-    GdkWindow    *root_window;
-    Window        root, child;
-    Bool          retval;
-    int           rootx, rooty;
-    int           winx, winy;
-    unsigned int  xmask;
-
-    root_window = gdk_screen_get_root_window (screen);
-
-    retval = XQueryPointer (GDK_SCREEN_XDISPLAY (screen),
-                            GDK_DRAWABLE_XID (root_window),
-                            &root, &child, &rootx, &rooty,
-                            &winx, &winy, &xmask);
-
-    if (x)
-        *x = retval ? rootx : -1;
-    if (y)
-        *y = retval ? rooty : -1;
-
-    return retval;
-}
-
 
 int main(int argc, char **argv)
 {
