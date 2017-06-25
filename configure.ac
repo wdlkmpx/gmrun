@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_INIT([gmrun], [0.9.2])
+AC_INIT([gmrun], [0.9.3])
 AM_CONFIG_HEADER([config.h])
 AM_INIT_AUTOMAKE
 AC_CONFIG_MACRO_DIR([m4])
