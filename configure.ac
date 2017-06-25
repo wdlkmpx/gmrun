@@ -32,15 +32,6 @@ if [ ! test "x$enable_mtrace" != "xyes"]; then
    CXXFLAGS="$CXXFLAGS -DMTRACE"
 fi
 
-AC_CHECK_FUNC( poptGetContext,
-              ,
-              AC_CHECK_LIB(popt,
-                            poptGetContext,
-                           LIBS="${LIBS} -lpopt",
-                           echo "*** You need to get libpopt ***";exit
-                           )
-              )
-
 AC_CHECK_FUNC( XQueryPointer,
               ,
               AC_CHECK_LIB(X11,

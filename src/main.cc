@@ -21,7 +21,6 @@
 #include <vector>
 #include <algorithm>
 #include <iterator>
-#include <popt.h>
 
 using namespace std;
 
@@ -543,35 +542,7 @@ int main(int argc, char **argv)
   configuration.get_int("CenteredByHeight", prefs_centred_by_height);
   configuration.get_int("UseActiveMonitor", prefs_use_active_monitor);
 
-  // parse commandline options
-  gboolean geo_parsed;
-  char geo_option[30] = "";
-  char *geoptr;
-  poptContext context;
-  int option;
-
-  geoptr = geo_option;
-
-  struct poptOption options[] = {
-    { "geometry", 'g', POPT_ARG_STRING | POPT_ARGFLAG_ONEDASH,
-      &geoptr, 0, "This option specifies the initial "
-      "size and location of the window.", NULL },
-    POPT_AUTOHELP
-    { NULL, '\0', 0, NULL, 0 }
-  };
-
-  context = poptGetContext("popt1", argc, (const char**) argv, options, 0);
-  option = poptGetNextOpt (context);
-
-  if (strcmp (geoptr, ""))
-  {
-    geo_parsed = gtk_window_parse_geometry (GTK_WINDOW (dialog),
-                        geoptr);
-  }
-  else
-  {
-      gtk_window_set_position(GTK_WINDOW(dialog), GTK_WIN_POS_CENTER_ALWAYS);
-  }
+  gtk_window_set_position(GTK_WINDOW(dialog), GTK_WIN_POS_CENTER_ALWAYS);
 
   gtk_widget_show(dialog);
 
