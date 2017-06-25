@@ -79,6 +79,5 @@ AC_OUTPUT([
 Makefile
 src/Makefile
 config/Makefile
-gmrun.spec
 ])
 
