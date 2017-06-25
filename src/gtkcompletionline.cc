@@ -465,14 +465,6 @@ complete_common(GtkCompletionLine *object)
 
   ls = object->cmpl;
   l = ls;
-/*
-  if (words[pos] == ((GString*)(l->data))->str) {
-    ls = g_list_remove_link(ls, l);
-    ls = g_list_append(ls, l->data);
-    g_list_free_1(l);
-    object->cmpl = ls;
-  }
-*/
   return 0;
 }
 
@@ -609,26 +601,6 @@ on_row_selected(GtkWidget *ls, gint row, gint col, GdkEvent *ev, gpointer data)
                              on_row_selected_handler);
 }
 
-/*
-
-static void
-select_appropiate(GtkCompletionLine *object)
-{
-  for (int i = 0; i < object->list_compl_nr_rows; ++i) {
-    char *text;
-    gtk_clist_get_text(GTK_CLIST(object->list_compl), i, 0, &text);
-    if (strncmp(prefix.c_str(), text, prefix.length())) {
-      gtk_signal_handler_block(GTK_OBJECT(object->list_compl),
-                               on_row_selected_handler);
-      gtk_clist_select_row(GTK_CLIST(object->list_compl), i, 0);
-      object->list_compl_items_where = i;
-      gtk_signal_handler_unblock(GTK_OBJECT(object->list_compl),
-                                 on_row_selected_handler);
-      break;
-    }
-  }
-}
-
 static void
 get_prefix(GtkCompletionLine *object)
 {
@@ -637,8 +609,6 @@ get_prefix(GtkCompletionLine *object)
   int pos = get_words(object, words);
   prefix = words[pos];
 }
-
-*/
 
 static int
 complete_line(GtkCompletionLine *object)
@@ -895,24 +865,6 @@ search_history(GtkCompletionLine* cl, bool avance, bool begin)
     return -1;
   }
 }
-
-/*
-static int
-inverse_search_history(GtkCompletionLine* cl, bool avance, bool begin)
-{
-  switch (cl->hist_search_mode) {
-   case GCL_SEARCH_FWD:
-    return search_back_history(cl, avance, begin);
-
-   case GCL_SEARCH_REW:
-   case GCL_SEARCH_BEG:
-    return search_forward_history(cl, avance, begin);
-
-   default:
-    return -1;
-  }
-}
-*/
 
 static void
 search_off(GtkCompletionLine* cl)
