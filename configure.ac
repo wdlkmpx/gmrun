@@ -2,7 +2,7 @@
 
 AC_INIT([gmrun], [0.9.3])
 AM_CONFIG_HEADER([config.h])
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([-Wall foreign silent-rules])
 AC_CONFIG_MACRO_DIR([m4])
 AM_MAINTAINER_MODE
 LT_INIT
@@ -63,17 +63,6 @@ AC_SUBST(PACKAGE_DATA_DIR)
 
 PREFIX=${prefix}
 AC_SUBST(PREFIX)
-
-dnl Use -Wall if we have gcc.
-changequote(,)dnl
-if test "x$GCC" = "xyes"; then
-  case " $CFLAGS " in
-  *[\ \	]-Wall[\ \	]*) ;;
-  *) CFLAGS="$CFLAGS -Wall" ;;
-  esac
-fi
-changequote([,])dnl
-
 
 AC_OUTPUT([
 Makefile
