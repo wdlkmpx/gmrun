@@ -2,7 +2,7 @@
 
 AC_INIT([gmrun], [0.9.3])
 AM_CONFIG_HEADER([config.h])
-AM_INIT_AUTOMAKE([-Wall foreign silent-rules])
+AM_INIT_AUTOMAKE([-Wall foreign])
 AC_CONFIG_MACRO_DIR([m4])
 AM_MAINTAINER_MODE
 LT_INIT
@@ -31,15 +31,6 @@ if [ ! test "x$enable_mtrace" != "xyes"]; then
    CFLAGS="$CFLAGS -DMTRACE"
    CXXFLAGS="$CXXFLAGS -DMTRACE"
 fi
-
-AC_CHECK_FUNC( XQueryPointer,
-              ,
-              AC_CHECK_LIB(X11,
-                           XQueryPointer,
-                           LIBS="${LIBS} -lX11",
-                           echo "*** You need to get libX11 ***";exit
-                           )
-              )
 
 PKG_CHECK_MODULES(GLIB, glib-2.0 >= 2.0.4
                         gobject-2.0 >= 2.0.4
