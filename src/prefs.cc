@@ -31,7 +31,7 @@ Prefs configuration;
 
 Prefs::Prefs()
 {
-  string file_name = PACKAGE_DATA_DIR"/";
+  string file_name = "/etc/";
   file_name += GMRUNRC;
   init(file_name);
 

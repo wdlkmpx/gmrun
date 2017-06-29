@@ -42,22 +42,11 @@ PKG_CHECK_MODULES(GTK, gtk+-2.0 >= 2.0.5)
 AC_SUBST(GTK_CFLAGS)
 AC_SUBST(GTK_LIBS)
 
-# Set PACKAGE_DATA_DIR in config.h.
-if test "x${datadir}" = 'x${prefix}/share'; then
-  AC_DEFINE_UNQUOTED(PACKAGE_DATA_DIR, "${prefix}/share/${PACKAGE}", "PACKAGE_DATA_DIR")
-  PACKAGE_DATA_DIR="${prefix}/share/${PACKAGE}"
-else
-  AC_DEFINE_UNQUOTED(PACKAGE_DATA_DIR, "${datadir}/${PACKAGE}", "PACKAGE_DATA_DIR")
-  PACKAGE_DATA_DIR="${datadir}/${PACKAGE}"
-fi
-AC_SUBST(PACKAGE_DATA_DIR)
-
 PREFIX=${prefix}
 AC_SUBST(PREFIX)
 
 AC_OUTPUT([
 Makefile
 src/Makefile
-config/Makefile
 ])
 
