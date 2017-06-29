@@ -1,4 +1,4 @@
-gmrun 0.9.3                  http://students.infoiasi.ro/~mishoo/site/gmrun.epl
+gmrun 0.9.4w                  http://students.infoiasi.ro/~mishoo/site/gmrun.epl
 ------------                ---------------------------------------------------
 
             Short GtkEntry for file autocompletion + main.cc that does the
