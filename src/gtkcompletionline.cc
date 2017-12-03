@@ -77,22 +77,26 @@ static gboolean
 on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data);
 
 /* get_type */
-guint gtk_completion_line_get_type(void)
+GType gtk_completion_line_get_type(void)
 {
-  static guint type = 0;
+  static GType type = 0;
   if (type == 0)
   {
-    GtkTypeInfo type_info =
+    static const GTypeInfo type_info =
     {
-      "GtkCompletionLine",
-      sizeof(GtkCompletionLine),
       sizeof(GtkCompletionLineClass),
-      (GtkClassInitFunc)gtk_completion_line_class_init,
-      (GtkObjectInitFunc)gtk_completion_line_init,
-      /*(GtkArgSetFunc)*/NULL /* reserved */,
-      /*(GtkArgGetFunc)*/NULL /* reserved */
+      NULL,
+      NULL,
+      (GClassInitFunc)gtk_completion_line_class_init,
+      NULL,
+      NULL,
+      sizeof(GtkCompletionLine),
+      0,
+      (GInstanceInitFunc)gtk_completion_line_init,
+      NULL
     };
-    type = gtk_type_unique(gtk_entry_get_type(), &type_info);
+    type = g_type_register_static(GTK_TYPE_ENTRY, "GtkCompletionLine",
+                                  &type_info, (GTypeFlags)0);
   }
   return type;
 }
@@ -745,7 +749,7 @@ complete_line(GtkCompletionLine *object)
 GtkWidget *
 gtk_completion_line_new()
 {
-  return GTK_WIDGET(gtk_type_new(gtk_completion_line_get_type()));
+  return GTK_WIDGET(g_object_new(gtk_completion_line_get_type(), NULL));
 }
 
 static void
