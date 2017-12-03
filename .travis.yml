@@ -1,0 +1,6 @@
+language: c++
+install: sudo apt-get install libgtk2.0-dev
+before_script: ./autogen.sh
+script:
+  - ./configure
+  - make
