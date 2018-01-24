@@ -584,22 +584,23 @@ generate_completion_from_dirlist(GtkCompletionLine *object)
   return 0;
 }
 
-static int
-parse_tilda(GtkCompletionLine *object)
-{
-  string text = gtk_entry_get_text(GTK_ENTRY(object));
-  gint cur = (gint)text.find("~");
-  if (cur != string::npos) {
-    if ((cur > 0) && (text[cur - 1] != ' '))
-      return 0;
-    if (cur < text.size() - 1 && text[cur + 1] != '/') {
+/* Expand tilde */
+static int parse_tilda(GtkCompletionLine *object) {
+  const gchar *text = gtk_entry_get_text(GTK_ENTRY(object));
+  const gchar *match = g_strstr_len(text, -1, "~");
+  if (match) {
+  gint cur = match - text;
+  if ((cur > 0) && (text[cur - 1] != ' '))
+    return 0;
+    if ((guint)cur < strlen(text) - 1 && text[cur + 1] != '/') {
       // FIXME: Parse another user's home
+      // #include <pwd.h>
+      // struct passwd *p;
+      // p=getpwnam(username);
+      // printf("%s\n", p->pw_dir);
     } else {
-      string home = g_get_home_dir();
-      size_t i = home.length() - 1;
-      while ((i >= 0) && (home[i] == '/'))
-        home.erase(i--);
-      gtk_editable_insert_text(GTK_EDITABLE(object), home.c_str(), home.length(), &cur);
+      gtk_editable_insert_text(GTK_EDITABLE(object),
+      g_get_home_dir(), strlen(g_get_home_dir()), &cur);
       gtk_editable_delete_text(GTK_EDITABLE(object), cur, cur + 1);
     }
   }
