@@ -264,22 +264,6 @@ void gtk_completion_line_last_history_item(GtkCompletionLine* object) {
 	}
 }
 
-string quote_string(const string& str)
-{
-	string res;
-	const char* i = str.c_str();
-	while (*i) {
-		char c = *i++;
-		switch (c) {
-		case ' ':
-			res += '\\';
-		default:
-			res += c;
-		}
-	}
-	return res;
-}
-
 static void
 get_token(istream& is, string& s)
 {
@@ -341,19 +325,24 @@ set_words(GtkCompletionLine *object, const vector<string>& words, int pos = -1)
 	int cur = 0;
 
 	vector<string>::const_iterator
-	i     = words.begin(),
-	i_end = words.end();
+	i		= words.begin(),
+	i_end	= words.end();
 
+	GRegex *regex = g_regex_new (" ", G_REGEX_OPTIMIZE, G_REGEX_MATCH_NOTEMPTY, NULL);
 	while (i != i_end) {
-		ss << quote_string(*i++);
+		gchar *quoted = g_regex_replace_literal (
+				regex, (*i++).c_str(), -1, 0, "\\ ", G_REGEX_MATCH_NOTEMPTY, NULL);
+		ss << quoted;
 		if (i != i_end)
 			ss << ' ';
 		if (!pos && !cur)
 			cur = ss.tellp();
 		else
 			--pos;
+		g_free(quoted);
 	}
 	ss << ends;
+	g_regex_unref (regex);
 
 	if (words.size() == 1) {
 		const string& s = words.back();

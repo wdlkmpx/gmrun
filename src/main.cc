@@ -304,8 +304,12 @@ ext_check(GtkCompletionLine *cl, struct gigi *g)
 	i     = words.begin(),
 	i_end = words.end();
 
+
+	GRegex *regex = g_regex_new (" ", G_REGEX_OPTIMIZE, G_REGEX_MATCH_NOTEMPTY, NULL);
 	while (i != i_end) {
-		const string& w = quote_string(*i++);
+		gchar *quoted = g_regex_replace_literal (
+				regex, (*i++).c_str(), -1, 0, "\\ ", G_REGEX_MATCH_NOTEMPTY, NULL);
+		const string w = quoted;
 		if (w[0] == '/') {
 			// absolute path, check for extension
 			size_t pos = w.rfind('.');
@@ -325,9 +329,11 @@ ext_check(GtkCompletionLine *cl, struct gigi *g)
 				}
 			}
 		}
+		g_free(quoted);
 		// FIXME: for now we check only one entry
 		break;
 	}
+	g_regex_unref(regex);
 
 	return false;
 }
