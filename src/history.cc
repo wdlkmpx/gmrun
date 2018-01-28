@@ -34,8 +34,7 @@ HistoryFile::HistoryFile()
 HistoryFile::~HistoryFile()
 {}
 
-void
-HistoryFile::read_the_file()
+void HistoryFile::read_the_file()
 {
 	const char *filename = m_filename.c_str();
 	ifstream f(filename);
@@ -55,8 +54,7 @@ HistoryFile::read_the_file()
 	m_current = m_file_entries;
 }
 
-void
-HistoryFile::sync_the_file()
+void HistoryFile::sync_the_file()
 {
 	const char *filename = m_filename.c_str();
 
@@ -78,8 +76,7 @@ HistoryFile::sync_the_file()
 	f.flush();
 }
 
-void
-HistoryFile::append(const char *entry)
+void HistoryFile::append(const char *entry)
 {
 	std::string ent = std::string(entry);
 	if (!history.empty()) {
@@ -98,8 +95,7 @@ HistoryFile::append(const char *entry)
 	history.push_back(ent);
 }
 
-void
-HistoryFile::set_default(const char *defstr)
+void HistoryFile::set_default(const char *defstr)
 {
 	if (!m_default_set) {
 		m_default = defstr;
@@ -107,8 +103,7 @@ HistoryFile::set_default(const char *defstr)
 	}
 }
 
-const char *
-HistoryFile::operator [] (size_t index)
+const char * HistoryFile::operator [] (size_t index)
 {
 	if (index >= history.size()) {
 		return m_default.c_str();
@@ -143,8 +138,7 @@ HistoryFile::prev_to_first()
 	}
 }
 
-const char *
-HistoryFile::next_to_last()
+const char * HistoryFile::next_to_last()
 {
 	if ((guint)m_current < history.size()) {
 		return (*this)[++m_current];
@@ -153,14 +147,12 @@ HistoryFile::next_to_last()
 	}
 }
 
-void
-HistoryFile::clear_default()
+void HistoryFile::clear_default()
 {
 	m_default_set = false;
 }
 
-void
-HistoryFile::reset_position()
+void HistoryFile::reset_position()
 {
 	m_current = m_file_entries;
 }

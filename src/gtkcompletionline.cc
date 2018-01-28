@@ -223,8 +223,7 @@ gtk_completion_line_class_init(GtkCompletionLineClass *klass)
 }
 
 /* init */
-static void
-gtk_completion_line_init(GtkCompletionLine *object)
+static void gtk_completion_line_init(GtkCompletionLine *object)
 {
 	/* Add object initialization / creation stuff here */
 	object->where = NULL;
@@ -264,8 +263,7 @@ void gtk_completion_line_last_history_item(GtkCompletionLine* object) {
 	}
 }
 
-static void
-get_token(istream& is, string& s)
+static void get_token(istream& is, string& s)
 {
 	s.clear();
 	bool escaped = false;
@@ -290,8 +288,7 @@ get_token(istream& is, string& s)
 	}
 }
 
-int
-get_words(GtkCompletionLine *object, vector<string>& words)
+int get_words(GtkCompletionLine *object, vector<string>& words)
 {
 	string content(gtk_entry_get_text(GTK_ENTRY(object)));
 	int pos_in_text = gtk_editable_get_position(GTK_EDITABLE(object));
@@ -316,8 +313,7 @@ get_words(GtkCompletionLine *object, vector<string>& words)
 	return pos;
 }
 
-int
-set_words(GtkCompletionLine *object, const vector<string>& words, int pos = -1)
+int set_words(GtkCompletionLine *object, const vector<string>& words, int pos = -1)
 {
 	ostringstream ss;
 	if (pos == -1)
@@ -359,8 +355,7 @@ set_words(GtkCompletionLine *object, const vector<string>& words, int pos = -1)
 	return cur;
 }
 
-static void
-generate_path()
+static void generate_path()
 {
 	char *path_cstr = (char*)getenv("PATH");
 
@@ -381,8 +376,7 @@ generate_path()
 	}
 }
 
-static int
-select_executables_only(const struct dirent* dent)
+static int select_executables_only(const struct dirent* dent)
 {
 	int len = strlen(dent->d_name);
 	int lenp = prefix.length();
@@ -429,8 +423,7 @@ int my_alphasort(const struct dirent **a, const struct dirent **b) {
 	return result;
 }
 
-static void
-generate_execs()
+static void generate_execs()
 {
 	execs.clear();
 
@@ -447,8 +440,7 @@ generate_execs()
 	}
 }
 
-static int
-generate_completion_from_execs(GtkCompletionLine *object)
+static int generate_completion_from_execs(GtkCompletionLine *object)
 {
 	g_list_foreach(object->cmpl, (GFunc)g_string_free, NULL);
 	g_list_free(object->cmpl);
@@ -462,8 +454,7 @@ generate_completion_from_execs(GtkCompletionLine *object)
 	return 0;
 }
 
-static string
-get_common_part(const char *p1, const char *p2)
+static string get_common_part(const char *p1, const char *p2)
 {
 	string ret;
 
@@ -476,8 +467,7 @@ get_common_part(const char *p1, const char *p2)
 	return ret;
 }
 
-static int
-complete_common(GtkCompletionLine *object)
+static int complete_common(GtkCompletionLine *object)
 {
 	GList *l;
 	GList *ls = object->cmpl;
@@ -499,8 +489,7 @@ complete_common(GtkCompletionLine *object)
 	return 0;
 }
 
-static int
-generate_dirlist(const char *what)
+static int generate_dirlist(const char *what)
 {
 	char *str = strdup(what);
 	char *p = str + 1;
@@ -552,8 +541,7 @@ dirty:
 	return GEN_CANT_COMPLETE;
 }
 
-static int
-generate_completion_from_dirlist(GtkCompletionLine *object)
+static int generate_completion_from_dirlist(GtkCompletionLine *object)
 {
 	g_list_foreach(object->cmpl, (GFunc)g_string_free, NULL);
 	g_list_free(object->cmpl);
@@ -591,8 +579,7 @@ static int parse_tilda(GtkCompletionLine *object) {
 	return 0;
 }
 
-static void
-complete_from_list(GtkCompletionLine *object)
+static void complete_from_list(GtkCompletionLine *object)
 {
 	parse_tilda(object);
 	vector<string> words;
@@ -648,8 +635,7 @@ static void cell_data_func( GtkTreeViewColumn *col, GtkCellRenderer *renderer,
 }
 
 
-static int
-complete_line(GtkCompletionLine *object)
+static int complete_line(GtkCompletionLine *object)
 {
 	parse_tilda(object);
 	vector<string> words;
@@ -856,8 +842,7 @@ search_back_history(GtkCompletionLine* cl, bool avance, bool begin)
 	return 0;
 }
 
-static int
-search_forward_history(GtkCompletionLine* cl, bool avance, bool begin)
+static int search_forward_history(GtkCompletionLine* cl, bool avance, bool begin)
 {
 	if (!cl->hist_word->empty()) {
 		const char * histext;
@@ -896,8 +881,7 @@ search_forward_history(GtkCompletionLine* cl, bool avance, bool begin)
 	return 0;
 }
 
-static int
-search_history(GtkCompletionLine* cl, bool avance, bool begin)
+static int search_history(GtkCompletionLine* cl, bool avance, bool begin)
 {
 	switch (cl->hist_search_mode) {
 	case GCL_SEARCH_REW:
@@ -912,8 +896,7 @@ search_history(GtkCompletionLine* cl, bool avance, bool begin)
 	}
 }
 
-static void
-search_off(GtkCompletionLine* cl)
+static void search_off(GtkCompletionLine* cl)
 {
 	int pos = gtk_editable_get_position(GTK_EDITABLE(cl));
 	cl->hist_search_mode = GCL_SEARCH_OFF;

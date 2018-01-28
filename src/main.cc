@@ -135,8 +135,7 @@ on_ext_handler(GtkCompletionLine *cl, const char* ext, struct gigi* g)
 	}
 }
 
-static void
-on_compline_runwithterm(GtkCompletionLine *cl, struct gigi* g)
+static void on_compline_runwithterm(GtkCompletionLine *cl, struct gigi* g)
 {
 	string command(g_locale_from_utf8 (gtk_entry_get_text(GTK_ENTRY(cl)),
 						-1,
@@ -173,8 +172,7 @@ on_compline_runwithterm(GtkCompletionLine *cl, struct gigi* g)
 	run_the_command(tmp.c_str(), g);
 }
 
-static gint
-search_off_timeout(struct gigi *g)
+static gint search_off_timeout(struct gigi *g)
 {
 	set_info_text_color(g->w1, "Run program:", W_TEXT_STYLE_NORMAL);
 	gtk_widget_hide(g->w2);
@@ -236,8 +234,7 @@ on_search_not_found(GtkCompletionLine *cl, struct gigi *g)
 	add_search_off_timeout(1000, g, GSourceFunc(search_fail_timeout));
 }
 
-static bool
-url_check(GtkCompletionLine *cl, struct gigi *g)
+static bool url_check(GtkCompletionLine *cl, struct gigi *g)
 {
 	string text(g_locale_from_utf8 (gtk_entry_get_text(GTK_ENTRY(cl)),
 					-1,
@@ -295,8 +292,7 @@ url_check(GtkCompletionLine *cl, struct gigi *g)
 	return false;
 }
 
-static bool
-ext_check(GtkCompletionLine *cl, struct gigi *g)
+static bool ext_check(GtkCompletionLine *cl, struct gigi *g)
 {
 	vector<string> words;
 	get_words(cl, words);
@@ -338,8 +334,7 @@ ext_check(GtkCompletionLine *cl, struct gigi *g)
 	return false;
 }
 
-static void
-on_compline_activated(GtkCompletionLine *cl, struct gigi *g)
+static void on_compline_activated(GtkCompletionLine *cl, struct gigi *g)
 {
 	if (url_check(cl, g))
 		return;
