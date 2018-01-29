@@ -110,7 +110,7 @@ HistoryFile::set_default(const char *defstr)
 const char *
 HistoryFile::operator [] (size_t index)
 {
-	if (index < 0 || index >= history.size()) {
+	if (index >= history.size()) {
 		return m_default.c_str();
 	}
 
@@ -129,7 +129,7 @@ const char *
 HistoryFile::next()
 {
 	const char *ret = (*this)[++m_current];
-	if (m_current >= history.size()) m_current = -1;
+	if ((guint)m_current >= history.size()) m_current = -1;
 	return ret;
 }
 
@@ -146,7 +146,7 @@ HistoryFile::prev_to_first()
 const char *
 HistoryFile::next_to_last()
 {
-	if (m_current < history.size()) {
+	if ((guint)m_current < history.size()) {
 		return (*this)[++m_current];
 	} else {
 		return NULL;
