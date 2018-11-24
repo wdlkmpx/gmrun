@@ -221,7 +221,6 @@ void gtk_completion_line_last_history_item(GtkCompletionLine* object) {
     const char* txt = object->hist->prev();
     gtk_entry_set_text(GTK_ENTRY(object),
 		       g_locale_to_utf8 (txt, -1, NULL, NULL, NULL));
-    gtk_entry_select_region(GTK_ENTRY(object), 0, strlen(txt));
   }
 }
 
@@ -577,8 +576,6 @@ complete_from_list(GtkCompletionLine *object)
       GTK_CLIST(object->list_compl), object->list_compl_items_where);
     words[pos] = ((GString*)object->where->data)->str;
     int current_pos = set_words(object, words, pos);
-    gtk_entry_select_region(GTK_ENTRY(object),
-                            object->pos_in_text, current_pos);
     int &item = object->list_compl_items_where;
     gtk_clist_select_row(GTK_CLIST(object->list_compl), item, 0);
     gtk_clist_moveto(GTK_CLIST(object->list_compl), item, 0, 0.5, 0.0);
@@ -586,8 +583,6 @@ complete_from_list(GtkCompletionLine *object)
     words[pos] = ((GString*)object->where->data)->str;
     object->pos_in_text = gtk_editable_get_position(GTK_EDITABLE(object));
     int current_pos = set_words(object, words, pos);
-    gtk_entry_select_region(GTK_ENTRY(object),
-                            object->pos_in_text, current_pos);
     object->where = g_list_next(object->where);
   }
 }
@@ -791,8 +786,6 @@ search_back_history(GtkCompletionLine* cl, bool avance, bool begin)
         if (!(avance && strcmp(tmp, histext) == 0)) {
           gtk_entry_set_text(GTK_ENTRY(cl), 
 			     g_locale_to_utf8 (histext, -1, NULL, NULL, NULL));
-          gtk_entry_select_region(GTK_ENTRY(cl),
-                                  i, i + cl->hist_word->length());
           gtk_signal_emit_by_name(GTK_OBJECT(cl), "search_letter");
           return 1;
         }
@@ -804,7 +797,6 @@ search_back_history(GtkCompletionLine* cl, bool avance, bool begin)
       }
     }
   } else {
-    gtk_entry_select_region(GTK_ENTRY(cl), 0, 0);
     gtk_signal_emit_by_name(GTK_OBJECT(cl), "search_letter");
   }
 
@@ -834,8 +826,6 @@ search_forward_history(GtkCompletionLine* cl, bool avance, bool begin)
         if (!(avance && strcmp(tmp, histext) == 0)) {
           gtk_entry_set_text(GTK_ENTRY(cl), 
 			     g_locale_to_utf8 (histext, -1, NULL, NULL, NULL));
-          gtk_entry_select_region(GTK_ENTRY(cl),
-                                  i, i + cl->hist_word->length());
           gtk_signal_emit_by_name(GTK_OBJECT(cl), "search_letter");
           return 1;
         }
@@ -847,7 +837,6 @@ search_forward_history(GtkCompletionLine* cl, bool avance, bool begin)
       }
     }
   } else {
-    gtk_entry_select_region(GTK_ENTRY(cl), 0, 0);
     gtk_signal_emit_by_name(GTK_OBJECT(cl), "search_letter");
   }
 
@@ -874,7 +863,6 @@ static void
 search_off(GtkCompletionLine* cl)
 {
   int pos = gtk_editable_get_position(GTK_EDITABLE(cl));
-  gtk_entry_select_region(GTK_ENTRY(cl), pos, pos);
   cl->hist_search_mode = GCL_SEARCH_OFF;
   gtk_signal_emit_by_name(GTK_OBJECT(cl), "search_mode");
   cl->hist->reset_position();
@@ -964,7 +952,6 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
          cl->win_compl = NULL;
          if (!search) {
            int pos = gtk_editable_get_position(GTK_EDITABLE(cl));
-           gtk_entry_select_region(GTK_ENTRY(cl), pos, pos);
          }
        }
      }
