@@ -41,15 +41,14 @@ HistoryFile::read_the_file()
   ifstream f(filename);
   if (!f) return;
 
+  string line_text;
+
   while (!f.eof()) {
-    char line_text[256];
     string line_str;
 
-    f.getline(line_text, sizeof(line_text));
-    if (*line_text) {
-      line_str = line_text;
-      history.push_back(line_str);
-    }
+    getline(f,line_text);
+    line_str = line_text;
+    history.push_back(line_str);
   }
 
   m_file_entries = history.size();
