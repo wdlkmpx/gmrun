@@ -32,13 +32,7 @@ if [ ! test "x$enable_mtrace" != "xyes"]; then
    CXXFLAGS="$CXXFLAGS -DMTRACE"
 fi
 
-PKG_CHECK_MODULES(GLIB, glib-2.0 >= 2.0.4
-                        gobject-2.0 >= 2.0.4
-                        gthread-2.0 >= 2.0.4)
-AC_SUBST(GLIB_CFLAGS)
-AC_SUBST(GLIB_LIBS)
-
-PKG_CHECK_MODULES(GTK, gtk+-2.0 >= 2.0.5)
+PKG_CHECK_MODULES(GTK, gtk+-2.0 >= 2.10)
 AC_SUBST(GTK_CFLAGS)
 AC_SUBST(GTK_LIBS)
 
