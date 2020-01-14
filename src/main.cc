@@ -464,7 +464,7 @@ int main(int argc, char **argv)
   g.w1 = label;
   g.w2 = label_search;
 
-  gtk_widget_set_usize(compline, prefs_width, -2);
+  gtk_widget_set_size_request(compline, prefs_width, -1);
   g_signal_connect(GTK_WIDGET(compline), "cancel",
                      G_CALLBACK(gtk_main_quit), NULL);
   g_signal_connect(GTK_WIDGET(compline), "activate",

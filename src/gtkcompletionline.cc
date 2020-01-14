@@ -743,7 +743,7 @@ complete_line(GtkCompletionLine *object)
 
         gtk_widget_show(object->list_compl);
         int w = gtk_clist_optimal_column_width(GTK_CLIST(object->list_compl), 0);
-        gtk_widget_set_usize(scroll, w + 40, 150);
+        gtk_widget_set_size_request(scroll, w + 40, 150);
 
         gtk_container_add(GTK_CONTAINER(object->win_compl), scroll);
 
