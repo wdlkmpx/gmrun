@@ -21,7 +21,7 @@
 extern "C++" {
 
 #define GTK_COMPLETION_LINE(obj) \
-  GTK_CHECK_CAST(obj, gtk_completion_line_get_type(), GtkCompletionLine)
+  G_TYPE_CHECK_INSTANCE_CAST(obj, gtk_completion_line_get_type(), GtkCompletionLine)
 #define GTK_COMPLETION_LINE_CLASS(klass) \
   GTK_CHECK_CLASS_CAST(klass, gtk_completion_line_get_type(), GtkCompletionLineClass)
 #define IS_GTK_COMPLETION_LINE(obj) \
