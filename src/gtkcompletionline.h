@@ -13,9 +13,8 @@
 #ifndef __GTKCOMPLETIONLINE_H__
 #define __GTKCOMPLETIONLINE_H__
 
-#include <gtk/gtkentry.h>
-
 #include <string>
+#include <gtk/gtk.h>
 
 #include "history.h"
 

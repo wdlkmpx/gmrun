@@ -426,8 +426,8 @@ int main(int argc, char **argv)
   gtk_window_set_policy(GTK_WINDOW(dialog), FALSE, FALSE, TRUE);
   // gtk_window_set_position(GTK_WINDOW(win), GTK_WIN_POS_CENTER);
   gtk_container_set_border_width(GTK_CONTAINER(dialog), 4);
-  gtk_signal_connect(GTK_OBJECT(dialog), "destroy",
-                     GTK_SIGNAL_FUNC(gtk_main_quit), NULL);
+  g_signal_connect(GTK_WIDGET(dialog), "destroy",
+                     G_CALLBACK(gtk_main_quit), NULL);
 
   GtkWidget *hhbox = gtk_hbox_new(FALSE, 2);
   gtk_widget_show(hhbox);
@@ -465,29 +465,29 @@ int main(int argc, char **argv)
   g.w2 = label_search;
 
   gtk_widget_set_usize(compline, prefs_width, -2);
-  gtk_signal_connect(GTK_OBJECT(compline), "cancel",
-                     GTK_SIGNAL_FUNC(gtk_main_quit), NULL);
-  gtk_signal_connect(GTK_OBJECT(compline), "activate",
-                     GTK_SIGNAL_FUNC(on_compline_activated), &g);
-  gtk_signal_connect(GTK_OBJECT(compline), "runwithterm",
-                     GTK_SIGNAL_FUNC(on_compline_runwithterm), &g);
+  g_signal_connect(GTK_WIDGET(compline), "cancel",
+                     G_CALLBACK(gtk_main_quit), NULL);
+  g_signal_connect(GTK_WIDGET(compline), "activate",
+                     G_CALLBACK(on_compline_activated), &g);
+  g_signal_connect(GTK_WIDGET(compline), "runwithterm",
+                     G_CALLBACK(on_compline_runwithterm), &g);
 
-  gtk_signal_connect(GTK_OBJECT(compline), "unique",
-                     GTK_SIGNAL_FUNC(on_compline_unique), &g);
-  gtk_signal_connect(GTK_OBJECT(compline), "notunique",
-                     GTK_SIGNAL_FUNC(on_compline_notunique), &g);
-  gtk_signal_connect(GTK_OBJECT(compline), "incomplete",
-                     GTK_SIGNAL_FUNC(on_compline_incomplete), &g);
+  g_signal_connect(GTK_WIDGET(compline), "unique",
+                     G_CALLBACK(on_compline_unique), &g);
+  g_signal_connect(GTK_WIDGET(compline), "notunique",
+                     G_CALLBACK(on_compline_notunique), &g);
+  g_signal_connect(GTK_WIDGET(compline), "incomplete",
+                     G_CALLBACK(on_compline_incomplete), &g);
 
-  gtk_signal_connect(GTK_OBJECT(compline), "search_mode",
-                     GTK_SIGNAL_FUNC(on_search_mode), &g);
-  gtk_signal_connect(GTK_OBJECT(compline), "search_not_found",
-                     GTK_SIGNAL_FUNC(on_search_not_found), &g);
-  gtk_signal_connect(GTK_OBJECT(compline), "search_letter",
-                     GTK_SIGNAL_FUNC(on_search_letter), label_search);
+  g_signal_connect(GTK_WIDGET(compline), "search_mode",
+                     G_CALLBACK(on_search_mode), &g);
+  g_signal_connect(GTK_WIDGET(compline), "search_not_found",
+                     G_CALLBACK(on_search_not_found), &g);
+  g_signal_connect(GTK_WIDGET(compline), "search_letter",
+                     G_CALLBACK(on_search_letter), label_search);
 
-  gtk_signal_connect(GTK_OBJECT(compline), "ext_handler",
-                     GTK_SIGNAL_FUNC(on_ext_handler), &g);
+  g_signal_connect(GTK_WIDGET(compline), "ext_handler",
+                     G_CALLBACK(on_ext_handler), &g);
   gtk_widget_show(compline);
 
   int shows_last_history_item;
