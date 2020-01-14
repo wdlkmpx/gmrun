@@ -604,13 +604,17 @@ complete_from_list(GtkCompletionLine *object)
   prefix = words[pos];
 
   if (object->win_compl != NULL) {
+#if ! GTK_CHECK_VERSION(3, 0, 0)
     object->where = (GList*)gtk_clist_get_row_data(
       GTK_CLIST(object->list_compl), object->list_compl_items_where);
+#endif
     words[pos] = ((GString*)object->where->data)->str;
     int current_pos = set_words(object, words, pos);
     int &item = object->list_compl_items_where;
+#if ! GTK_CHECK_VERSION(3, 0, 0)
     gtk_clist_select_row(GTK_CLIST(object->list_compl), item, 0);
     gtk_clist_moveto(GTK_CLIST(object->list_compl), item, 0, 0.5, 0.0);
+#endif
   } else {
     words[pos] = ((GString*)object->where->data)->str;
     object->pos_in_text = gtk_editable_get_position(GTK_EDITABLE(object));
@@ -705,10 +709,9 @@ complete_line(GtkCompletionLine *object)
         /*gtk_window_set_position(GTK_WINDOW(object->win_compl),
           GTK_WIN_POS_MOUSE);*/
 
-        //gtk_window_set_policy(GTK_WINDOW(object->win_compl),
-        //                      FALSE, FALSE, TRUE);
-
+#if ! GTK_CHECK_VERSION(3, 0, 0)
         object->list_compl = gtk_clist_new(1);
+#endif
 
         on_row_selected_handler =
           g_signal_connect(GTK_WIDGET(object->list_compl), "select_row",
@@ -723,8 +726,10 @@ complete_line(GtkCompletionLine *object)
           char *tmp[2];
           tmp[0] = ((GString*)p->data)->str;
           tmp[1] = NULL;
+#if ! GTK_CHECK_VERSION(3, 0, 0)
           int row = gtk_clist_append(GTK_CLIST(object->list_compl), tmp);
           gtk_clist_set_row_data(GTK_CLIST(object->list_compl), row, p);
+#endif
           object->list_compl_nr_rows++;
           p = g_list_next(p);
         }
@@ -742,7 +747,11 @@ complete_line(GtkCompletionLine *object)
         object->list_compl_items_where = 0;
 
         gtk_widget_show(object->list_compl);
+#if ! GTK_CHECK_VERSION(3, 0, 0)
         int w = gtk_clist_optimal_column_width(GTK_CLIST(object->list_compl), 0);
+#else
+        int w = 200;
+#endif
         gtk_widget_set_size_request(scroll, w + 40, 150);
 
         gtk_container_add(GTK_CONTAINER(object->win_compl), scroll);
@@ -760,8 +769,10 @@ complete_line(GtkCompletionLine *object)
         gtk_window_move(GTK_WINDOW(object->win_compl), x, y);
         gtk_widget_show(object->win_compl);
 
+#if ! GTK_CHECK_VERSION(3, 0, 0)
         gtk_clist_select_row(GTK_CLIST(object->list_compl),
                              object->list_compl_items_where, 0);
+#endif
 
         g_signal_handler_block(GTK_WIDGET(object->list_compl),
                                    on_row_selected_handler);

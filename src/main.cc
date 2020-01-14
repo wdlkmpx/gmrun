@@ -75,7 +75,6 @@ GtkStyle* style_normal(GtkWidget *w)
   if (!style) {
     style = gtk_style_copy(gtk_widget_get_style(w));
     style->fg[GTK_STATE_NORMAL] = (GdkColor){0, 0x0000, 0x0000, 0x0000};
-    gtk_style_ref(style);
   }
   return style;
 }
@@ -87,7 +86,6 @@ GtkStyle* style_notfound(GtkWidget *w)
   if (!style) {
     style = gtk_style_copy(gtk_widget_get_style(w));
     style->fg[GTK_STATE_NORMAL] = (GdkColor){0, 0xFFFF, 0x0000, 0x0000};
-    gtk_style_ref(style);
   }
   return style;
 }
@@ -99,7 +97,6 @@ GtkStyle* style_notunique(GtkWidget *w)
   if (!style) {
     style = gtk_style_copy(gtk_widget_get_style(w));
     style->fg[GTK_STATE_NORMAL] = (GdkColor){0, 0x0000, 0x0000, 0xFFFF};
-    gtk_style_ref(style);
   }
   return style;
 }
@@ -111,7 +108,6 @@ GtkStyle* style_unique(GtkWidget *w)
   if (!style) {
     style = gtk_style_copy(gtk_widget_get_style(w));
     style->fg[GTK_STATE_NORMAL] = (GdkColor){0, 0x0000, 0xFFFF, 0x0000};
-    gtk_style_ref(style);
   }
   return style;
 }
@@ -420,10 +416,8 @@ int main(int argc, char **argv)
 
   dialog = gtk_dialog_new();
   gtk_widget_realize(dialog);
-  gdk_window_set_decorations(dialog->window, GDK_DECOR_BORDER);
   gtk_widget_set_name(dialog, "Msh_Run_Window");
   gtk_window_set_title(GTK_WINDOW(dialog), "Execute program feat. completion");
-  gtk_window_set_policy(GTK_WINDOW(dialog), FALSE, FALSE, TRUE);
   // gtk_window_set_position(GTK_WINDOW(win), GTK_WIN_POS_CENTER);
   gtk_container_set_border_width(GTK_CONTAINER(dialog), 4);
   g_signal_connect(GTK_WIDGET(dialog), "destroy",
