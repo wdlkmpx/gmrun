@@ -750,9 +750,11 @@ complete_line(GtkCompletionLine *object)
         GdkWindow *top = gtk_widget_get_parent_window(GTK_WIDGET(object));
         int x, y;
         gdk_window_get_position(top, &x, &y);
-        x += GTK_WIDGET(object)->allocation.x;
-        y += GTK_WIDGET(object)->allocation.y +
-          GTK_WIDGET(object)->allocation.height;
+        // https://developer.gnome.org/gdk2/stable/gdk2-Points-Rectangles-and-Regions.html#GdkRectangle
+        GtkAllocation rect;
+        gtk_widget_get_allocation( GTK_WIDGET(object), &rect );
+        x += rect.x;
+        y += rect.y + rect.height;
 
         // gtk_widget_popup(object->win_compl, x, y);
         gtk_window_move(GTK_WINDOW(object->win_compl), x, y);
