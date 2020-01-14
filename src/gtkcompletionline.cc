@@ -705,8 +705,8 @@ complete_line(GtkCompletionLine *object)
         /*gtk_window_set_position(GTK_WINDOW(object->win_compl),
           GTK_WIN_POS_MOUSE);*/
 
-        gtk_window_set_policy(GTK_WINDOW(object->win_compl),
-                              FALSE, FALSE, TRUE);
+        //gtk_window_set_policy(GTK_WINDOW(object->win_compl),
+        //                      FALSE, FALSE, TRUE);
 
         object->list_compl = gtk_clist_new(1);
 
