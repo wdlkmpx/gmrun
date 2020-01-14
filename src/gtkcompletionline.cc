@@ -913,7 +913,7 @@ search_off(GtkCompletionLine* cl)
 #define MODE_SRC \
   (cl->hist_search_mode != GCL_SEARCH_OFF)
 
-static gint tab_pressed(GtkCompletionLine* cl)
+static guint tab_pressed(GtkCompletionLine* cl)
 {
   if (MODE_SRC)
     search_off(cl);
@@ -931,7 +931,7 @@ clear_selection(GtkCompletionLine* cl)
 static gboolean
 on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
 {
-  static gint tt_id = -1;
+  static guint timeout_id = 0;
 
   switch (event->type) {
 
@@ -949,9 +949,9 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
       break;
 
      case GDK_KEY_Tab:
-      if (tt_id != -1) {
-        gtk_timeout_remove(tt_id);
-        tt_id = -1;
+      if (timeout_id != 0) {
+        g_source_remove(timeout_id);
+        timeout_id = 0;
       }
       tab_pressed(cl);
       STOP_PRESS;
@@ -1132,13 +1132,14 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
           search_off(cl);
       }
       if (cl->tabtimeout != 0) {
-        if (tt_id != -1) {
-          gtk_timeout_remove(tt_id);
-          tt_id = -1;
+        if (timeout_id != 0) {
+          g_source_remove(timeout_id);
+          timeout_id = 0;
         }
-        if (::isprint(*event->string))
-          tt_id = gtk_timeout_add(cl->tabtimeout,
-                                  GtkFunction(tab_pressed), cl);
+        if (::isprint(*event->string)) {
+          timeout_id = g_timeout_add(cl->tabtimeout,
+                                  GSourceFunc(tab_pressed), cl);
+        }
       }
       break;
     }

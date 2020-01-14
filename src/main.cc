@@ -53,17 +53,17 @@ static guint g_search_off_timeout_id = 0;
 static void remove_search_off_timeout()
 {
   if (g_search_off_timeout_id) {
-    gtk_timeout_remove(g_search_off_timeout_id);
+    g_source_remove(g_search_off_timeout_id);
     g_search_off_timeout_id = 0;
   }
 }
 
-static void add_search_off_timeout(guint32 timeout, struct gigi *g, GtkFunction func = 0)
+static void add_search_off_timeout(guint32 timeout, struct gigi *g, GSourceFunc func = 0)
 {
   remove_search_off_timeout();
   if (!func)
-    func = GtkFunction(search_off_timeout);
-  g_search_off_timeout_id = gtk_timeout_add(timeout, func, g);
+    func = GSourceFunc(search_off_timeout);
+  g_search_off_timeout_id = g_timeout_add(timeout, func, g);
 }
 
 /// END: TIMEOUT MANAGEMENT
@@ -152,7 +152,7 @@ on_ext_handler(GtkCompletionLine *cl, const char* ext, struct gigi* g)
       str += cmd.substr(0, pos);
     gtk_label_set_text(GTK_LABEL(g->w2), str.c_str());
     gtk_widget_show(g->w2);
-    // gtk_timeout_add(1000, GtkFunction(search_off_timeout), g);
+    // gtk_timeout_add(1000, GSourceFunc(search_off_timeout), g);
   } else {
     search_off_timeout(g);
   }
@@ -263,7 +263,7 @@ on_search_not_found(GtkCompletionLine *cl, struct gigi *g)
 {
   gtk_label_set_text(GTK_LABEL(g->w1), "Not Found!");
   gtk_widget_set_style(g->w2, style_notfound(g->w2));
-  add_search_off_timeout(1000, g, GtkFunction(search_fail_timeout));
+  add_search_off_timeout(1000, g, GSourceFunc(search_fail_timeout));
 }
 
 static bool
