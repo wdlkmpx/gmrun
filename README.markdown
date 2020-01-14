@@ -1,24 +1,6 @@
-gmrun 0.9.4w                  http://students.infoiasi.ro/~mishoo/site/gmrun.epl
-------------                ---------------------------------------------------
-
-            Short GtkEntry for file autocompletion + main.cc that does the
-            needed stuff for running programs.  This is intended as a
-            replacement to grun or gnome-run, which (sorry) sucks.  The idea
-            comes from the KDE Window Manager (ALT-F2 in KDE).  Though, GNOME
-            is better :)
-
-
-Copyright (c) 2000-2003 Mihai Bazon
-Author: Mihai Bazon <mishoo@infoiasi.ro>.
-
-send postcards to:
-
-     Mihai Bazon,
-     str. Republicii, nr. 350, sc. E, ap. 9, cod 6500 VASLUI - VASLUI
-     Romania
+Copyright (c) 2000-2003 Mihai Bazon <mishoo@infoiasi.ro>
 
 This program falls under the GNU General Public License version 2 or above.
-
 
 Features
 ---------
@@ -63,40 +45,13 @@ Features
 Requirements
 -------------
 
-    * A good C++ compiler (that is, g++ 3.0 or later).  It did originally
-    compile with g++ 2.95, but not anymore ;-] -- though that's easy to fix.
-
-    * GTK-2.  gmrun upto and including 0.8.1 were for GTK-1.x series, version
-    0.9.0 requires GTK-2.
-
-
-For code critics
------------------
-
-    This program is written in 2 hours.  The code might seem a little weird,
-    but it works, and that's what I'm interested in.  Code completion is
-    written in C++, although GTK+ is written in standard C.  Should you think
-    this is a problem, feel free to rewrite the code in C (it could be at
-    least 4 times bigger).
-
-    It uses some static data (I know, I'm a too lasy programmer to think about
-    something better); this means that if you're having *two or more*
-    GtkCompletionLine-s in a program, you're looking for trouble.  The static
-    data will be *shared* between them, and completion might not work
-    correctly.  However, I don't know for sure, and I'm not going to test
-    this.
-
-    Having all that said, you should know that I'm not actually a bad
-    programmer ;-] The problem being too simple for huge code complications, I
-    preferred the easy way of doing different kind of things.  It works quite
-    fine, so "don't expect tons of C code for completion" (quoted from some
-    sources in mini-commander applet of GNOME).
-
+    * A C++ compiler
+    * GTK-2
 
 Compilation, installation
 --------------------------
 
-    Use the configure script:
+    Use the configure script (run ./autogen.sh if ./configure is missing):
 
         $ ./configure
         $ make
@@ -167,42 +122,3 @@ Tips and tricks (hope that doesn't sound MS-ish...)
    entered text are matching, but you can reverse the search order using
    CTRL-R / CTRL-S.  Very flexible approach.
 
-
-Bugs
------
-
-    * It gets pretty slow...  Maybe I should consider writting it in ANSI-C,
-      but.... maybe not.
-
-    * Writting this README took me more time than writting the program.
-
-    * As I mentioned before, the code is written in C++, although GTK+ is a
-      C library.  This is not actually a bug; I like C++ because programs
-      become clearer and easier to maintain, not to mention the source file
-      size is smaller.  So, if anyone cares to port this to standard C, feel
-      free to do it, but I fear the code should be rewritten (almost) from
-      scratch.
-
-    * Documentation is inexistent (except this file) (however, it would be
-      quite useless).
-
-    Should you have any problems mail me a detailed description; please put
-    the text "ignore_me" in the subject line, for easy message filtering. :)
-    (just kidding...  I would gladely help if I can).
-
-    * Actually I worked more than 2 hours.  Anyway, the completion code took
-      about 2-3 h to design and implement.
-
-
-Disclaimer
------------
-
-    * The Short Way:
-        NO WARRANTIES OF ANY KIND.  USE IT AT YOUR OWN RISK.
-
-    * The Right Way:
-        Please read the GNU General Public License.  This program falls under
-        its terms.
-
-
-                       (: END OF TERMS AND CONDITIONS :)
