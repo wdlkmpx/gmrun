@@ -938,15 +938,15 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
 
     switch (event->keyval) {
 
-     case GDK_Control_R:
-     case GDK_Control_L:
-     case GDK_Shift_R:
-     case GDK_Shift_L:
-     case GDK_Alt_R:
-     case GDK_Alt_L:
+     case GDK_KEY_Control_R:
+     case GDK_KEY_Control_L:
+     case GDK_KEY_Shift_R:
+     case GDK_KEY_Shift_L:
+     case GDK_KEY_Alt_R:
+     case GDK_KEY_Alt_L:
       break;
 
-     case GDK_Tab:
+     case GDK_KEY_Tab:
       if (tt_id != -1) {
         gtk_timeout_remove(tt_id);
         tt_id = -1;
@@ -955,7 +955,7 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
       STOP_PRESS;
       return TRUE;
 
-     case GDK_Up:
+     case GDK_KEY_Up:
       if (cl->win_compl != NULL) {
         int &item = cl->list_compl_items_where;
         item--;
@@ -973,7 +973,7 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
       STOP_PRESS;
       return TRUE;
 
-     case GDK_space:
+     case GDK_KEY_space:
      {
        cl->first_key = 0;
        bool search = MODE_SRC;
@@ -989,7 +989,7 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
      }
      return FALSE;
 
-     case GDK_Down:
+     case GDK_KEY_Down:
       if (cl->win_compl != NULL) {
         int &item = cl->list_compl_items_where;
         item++;
@@ -1007,7 +1007,7 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
       STOP_PRESS;
       return TRUE;
 
-     case GDK_Return:
+     case GDK_KEY_Return:
       if (cl->win_compl != NULL) {
         gtk_widget_destroy(cl->win_compl);
         cl->win_compl = NULL;
@@ -1020,7 +1020,7 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
       STOP_PRESS;
       return TRUE;
 
-     case GDK_exclam:
+     case GDK_KEY_exclam:
       if (!MODE_BEG) {
         if (!MODE_SRC)
           gtk_editable_delete_selection(GTK_EDITABLE(cl));
@@ -1034,8 +1034,8 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
         return true;
       } else goto ordinary;
 
-     case GDK_R:
-     case GDK_r:
+     case GDK_KEY_R:
+     case GDK_KEY_r:
       if (event->state & GDK_CONTROL_MASK) {
         if (MODE_SRC) {
           search_back_history(cl, true, MODE_BEG);
@@ -1049,8 +1049,8 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
         return TRUE;
       } else goto ordinary;
 
-     case GDK_S:
-     case GDK_s:
+     case GDK_KEY_S:
+     case GDK_KEY_s:
       if (event->state & GDK_CONTROL_MASK) {
         if (MODE_SRC) {
           search_forward_history(cl, true, MODE_BEG);
@@ -1064,7 +1064,7 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
         return TRUE;
       } else goto ordinary;
 
-     case GDK_BackSpace:
+     case GDK_KEY_BackSpace:
       if (MODE_SRC) {
         if (!cl->hist_word->empty()) {
           cl->hist_word->erase(cl->hist_word->length() - 1);
@@ -1075,12 +1075,12 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
       }
       return FALSE;
 
-     case GDK_Home:
-     case GDK_End:
+     case GDK_KEY_Home:
+     case GDK_KEY_End:
       clear_selection(cl);
       goto ordinary;
 
-     case GDK_Escape:
+     case GDK_KEY_Escape:
       if (MODE_SRC) {
         search_off(cl);
       } else if (cl->win_compl != NULL) {
@@ -1093,8 +1093,8 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
       STOP_PRESS;
       return TRUE;
 
-     case GDK_G:
-     case GDK_g:
+     case GDK_KEY_G:
+     case GDK_KEY_g:
       if (event->state & GDK_CONTROL_MASK) {
         search_off(cl);
         if (MODE_SRC)
@@ -1102,8 +1102,8 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
         return TRUE;
       } else goto ordinary;
 
-     case GDK_E:
-     case GDK_e:
+     case GDK_KEY_E:
+     case GDK_KEY_e:
       if (event->state & GDK_CONTROL_MASK) {
         search_off(cl);
         if (MODE_SRC)
