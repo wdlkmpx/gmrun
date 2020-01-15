@@ -71,6 +71,8 @@ static void gtk_completion_line_init(GtkCompletionLine *object);
 
 static gboolean
 on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data);
+static gboolean
+on_scroll(GtkCompletionLine *cl, GdkEventScroll *event, gpointer data);
 
 /* get_type */
 GType gtk_completion_line_get_type(void)
@@ -218,6 +220,7 @@ gtk_completion_line_class_init(GtkCompletionLineClass *klass)
   klass->search_not_found = NULL;
   klass->ext_handler = NULL;
   klass->cancel = NULL;
+
 }
 
 /* init */
@@ -235,11 +238,16 @@ gtk_completion_line_init(GtkCompletionLine *object)
   object->tabtimeout = 0;
   object->show_dot_files = 0;
 
+  // required for gtk3+
+  gtk_widget_add_events(GTK_WIDGET(object), GDK_SCROLL_MASK);
+
   on_key_press_handler =
     g_signal_connect(GTK_WIDGET(object), "key_press_event",
                        G_CALLBACK(on_key_press), NULL);
   g_signal_connect(GTK_WIDGET(object), "key_release_event",
                      G_CALLBACK(on_key_press), NULL);
+  g_signal_connect(GTK_WIDGET(object), "scroll-event",
+                     G_CALLBACK(on_scroll), NULL);
 
   object->hist = new HistoryFile();
 
@@ -937,6 +945,52 @@ clear_selection(GtkCompletionLine* cl)
 {
   int pos = gtk_editable_get_position(GTK_EDITABLE(cl));
   gtk_editable_select_region(GTK_EDITABLE(cl), pos, pos);
+}
+
+static gboolean
+on_scroll(GtkCompletionLine *cl, GdkEventScroll *event, gpointer data)
+{
+  // https://developer.gnome.org/gdk2/stable/gdk2-Event-Structures.html#GdkEventScroll
+  // https://developer.gnome.org/gdk3/stable/gdk3-Event-Structures.html#GdkEventScroll
+  if (event->type != GDK_SCROLL) {
+    return FALSE;
+  }
+  GdkScrollDirection direction;
+  direction = event->direction;
+  if (direction == GDK_SCROLL_UP) {
+    if (cl->win_compl != NULL) {
+      int &item = cl->list_compl_items_where;
+      item--;
+      if (item < 0) {
+        item = 0;
+      } else {
+        complete_from_list(cl);
+      }
+    } else {
+      up_history(cl);
+    }
+    if (MODE_SRC) {
+      search_off(cl);
+    }
+    return TRUE;
+  } else if (direction == GDK_SCROLL_DOWN) {
+    if (cl->win_compl != NULL) {
+      int &item = cl->list_compl_items_where;
+      item++;
+      if (item >= cl->list_compl_nr_rows) {
+        item = cl->list_compl_nr_rows - 1;
+      } else {
+        complete_from_list(cl);
+      }
+    } else {
+      down_history(cl);
+    }
+    if (MODE_SRC) {
+      search_off(cl);
+    }
+    return TRUE;
+  }
+  return FALSE;
 }
 
 static gboolean
