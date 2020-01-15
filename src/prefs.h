@@ -19,25 +19,25 @@
 
 class Prefs
 {
- public:
-  typedef std::map<ci_string, std::string> CONFIG;
-  typedef std::pair<ci_string, std::string> PAIR;
+	public:
+		typedef std::map<ci_string, std::string> CONFIG;
+		typedef std::pair<ci_string, std::string> PAIR;
 
- private:
-  CONFIG vals_;
-  CONFIG exts_;
+	private:
+		CONFIG vals_;
+		CONFIG exts_;
 
-  bool init(const std::string& file_name);
-  string process(const std::string& cmd) const;
+		bool init(const std::string& file_name);
+		string process(const std::string& cmd) const;
 
- public:
-  Prefs();
-  ~Prefs();
+	public:
+		Prefs();
+		~Prefs();
 
-  bool get_string(const std::string& key, std::string& val) const;
-  bool get_int(const std::string& key, int& val) const;
-  bool get_string_list(const std::string& ket, std::list<string>& val) const;
-  bool get_ext_handler(const std::string& ext, std::string& val) const;
+		bool get_string(const std::string& key, std::string& val) const;
+		bool get_int(const std::string& key, int& val) const;
+		bool get_string_list(const std::string& ket, std::list<string>& val) const;
+		bool get_ext_handler(const std::string& ext, std::string& val) const;
 };
 
 extern Prefs configuration;
