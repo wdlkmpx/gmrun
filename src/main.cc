@@ -416,6 +416,13 @@ int main(int argc, char **argv)
 
   dialog = gtk_dialog_new();
   gtk_widget_realize(dialog);
+
+  // this removes the title bar..
+  GdkWindow *gwindow = gtk_widget_get_window (GTK_WIDGET(dialog));
+  if (gwindow) {
+    gdk_window_set_decorations (gwindow, GDK_DECOR_BORDER);
+  }
+
   gtk_widget_set_name(dialog, "Msh_Run_Window");
   gtk_window_set_title(GTK_WINDOW(dialog), "Execute program feat. completion");
   // gtk_window_set_position(GTK_WINDOW(win), GTK_WIN_POS_CENTER);
