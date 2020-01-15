@@ -1,6 +1,4 @@
-Copyright (c) 2000-2003 Mihai Bazon <mishoo@infoiasi.ro>
-
-This program falls under the GNU General Public License version 2 or above.
+Copyright (c) 2000-2003 GPLv2+ Mihai Bazon <mishoo@infoiasi.ro>
 
 Features
 ---------
@@ -11,28 +9,25 @@ Features
       turns to emacs, type a SPACE, and write the file you want to open using
       completion).
 
-    * I added history capability (limited to 20 entries, change history.cc for
-      more, #define HIST_MAX_SIZE).  History is maintained in the file "
-      ~/.gmrun_history ".
-
-      CHANGED (since 0.5.3, I think..) -- new config file parameter: History.
-    
-    * CTRL-Enter runs the command in a terminal.  CTRL-Enter without any
-      command starts a new terminal.
-
-    * New configuration file: ~/.gmrunrc or /usr/local/share/gmrun/gmrunrc.
+    * Configuration file: ~/.gmrunrc or /etc/gmrunrc.
       Check one of them, configuration is very simple.  From that file you
       can change window position and width, history size, terminal, URL
       handlers, etc.
+
+    * Config file parameter: History.  History is maintained in the file "
+      ~/.gmrun_history ".
+
+    * CTRL-Enter runs the command in a terminal.  CTRL-Enter without any
+      command starts a new terminal.
 
     * You can use CTRL-R / CTRL-S to search through history, much like in bash
       or Emacs.  Also, pressing "!" as the first character enters some special
       search mode, finding those history entries that begin with the entered
       text.
 
-    * URL handlers (added in 0.6.0).  Nice feature, allowing you to enter
-      lines like "http://www.google.com" to start your favorite browser on
-      www.google.com.  The URL-s are configurable from the configuration
+    * URL handlers allowing you to enter lines like "http://www.google.com"
+      to start your favorite browser on www.google.com.
+      The URL-s are configurable from the configuration
       file, in a simple manner (I hope..).
 
     * Extension handlers (added in 0.8.0).  Basically you can run, for
@@ -53,27 +48,14 @@ Compilation, installation
 
     Use the configure script (run ./autogen.sh if ./configure is missing):
 
-        $ ./configure
+        $ ./configure --prefix=/usr
         $ make
         $ make install
 
-    After this the executable goes usually in /usr/local/bin, make sure this is
-    in your path.  Put this in your .sawmillrc:
+    Pass --enable-gtk3 to ./configure to build the gtk3 ui
 
-        (require 'sawmill-defaults)
-        (bind-keys global-keymap "S-C-M-RET" '(system "gmrun &"))
-
-    Note that if you're using sawfish you have other ways to customize your
-    keyboard, through the control panel.
-
-    For another window managers you gonna have to find a way to bind this
-    program to a key combination; otherwise it wouldn't be much help... (I
-    coded it exactly to get rid of the mouse-time-wasting-walking).
-    E.g. for IceWM (my favorite, at this time) you edit ~/.icewm/preferences
-    and add a line like:
-
-        KeySysRun="Alt+Ctrl+Shift+Enter"
-
+    Optionally you can configure your window manager to call gmrun
+    with WinKey + R or something.
 
 Tips and tricks (hope that doesn't sound MS-ish...)
 ----------------------------------------------------
