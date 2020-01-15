@@ -33,6 +33,7 @@ using namespace std;
 
 #include "gtkcompletionline.h"
 #include "prefs.h"
+#include "main.h"
 
 // defined in gtkcompletionline.cc
 int get_words(GtkCompletionLine *object, vector<string>& words);
@@ -68,48 +69,29 @@ static void add_search_off_timeout(guint32 timeout, struct gigi *g, GSourceFunc 
 
 /// END: TIMEOUT MANAGEMENT
 
-GtkStyle* style_normal(GtkWidget *w)
-{
-  static GtkStyle *style;
-
-  if (!style) {
-    style = gtk_style_copy(gtk_widget_get_style(w));
-    style->fg[GTK_STATE_NORMAL] = (GdkColor){0, 0x0000, 0x0000, 0x0000};
+// https://unix.stackexchange.com/questions/457584/gtk3-change-text-color-in-a-label-raspberry-pi
+static void set_info_text_color(GtkWidget *w, const char *text, int spec) {
+  char *markup = NULL;
+  switch (spec) {
+    case W_TEXT_STYLE_NORMAL: // black
+      markup = g_markup_printf_escaped ("<span foreground=\"black\">%s</span>", text);
+      break;
+    case W_TEXT_STYLE_NOTFOUND: // red
+      markup = g_markup_printf_escaped ("<span foreground=\"red\">%s</span>", text);
+      break;
+    case W_TEXT_STYLE_NOTUNIQUE: // blue
+      markup = g_markup_printf_escaped ("<span foreground=\"blue\">%s</span>", text);
+      break;
+    case W_TEXT_STYLE_UNIQUE: //green
+      markup = g_markup_printf_escaped ("<span foreground=\"green\">%s</span>", text);
+      break;
+    default:
+      markup = g_markup_printf_escaped ("<span foreground=\"black\">%s</span>", text);
   }
-  return style;
-}
-
-GtkStyle* style_notfound(GtkWidget *w)
-{
-  static GtkStyle *style;
-
-  if (!style) {
-    style = gtk_style_copy(gtk_widget_get_style(w));
-    style->fg[GTK_STATE_NORMAL] = (GdkColor){0, 0xFFFF, 0x0000, 0x0000};
+  if (markup) {
+    gtk_label_set_markup (GTK_LABEL (w), markup);
+    g_free(markup);
   }
-  return style;
-}
-
-GtkStyle* style_notunique(GtkWidget *w)
-{
-  static GtkStyle *style;
-
-  if (!style) {
-    style = gtk_style_copy(gtk_widget_get_style(w));
-    style->fg[GTK_STATE_NORMAL] = (GdkColor){0, 0x0000, 0x0000, 0xFFFF};
-  }
-  return style;
-}
-
-GtkStyle* style_unique(GtkWidget *w)
-{
-  static GtkStyle *style;
-
-  if (!style) {
-    style = gtk_style_copy(gtk_widget_get_style(w));
-    style->fg[GTK_STATE_NORMAL] = (GdkColor){0, 0x0000, 0xFFFF, 0x0000};
-  }
-  return style;
 }
 
 static void
@@ -129,8 +111,7 @@ run_the_command(const std::string& command, struct gigi* g)
 #ifdef DEBUG
     cerr << error << endl;
 #endif
-    gtk_label_set_text(GTK_LABEL(g->w1), error.c_str());
-    gtk_widget_set_style(g->w1, style_notfound(g->w1));
+    set_info_text_color(g->w1, error.c_str(), W_TEXT_STYLE_NOTFOUND);
     add_search_off_timeout(2000, g);
   }
 }
@@ -195,8 +176,7 @@ on_compline_runwithterm(GtkCompletionLine *cl, struct gigi* g)
 static gint
 search_off_timeout(struct gigi *g)
 {
-  gtk_label_set_text(GTK_LABEL(g->w1), "Run program:");
-  gtk_widget_set_style(g->w1, style_normal(g->w1));
+  set_info_text_color(g->w1, "Run program:", W_TEXT_STYLE_NORMAL);
   gtk_widget_hide(g->w2);
   return FALSE;
 }
@@ -204,24 +184,21 @@ search_off_timeout(struct gigi *g)
 static void
 on_compline_unique(GtkCompletionLine *cl, struct gigi *g)
 {
-  gtk_label_set_text(GTK_LABEL(g->w1), "unique");
-  gtk_widget_set_style(g->w1, style_unique(g->w1));
+  set_info_text_color(g->w1, "unique", W_TEXT_STYLE_UNIQUE);
   add_search_off_timeout(1000, g);
 }
 
 static void
 on_compline_notunique(GtkCompletionLine *cl, struct gigi *g)
 {
-  gtk_label_set_text(GTK_LABEL(g->w1), "not unique");
-  gtk_widget_set_style(g->w1, style_notunique(g->w1));
+  set_info_text_color(g->w1, "not unique", W_TEXT_STYLE_NOTUNIQUE);
   add_search_off_timeout(1000, g);
 }
 
 static void
 on_compline_incomplete(GtkCompletionLine *cl, struct gigi *g)
 {
-  gtk_label_set_text(GTK_LABEL(g->w1), "not found");
-  gtk_widget_set_style(g->w1, style_notfound(g->w1));
+  set_info_text_color(g->w1, "not found", W_TEXT_STYLE_NOTFOUND);
   add_search_off_timeout(1000, g);
 }
 
@@ -248,17 +225,14 @@ on_search_letter(GtkCompletionLine *cl, GtkWidget *label)
 static gint
 search_fail_timeout(struct gigi *g)
 {
-  gtk_label_set_text(GTK_LABEL(g->w1), "Search:");
-  gtk_widget_set_style(g->w2, style_notunique(g->w2));
-
+  set_info_text_color(g->w1, "Search:", W_TEXT_STYLE_NOTUNIQUE);
   return FALSE;
 }
 
 static void
 on_search_not_found(GtkCompletionLine *cl, struct gigi *g)
 {
-  gtk_label_set_text(GTK_LABEL(g->w1), "Not Found!");
-  gtk_widget_set_style(g->w2, style_notfound(g->w2));
+  set_info_text_color(g->w1, "Not Found!", W_TEXT_STYLE_NOTFOUND);
   add_search_off_timeout(1000, g, GSourceFunc(search_fail_timeout));
 }
 
@@ -310,10 +284,9 @@ url_check(GtkCompletionLine *cl, struct gigi *g)
       run_the_command(url_handler.c_str(), g);
       return true;
     } else {
-      gtk_label_set_text(GTK_LABEL(g->w1),
-                         (string("No URL handler for [") +
-                          url_type + "]").c_str());
-      gtk_widget_set_style(g->w1, style_notfound(g->w1));
+      set_info_text_color(g->w1,
+                         (string("No URL handler for [") + url_type + "]").c_str(),
+                         W_TEXT_STYLE_NOTFOUND);
       add_search_off_timeout(1000, g);
       return true;
     }

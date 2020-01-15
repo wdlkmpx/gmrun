@@ -9,5 +9,9 @@
  *      option, and provided that this copyright notice remains intact.
  *****************************************************************************/
 
-
-
+enum {
+   W_TEXT_STYLE_NORMAL,
+   W_TEXT_STYLE_NOTFOUND,
+   W_TEXT_STYLE_NOTUNIQUE,
+   W_TEXT_STYLE_UNIQUE,
+};
