@@ -388,7 +388,9 @@ int main(int argc, char **argv)
 
 	gtk_init(&argc, &argv);
 
+	GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	dialog = gtk_dialog_new();
+	gtk_window_set_transient_for( (GtkWindow*)dialog, (GtkWindow*)window );
 	gtk_widget_realize(dialog);
 
   // this removes the title bar..
