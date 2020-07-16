@@ -1,23 +1,146 @@
-2003-11-16  AV  <andreas99@users.sourceforge.net>
-	* configure.in: added support for libpopt
+============
+gmrun 0.9.5w
+============ changes since 0.9.4w:
 
-	* src/gtkcompletionline.cc: added UTF-8 support for input and output
+Henning Schild (2):
+      gtk: replace deprecated gtk_type_new and _unique
+      gtk: do not select any text to keep clipboard clean
 
-	* src/main.cc: added UTF-8 support for input and output and
-          added an option to place gmrun (-geometry)
+unknown (1):
+      Handle more than 256 characters in the history
 
-2002-06-05  EJ  <sonofkojak@users.sourceforge.net>
+wdlkmpx (3):
+      add .travis.yml
+      configure.ac: no need to check for glib
+      gmrun 0.9.5w
 
-	* src/history.cc (append): Previously, an item was not placed in
-	  the history when it was the last item. Now, if we find an entry,
-	  we move it to the end of the list.
 
-2002-06-05  EJ  <sonofkojak@users.sourceforge.net>
+============
+gmrun 0.9.4w
+============ changes since 0.9.2:
 
-	* acinclude.m4: Added stlport detection code. When using an old
-	  version of g++/stdc++ you can get this code to compile only with
-	  the stlport. gcc-2.9[56] don't have a definition for
-	  char_traits.
+Makoto Nokata (2):
+      Rewritten feature which places gmrun window on monitor
+      Updated default gmrun config
 
-	  
+Paweł Błaszczyk (2):
+      Fix for "undefined reference to symbol 'XQueryPointer'"
+      Use GtkDialog instead of GtkWindow.
+
+R. Tyler Ballance (1):
+      Correct a few compiler errors due to missing imports under gcc4
+
+R. Tyler Croy (7):
+      Remove generated config.h.in
+      Add simplistic git ignore file
+      Fix bug with running quoted commands in the terminal
+      Correct improper function prototype for my_alphasort.
+      Rename the readme for extra special GitHub consideration
+      Center the window on the screen with the mouse pointer
+      Add a README symlink for kicks
+
+wdlkmpx (15):
+      clean up/update build system
+      always use libc's system() function to run commands
+      configure.ac: remove unneded AM_PROG_AR
+      bump version to 0.9.3
+      use gtk_window_set_position()
+      remove commented out code
+      remove libpopt dep / --geometry param
+      remove gmrun.spec.in...
+      configure.ac: update AM_INIT_AUTOMAKE
+      update .gitignore
+      remove unused screen_contains_pointer()
+      add 'make-release' script
+      configure.ac: remove unused XQueryPointer stuff
+      simplify / use @sysconfdir@ for gmrunrc
+      bump version to 0.9.4w
+
+
+===========
+gmrun 0.9.2
+===========
+
+andreas99 (3):
+      - merged gtk-2 branch to main branch
+      - UTF-8 support - libpopt support
+      changes for 0.9.2
+
+mishoo (73):
+      Initial revision
+      These files are generated.
+      little bug fixed in gtkcompletionline.cc (the prev. version works with an older compiler)
+      Removed useless files
+      jump to new version
+      removed unconditional debug output.
+      added drop-down list (nice)
+      switch to new version (added drop-down list functionality)
+      *** empty log message ***
+      some nice changes - fixed bug, completion window is displayed even if we're not completing the last word.  Also, cursor now marks two words for completion, even if there's no space between.
+      some bugs fixes, support for CTRL-ENTER starts command in terminal.
+      new version
+      Added support for configuration file
+      fix compilation prob.
+      configure -- switch to new version gtkcompletionline -- much smoother completion.. select completed-text..                      etc, really better.. prefs -- added support for $(Variable) expansion main -- added 3 config options: Top, Left (opper-left corner)
+      End, Escape -- clear the selection
+      -- swithced to new version -- more intuitive tab completion (hit tab only once, and the list is shown) -- fixed bug in prefs (made it recursive, so can replace more than one variable on a line) -- ... and other nice things :) hopefully
+      fixed bug in gtkcompletionline.cc -- crashed when no completion found..
+      case-insensitive std::string-like class
+      *** empty log message ***
+      default configuration file
+      added support for default configuration file
+      switched to new version
+      revert to normal version (0.5.3-2 not good for building rpms..)
+      [main.cc] set widget names [history.cc] history size moved to config file (not hard coded) [gmrunrc] set history size in default config file
+      changed gdk_window_set_position to gtk_widget_set_uposition -- got rid of flicker.. :)
+      updated
+      *** empty log message ***
+      trying to add CTRL-R feature from bash...
+      updated code to support backward / forward searching through history using CTRL-R / CTRL-S as in bash / Emacs.
+      fixed bug in CTRL-R/S searching. added code for backspace in history search mode.
+      switched to new version (0.5.4)
+      search phrase gets nice selected :)
+      various bug fixes
+      bug fixing / improvement..
+      *** empty log message ***
+      rpm spec file
+      hmm...
+      added "!" to complete from history with the last command beginning with the entered text
+      cosmetic...
+      updated
+      new version
+      - bug fixes - nice window, no titlebar
+      fixed bug
+      added URL-handling ability (check the config file)
+      modified for URL-s also, added some small comments to make content clearer for user.
+      changed version
+      README -- improved documentation. configure -- hmm... this should be removed from CVS, but... later.
+      removed.  moved to gmrun.spec.in -- to be generated by configure.
+      generates gmrun.spec when configure is run
+      support for creating gmrun.spec
+      fixed bug
+      programs are now executed with exec*p
+      fixed bug
+      another bug fix... :)
+      changes related to generation of gmrun.spec
+      fixed some bugs; new features:
+      updated for new configuration parameters
+      updated for the new release
+      fixed bug
+      fixed bugs, new configuration parameter: ShowLast (1 / 0) to determine if gmrun should display the last history item as selected by default. (maybe some users don't like that...)
+      added nice frame around the completion window
+      *** empty log message ***
+      included some patches from Michal Politowski (thanks!);
+      bug fixes:   - file names containing white-space now (hopefully) behave correctly   - others, I don't remember
+      they're kind of old, but..
+      these are automatically generated, duh..
+      preparing for a new version
+      finally, I write news :)
+      new bugfix version
+      bugfixes: END/HOME (C-E/C-A) behavior is now much better, some code cleanup (mainly reindentation :)), removed some warnings, etc.  Major bug fixed is that previously (with 0.8) you could not edit a .doc file with soffice if you had .doc extension handler set as AbiWord :)
+      0.8.1 news
+      bug fixed (the "e"/"E" character doesn't clear selection)
+
+sonofkojak (1):
+      Added support for STLPort.
 
