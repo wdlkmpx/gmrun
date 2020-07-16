@@ -45,7 +45,7 @@ Requirements
 -------------
 
     * A C++ compiler
-    * GTK-2
+    * GTK-2 / 3
 
 Compilation, installation
 --------------------------
@@ -61,8 +61,8 @@ Compilation, installation
     Optionally you can configure your window manager to call gmrun
     with WinKey + R or something.
 
-Tips and tricks (hope that doesn't sound MS-ish...)
-----------------------------------------------------
+Tips and tricks
+---------------
 
 1. Everything that doesn't start with "/" or "~" gets completed from $PATH
    environment var.  More exactly, all files from $PATH directories are
