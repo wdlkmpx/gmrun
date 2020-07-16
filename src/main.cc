@@ -393,14 +393,12 @@ int main(int argc, char **argv)
 	gtk_window_set_transient_for( (GtkWindow*)dialog, (GtkWindow*)window );
 	gtk_widget_realize(dialog);
 
-  // this removes the title bar..
-	GdkWindow *win = gtk_widget_get_window (GTK_WIDGET(dialog));
-	if (win) {
-		gdk_window_set_decorations (win, GDK_DECOR_BORDER);
-	}
+	// this removes the title bar..
+	GdkWindow *gwin = gtk_widget_get_window (GTK_WIDGET(dialog));
+	gdk_window_set_decorations (gwin, GDK_DECOR_BORDER);
 
-	gtk_widget_set_name (GTK_WIDGET (win), "gmrun");
-	gtk_window_set_title (GTK_WINDOW(win), "A simple launcher with completion");
+	gtk_widget_set_name (GTK_WIDGET (dialog), "gmrun");
+	gtk_window_set_title (GTK_WINDOW(window), "A simple launcher with completion");
 
 	gtk_container_set_border_width(GTK_CONTAINER(dialog), 4);
 	g_signal_connect(GTK_WIDGET(dialog), "destroy",
