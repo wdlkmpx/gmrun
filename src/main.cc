@@ -394,14 +394,14 @@ int main(int argc, char **argv)
 	gtk_widget_realize(dialog);
 
   // this removes the title bar..
-	GdkWindow *gwindow = gtk_widget_get_window (GTK_WIDGET(dialog));
-	if (gwindow) {
-		gdk_window_set_decorations (gwindow, GDK_DECOR_BORDER);
+	GdkWindow *win = gtk_widget_get_window (GTK_WIDGET(dialog));
+	if (win) {
+		gdk_window_set_decorations (win, GDK_DECOR_BORDER);
 	}
 
-	gtk_widget_set_name(dialog, "Msh_Run_Window");
-	gtk_window_set_title(GTK_WINDOW(dialog), "Execute program feat. completion");
-	// gtk_window_set_position(GTK_WINDOW(win), GTK_WIN_POS_CENTER);
+	gtk_widget_set_name (GTK_WIDGET (win), "gmrun");
+	gtk_window_set_title (GTK_WINDOW(win), "A simple launcher with completion");
+
 	gtk_container_set_border_width(GTK_CONTAINER(dialog), 4);
 	g_signal_connect(GTK_WIDGET(dialog), "destroy",
 						G_CALLBACK(gtk_main_quit), NULL);
