@@ -479,7 +479,70 @@ int main(int argc, char **argv)
 	configuration.get_int("Top", prefs_top);
 	configuration.get_int("Left", prefs_left);
 
-	gtk_window_set_position(GTK_WINDOW(dialog), GTK_WIN_POS_CENTER_ALWAYS);
+	// --geometry / parse commandline options
+	char *geometry_str = NULL;
+	GError *error = NULL;
+	GOptionContext *context;
+	static GOptionEntry entries[] =
+	{
+		{ "geometry", 'g', 0, G_OPTION_ARG_STRING, &geometry_str, "This option specifies the initial size and location of the window.", NULL },
+		{ NULL }
+	};
+
+	context = g_option_context_new (NULL);
+	g_option_context_add_main_entries (context, entries, NULL);
+	g_option_context_add_group (context, gtk_get_option_group (TRUE));
+	if (!g_option_context_parse (context, &argc, &argv, &error))
+	{
+		if (geometry_str) {
+			g_free (geometry_str);
+		}
+		g_print ("option parsing failed: %s\n", error->message);
+		exit (1);
+	}
+	g_free (context);
+	g_free (error);
+	// --
+
+	if (!geometry_str) {
+		gtk_window_set_position (GTK_WINDOW(dialog), GTK_WIN_POS_CENTER_ALWAYS);
+	} else {
+		// --geometry WxH+X+Y
+		// width x height + posX + posY
+		gint64 width, height, posX, posY;
+		char *Wstr, *Hstr, *Xstr, *Ystr;
+		Wstr = Hstr = Xstr = Ystr = NULL;
+
+		Xstr = strchr (geometry_str, '+');
+		if (Xstr) { // +posX+posY
+			*Xstr = 0;
+			Xstr++; // posX+posY
+			Ystr = strchr (Xstr, '+');
+			if (Ystr) { // +posY
+				*Ystr = 0;
+				Ystr++; // posY
+			}
+		}
+		if (Xstr && Ystr && *Xstr && *Ystr) {
+			posX = strtoll (Xstr, NULL, 0);
+			posY = strtoll (Ystr, NULL, 0);
+			///fprintf (stderr, "x: %" G_GINT64_FORMAT "\ny: %" G_GINT64_FORMAT "\n", posX, posY);
+			gtk_window_move (GTK_WINDOW (dialog), posX, posY);
+		}
+
+		Hstr = strchr (geometry_str, 'x');
+		if (Hstr) { // WxH
+			*Hstr = 0;
+			Hstr++; // H
+			Wstr = geometry_str;
+			width  = strtoll (Wstr, NULL, 0);
+			height = strtoll (Hstr, NULL, 0);
+			///fprintf (stderr, "w: %" G_GINT64_FORMAT "\nh: %" G_GINT64_FORMAT "\n", width, height);
+			gtk_window_set_default_size (GTK_WINDOW (dialog), width, height);
+		}
+
+		g_free (geometry_str);
+	}
 
 	gtk_widget_show(dialog);
 
@@ -488,7 +551,3 @@ int main(int argc, char **argv)
 	gtk_main();
 }
 
-// Local Variables: ***
-// mode: c++ ***
-// c-basic-offset: 2 ***
-// End: ***
