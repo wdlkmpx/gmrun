@@ -476,14 +476,8 @@ int main(int argc, char **argv)
 
 	int prefs_top = 80;
 	int prefs_left = 100;
-	int prefs_centred_by_width = 0;
-	int prefs_centred_by_height = 0;
-	int prefs_use_active_monitor = 0;
 	configuration.get_int("Top", prefs_top);
 	configuration.get_int("Left", prefs_left);
-	configuration.get_int("CenteredByWidth", prefs_centred_by_width);
-	configuration.get_int("CenteredByHeight", prefs_centred_by_height);
-	configuration.get_int("UseActiveMonitor", prefs_use_active_monitor);
 
 	gtk_window_set_position(GTK_WINDOW(dialog), GTK_WIN_POS_CENTER_ALWAYS);
 

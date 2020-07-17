@@ -1,6 +1,4 @@
 # gmrun configuration file
-# gmrun is (C) Mihai Bazon, <mishoo@infoiasi.ro>
-# GPL v2.0 applies
 
 # Set terminal
 Terminal = xterm
@@ -11,11 +9,6 @@ AlwaysInTerm = ssh telnet ftp lynx mc vi vim pine centericq perldoc man
 Width = 400
 Top = 100
 Left = 200
-# Place window centered by the size of screen
-CenteredByWidth = 0
-CenteredByHeight = 0
-# Place window on active monitor
-UseActiveMonitor = 0
 
 # History size
 History = 256
