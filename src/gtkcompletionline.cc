@@ -501,8 +501,10 @@ static int generate_dirlist(const char *what)
 		dest += *p;
 		if (*p == '/') {
 			DIR* dir = opendir(dest.c_str());
-			if (!dir)
-				goto dirty;
+			if (!dir) {
+				free(str);
+				return GEN_CANT_COMPLETE;
+			}
 			closedir(dir);
 			filename = p;
 		}
@@ -535,10 +537,6 @@ static int generate_dirlist(const char *what)
 
 	free(str);
 	return GEN_COMPLETION_OK;
-
-dirty:
-	free(str);
-	return GEN_CANT_COMPLETE;
 }
 
 static int generate_completion_from_dirlist(GtkCompletionLine *object)
