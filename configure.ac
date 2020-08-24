@@ -3,8 +3,9 @@
 AC_INIT([gmrun], [0.9.5w])
 AM_CONFIG_HEADER([config.h])
 AM_INIT_AUTOMAKE([-Wall foreign])
-AC_CONFIG_MACRO_DIR([m4])
-AM_MAINTAINER_MODE
+AC_CONFIG_MACRO_DIRS([m4])
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
+m4_ifdef([AM_MAINTAINER_MODE], [AM_MAINTAINER_MODE])
 LT_INIT
 
 AC_ISC_POSIX
@@ -44,7 +45,7 @@ if test "x$enable_gtk3" = "xyes" ; then
   CFLAGS="$CFLAGS -DENABLE_GTK3"
   gtk_modules="gtk+-3.0 >= 3.0.0"
 else
-  gtk_modules="gtk+-2.0 >= 2.24.0"
+  gtk_modules="gtk+-2.0 >= 2.14.0"
 fi
 PKG_CHECK_MODULES(GTK, [$gtk_modules])
 AC_SUBST(GTK_CFLAGS)

@@ -4,6 +4,7 @@ compile
 config.guess
 config.h*
 config.log
+config.rpath
 config.status
 config.sub
 autom4te.cache
