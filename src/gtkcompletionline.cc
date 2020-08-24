@@ -11,7 +11,6 @@
 
 #include <gdk/gdkkeysyms.h>
 #include <gtk/gtk.h>
-#include "gtkcompat.h"
 
 #include <stddef.h>
 #include <stdio.h>

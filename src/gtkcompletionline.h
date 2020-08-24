@@ -15,6 +15,7 @@
 
 #include <string>
 #include <gtk/gtk.h>
+#include "gtkcompat.h"
 
 #include "history.h"
 

@@ -404,7 +404,7 @@ int main(int argc, char **argv)
 	g_signal_connect(GTK_WIDGET(dialog), "destroy",
 						G_CALLBACK(gtk_main_quit), NULL);
 
-	GtkWidget *hhbox = gtk_hbox_new(FALSE, 2);
+	GtkWidget *hhbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 2);
 	gtk_widget_show(hhbox);
 	gtk_box_pack_start(GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(dialog))), hhbox, FALSE, FALSE, 0);
 
