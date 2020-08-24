@@ -482,7 +482,7 @@ int main(int argc, char **argv)
 	// --geometry / parse commandline options
 	char *geometry_str = NULL;
 	GError *error = NULL;
-	GOptionContext *context;
+	GOptionContext *context = NULL;
 	static GOptionEntry entries[] =
 	{
 		{ "geometry", 'g', 0, G_OPTION_ARG_STRING, &geometry_str, "This option specifies the initial size and location of the window.", NULL },
@@ -494,14 +494,14 @@ int main(int argc, char **argv)
 	g_option_context_add_group (context, gtk_get_option_group (TRUE));
 	if (!g_option_context_parse (context, &argc, &argv, &error))
 	{
-		if (geometry_str) {
-			g_free (geometry_str);
-		}
 		g_print ("option parsing failed: %s\n", error->message);
+		if (context)      g_option_context_free (context);
+		if (error)        g_error_free (error);
+		if (geometry_str) g_free (geometry_str);
 		exit (1);
 	}
-	g_free (context);
-	g_free (error);
+	if (context) g_option_context_free (context);
+	if (error)   g_error_free (error);
 	// --
 
 	if (!geometry_str) {
