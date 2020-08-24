@@ -1,6 +1,10 @@
 /*
  * Copyright (C) 2020
  *
+ * gtkcompat, GTK2+ compatibility layer
+ * 
+ * 2020-08-23
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -106,6 +110,52 @@ gtk_paned_new (GtkOrientation orientation)
 	return NULL;
 }
 
+void
+gtk_widget_set_halign (GtkWidget *widget, GtkAlign align)
+{
+	GtkMisc * misc = GTK_MISC (widget);
+	gfloat xalign = 0.0;
+	switch (align)
+	{
+		case GTK_ALIGN_FILL:
+		case GTK_ALIGN_START:  xalign = 0.0; break;
+		case GTK_ALIGN_CENTER: xalign = 0.5; break;
+		case GTK_ALIGN_END:    xalign = 1.0; break;
+	}
+	if (xalign != misc->xalign)
+	{
+		g_object_freeze_notify (G_OBJECT (misc));
+		g_object_notify (G_OBJECT (misc), "xalign");
+		misc->xalign = xalign;
+		if (gtk_widget_is_drawable (widget))
+			gtk_widget_queue_draw (widget);
+		g_object_thaw_notify (G_OBJECT (misc));
+	}
+}
+
+void
+gtk_widget_set_valign (GtkWidget *widget, GtkAlign align)
+{
+	GtkMisc * misc = GTK_MISC (widget);
+	gfloat yalign = 0.0;
+	switch (align)
+	{
+		case GTK_ALIGN_FILL:
+		case GTK_ALIGN_START:  yalign = 0.0; break;
+		case GTK_ALIGN_CENTER: yalign = 0.5; break;
+		case GTK_ALIGN_END:    yalign = 1.0; break;
+	}
+	if (yalign != misc->yalign)
+	{
+		g_object_freeze_notify (G_OBJECT (misc));
+		g_object_notify (G_OBJECT (misc), "yalign");
+		misc->yalign = yalign;
+		if (gtk_widget_is_drawable (widget))
+			gtk_widget_queue_draw (widget);
+		g_object_thaw_notify (G_OBJECT (misc));
+	}
+}
+
 #endif
 
 
@@ -113,7 +163,7 @@ gtk_paned_new (GtkOrientation orientation)
 /*                   GTK < 2.22                       */
 /* ================================================== */
 
-#if ! (GTK_CHECK_VERSION (2, 22, 0))
+#if ! GTK_CHECK_VERSION (2, 22, 0)
 
 gboolean gtk_window_has_group (GtkWindow *window)
 {
@@ -130,11 +180,18 @@ GtkWidget * gtk_window_group_get_current_grab (GtkWindowGroup *window_group)
 
 #endif
 
+
 /* ================================================== */
 /*                   GTK < 2.20                       */
 /* ================================================== */
 
-#if ! (GTK_CHECK_VERSION (2, 20, 0))
+#if ! GTK_CHECK_VERSION (2, 20, 0)
+
+void
+gtk_widget_get_requisition (GtkWidget *widget, GtkRequisition *requisition)
+{
+	*requisition = widget->requisition;
+}
 
 void
 gtk_widget_set_mapped (GtkWidget *widget, gboolean mapped)
@@ -154,12 +211,6 @@ gtk_widget_set_realized (GtkWidget *widget, gboolean realized)
 		GTK_OBJECT_FLAGS (widget) &= ~(GTK_REALIZED);
 }
 
-GtkWindowType
-gtk_window_get_window_type (GtkWindow *window)
-{
-	return (window->type);
-}
-
 #endif
 
 
@@ -167,7 +218,7 @@ gtk_window_get_window_type (GtkWindow *window)
 /*                   GTK < 2.18                       */
 /* ================================================== */
 
-#if ! (GTK_CHECK_VERSION (2, 18, 0))
+#if ! GTK_CHECK_VERSION (2, 18, 0)
 
 void gtk_widget_get_allocation (GtkWidget *widget, GtkAllocation *allocation)
 {
@@ -216,30 +267,5 @@ void gtk_widget_set_visible (GtkWidget *widget, gboolean visible)
 	else
 		gtk_widget_hide (widget);
 }
-#endif
-
-
-/* ================================================== */
-/*                   GTK < 2.14                      */
-/* ================================================== */
-
-#if ! (GTK_CHECK_VERSION (2, 14, 0))
-
-GtkWidget * gtk_dialog_get_action_area (GtkDialog *dialog) {
-	return (dialog->action_area);
-}
-
-GtkWidget * gtk_dialog_get_content_area (GtkDialog *dialog) {
-	return (dialog->vbox);
-}
-
-GdkWindow * gtk_widget_get_window (GtkWidget *widget) {
-	return (widget->window);
-}
-
-GtkWidget * gtk_window_get_default_widget (GtkWindow *window) {
-	return (window->default_widget);
-}
-
 #endif
 
