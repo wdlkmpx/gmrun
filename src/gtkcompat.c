@@ -3,7 +3,7 @@
  *
  * gtkcompat, GTK2+ compatibility layer
  * 
- * 2020-08-23
+ * 2020-08-24
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -112,7 +112,7 @@ gtk_paned_new (GtkOrientation orientation)
 
 void
 gtk_widget_set_halign (GtkWidget *widget, GtkAlign align)
-{
+{ // from gtk_misc_set_alignment ()
 	GtkMisc * misc = GTK_MISC (widget);
 	gfloat xalign = 0.0;
 	switch (align)
@@ -135,7 +135,7 @@ gtk_widget_set_halign (GtkWidget *widget, GtkAlign align)
 
 void
 gtk_widget_set_valign (GtkWidget *widget, GtkAlign align)
-{
+{ // from gtk_misc_set_alignment ()
 	GtkMisc * misc = GTK_MISC (widget);
 	gfloat yalign = 0.0;
 	switch (align)
@@ -152,6 +152,52 @@ gtk_widget_set_valign (GtkWidget *widget, GtkAlign align)
 		misc->yalign = yalign;
 		if (gtk_widget_is_drawable (widget))
 			gtk_widget_queue_draw (widget);
+		g_object_thaw_notify (G_OBJECT (misc));
+	}
+}
+
+void
+gtk_widget_set_margin_left  (GtkWidget *widget, gint margin)
+{ // from gtk_misc_set_padding ()
+	// 3.12+: gtk_widget_set_margin_start
+	GtkRequisition *requisition;
+	int xpad = margin;
+	GtkMisc * misc = GTK_MISC (widget);
+	if (xpad < 0) xpad = 0;
+	if (xpad != misc->xpad)
+	{
+		g_object_freeze_notify (G_OBJECT (misc));
+		if (xpad != misc->xpad)
+			g_object_notify (G_OBJECT (misc), "xpad");
+		requisition = &(GTK_WIDGET (misc)->requisition);
+		requisition->width -= misc->xpad * 2;
+		misc->xpad = xpad;
+		requisition->width += misc->xpad * 2;
+		if (GTK_WIDGET_DRAWABLE (misc))
+			gtk_widget_queue_resize (GTK_WIDGET (misc));
+		g_object_thaw_notify (G_OBJECT (misc));
+	}
+}
+
+void
+gtk_widget_set_margin_right (GtkWidget *widget, gint margin)
+{ // from gtk_misc_set_padding ()
+	// 3.12+: gtk_widget_set_margin_end
+	GtkRequisition *requisition;
+	int ypad = margin;
+	GtkMisc * misc = GTK_MISC (widget);
+	if (ypad < 0) ypad = 0;
+	if (ypad != misc->ypad)
+	{
+		g_object_freeze_notify (G_OBJECT (misc));
+		if (ypad != misc->ypad)
+			g_object_notify (G_OBJECT (misc), "ypad");
+		requisition = &(GTK_WIDGET (misc)->requisition);
+		requisition->height -= misc->ypad * 2;
+		misc->ypad = ypad;
+		requisition->height += misc->ypad * 2;
+		if (GTK_WIDGET_DRAWABLE (misc))
+			gtk_widget_queue_resize (GTK_WIDGET (misc));
 		g_object_thaw_notify (G_OBJECT (misc));
 	}
 }

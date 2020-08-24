@@ -100,6 +100,13 @@ extern "C"
 /*                       GTK                          */
 /* ================================================== */
 
+// GTK < 3.12
+#if ! GTK_CHECK_VERSION (3, 12, 0)
+#define gtk_widget_set_margin_start(widget,margin) gtk_widget_set_margin_left(widget,margin)
+#define gtk_widget_set_margin_end(widget,margin)   gtk_widget_set_margin_right(widget,margin)
+#endif
+
+
 // GTK < 3.0
 #if ! GTK_CHECK_VERSION (3, 0, 0)
 GtkWidget *gtk_box_new (GtkOrientation orientation, gint spacing) ;
@@ -120,6 +127,8 @@ typedef enum /* GtkAlign */
 } GtkAlign;
 void gtk_widget_set_halign (GtkWidget *widget, GtkAlign align);
 void gtk_widget_set_valign (GtkWidget *widget, GtkAlign align);
+void gtk_widget_set_margin_left  (GtkWidget *widget, gint margin);
+void gtk_widget_set_margin_right (GtkWidget *widget, gint margin);
 #endif
 
 
