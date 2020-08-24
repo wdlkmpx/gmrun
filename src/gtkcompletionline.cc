@@ -9,7 +9,6 @@
  *      option, and provided that this copyright notice remains intact.
  *****************************************************************************/
 
-
 #include <gdk/gdkkeysyms.h>
 #include <gtk/gtk.h>
 #include "gtkcompat.h"
@@ -403,7 +402,17 @@ static int select_executables_only(const struct dirent* dent)
 	return 0;
 }
 
-int my_alphasort(const struct dirent **a, const struct dirent **b) {
+#if defined(__GLIBC__) && __GLIBC_PREREQ(2, 10)
+int my_alphasort (const struct dirent **a, const struct dirent **b)
+#else
+int my_alphasort (const void *_a, const void *_b)
+#endif
+{
+#if defined(__GLIBC__) && __GLIBC__ == 2 && __GLIBC_MINOR__ < 10
+	dirent const * const *a = (dirent const * const *)_a;
+	dirent const * const *b = (dirent const * const *)_b;
+#endif
+
 	const char* s1 = (*a)->d_name;
 	const char* s2 = (*b)->d_name;
 
