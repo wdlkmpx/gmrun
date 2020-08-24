@@ -176,6 +176,7 @@ static gint search_off_timeout(struct gigi *g)
 {
 	set_info_text_color(g->w1, "Run program:", W_TEXT_STYLE_NORMAL);
 	gtk_widget_hide(g->w2);
+	g_search_off_timeout_id = 0;
 	return FALSE;
 }
 
