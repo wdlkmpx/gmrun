@@ -741,12 +741,7 @@ static int complete_line(GtkCompletionLine *object)
 
 				gtk_container_set_border_width(GTK_CONTAINER(object->tree_compl), 2);
 				gtk_container_add(GTK_CONTAINER (scroll), object->tree_compl);
-
-				gtk_tree_model_get_iter_first(object->sort_list_compl, &(object->list_compl_it));
-
-				gtk_widget_show(object->tree_compl);
-
-				gtk_container_add(GTK_CONTAINER(object->win_compl), scroll);
+				gtk_container_add(GTK_CONTAINER (object->win_compl), scroll);
 
 				GdkWindow *top = gtk_widget_get_parent_window(GTK_WIDGET(object));
 				int x, y;
@@ -761,13 +756,12 @@ static int complete_line(GtkCompletionLine *object)
 				gtk_window_move(GTK_WINDOW(object->win_compl), x, y);
 				gtk_widget_show_all(object->win_compl);
 
-				GtkTreePath *path = gtk_tree_model_get_path(object->sort_list_compl, &(object->list_compl_it));
-				gtk_tree_view_set_cursor(GTK_TREE_VIEW(object->tree_compl), path, NULL, FALSE);
-				gtk_tree_path_free(path);
- 
 				gtk_tree_view_columns_autosize(GTK_TREE_VIEW(object->tree_compl));
 				gtk_widget_get_allocation(object->tree_compl, &al);
 				gtk_widget_set_size_request(scroll, al.width + 40, 150);
+
+				gtk_tree_model_get_iter_first (object->sort_list_compl, &(object->list_compl_it));
+				gtk_tree_selection_select_iter (selection, &(object->list_compl_it));
 
 				g_signal_handler_unblock(G_OBJECT(object->tree_compl),
 									on_cursor_changed_handler);
