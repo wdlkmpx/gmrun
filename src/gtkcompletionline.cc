@@ -698,7 +698,7 @@ static int complete_line(GtkCompletionLine *object)
 				/*gtk_window_set_position(GTK_WINDOW(object->win_compl),
 					GTK_WIN_POS_MOUSE);*/
 
-				object->list_compl = gtk_list_store_new (2, G_TYPE_POINTER, G_TYPE_INT);
+				object->list_compl = gtk_list_store_new (1, G_TYPE_POINTER);
 				object->sort_list_compl = gtk_tree_model_sort_new_with_model(GTK_TREE_MODEL(object->list_compl));
 				object->tree_compl = gtk_tree_view_new_with_model(GTK_TREE_MODEL(object->sort_list_compl));
 				g_object_unref(object->list_compl);
@@ -710,10 +710,6 @@ static int complete_line(GtkCompletionLine *object)
 				renderer = gtk_cell_renderer_text_new();
 				gtk_tree_view_column_pack_start(col, renderer, TRUE);
 				gtk_tree_view_column_set_cell_data_func(col, renderer, cell_data_func, NULL, NULL);
- 
-				col = gtk_tree_view_column_new();
-				gtk_tree_view_append_column(GTK_TREE_VIEW(object->tree_compl), col);
-				gtk_tree_view_column_set_visible(col, FALSE);
  
 				GtkTreeSelection *selection;
 				selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(object->tree_compl));
@@ -731,7 +727,7 @@ static int complete_line(GtkCompletionLine *object)
 				while (p) {
 					GtkTreeIter it;
 					gtk_list_store_append(object->list_compl, &it);
-					gtk_list_store_set (object->list_compl, &it, 0, p, 1, object->list_compl_nr_rows, -1);
+					gtk_list_store_set (object->list_compl, &it, 0, p, -1);
 					object->list_compl_nr_rows++;
 					p = g_list_next(p);
 				}
@@ -951,11 +947,12 @@ on_scroll(GtkCompletionLine *cl, GdkEventScroll *event, gpointer data)
 #if GTK_CHECK_VERSION(3, 0, 0)
 			valid = gtk_tree_model_iter_previous(cl->sort_list_compl, &(cl->list_compl_it));
 #else
-			int pos;
-			gtk_tree_model_get(cl->sort_list_compl, &(cl->list_compl_it), 1, &pos, -1);
-			if(pos!=0) pos--;
-			else       pos = cl->list_compl_nr_rows - 1;
-			valid = gtk_tree_model_iter_nth_child(cl->sort_list_compl, &(cl->list_compl_it), NULL, pos);
+			GtkTreePath * path = gtk_tree_model_get_path (cl->sort_list_compl, &(cl->list_compl_it));
+			valid = gtk_tree_path_prev (path);
+			if (valid) {
+				gtk_tree_model_get_iter (cl->sort_list_compl, &(cl->list_compl_it), path);
+			}
+			gtk_tree_path_free (path);
 #endif
 			if(!valid) {
 				gtk_tree_model_iter_nth_child(cl->sort_list_compl, &(cl->list_compl_it), NULL, cl->list_compl_nr_rows - 1);
@@ -1016,11 +1013,12 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
 #if GTK_CHECK_VERSION(3, 0, 0)
 				valid = gtk_tree_model_iter_previous(cl->sort_list_compl, &(cl->list_compl_it));
 #else
-				int pos;
-				gtk_tree_model_get(cl->sort_list_compl, &(cl->list_compl_it), 1, &pos, -1);
-				if(pos!=0) pos--;
-				else       pos = cl->list_compl_nr_rows - 1;
-				valid = gtk_tree_model_iter_nth_child(cl->sort_list_compl, &(cl->list_compl_it), NULL, pos);
+				GtkTreePath * path = gtk_tree_model_get_path (cl->sort_list_compl, &(cl->list_compl_it));
+				valid = gtk_tree_path_prev (path);
+				if (valid) {
+					gtk_tree_model_get_iter (cl->sort_list_compl, &(cl->list_compl_it), path);
+				}
+				gtk_tree_path_free (path);
 #endif
 				if(!valid) {
 					gtk_tree_model_iter_nth_child(cl->sort_list_compl, &(cl->list_compl_it), NULL, cl->list_compl_nr_rows - 1);
