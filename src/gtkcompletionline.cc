@@ -693,10 +693,20 @@ static int complete_line(GtkCompletionLine *object)
 
 			if (object->win_compl == NULL) {
 				object->win_compl = gtk_window_new(GTK_WINDOW_POPUP);
-				gtk_widget_set_name(object->win_compl, "Msh_Run_Window");
+				gtk_widget_set_name(object->win_compl, "gmrun_completion_window");
 
-				/*gtk_window_set_position(GTK_WINDOW(object->win_compl),
-					GTK_WIN_POS_MOUSE);*/
+				/* attemp to silence warning: Gtk-WARNING **: Allocating size to Window ...
+				https://git.eclipse.org/c/platform/eclipse.platform.swt.git/commit/?id=61a598af4dfda586b27d87537bb2d015bd614ba1
+				https://sources.debian.org/src/clutter-gtk/1.8.2-2/clutter-gtk/gtk-clutter-actor.c/?hl=325#L325
+				https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=867427
+				*/
+#if GTK_MAJOR_VERSION == 3 && GTK_MINOR_VERSION >= 20 && GTK_MINOR_VERSION < 24
+				// not a proper fix
+				GtkRequisition r, r2;
+				gtk_widget_get_preferred_size (GTK_WIDGET (object->win_compl), &r, &r2);
+				GtkAllocation wal = { 0, 0, r2.width, r.height };
+				gtk_widget_size_allocate (GTK_WIDGET (object->win_compl), &wal);
+#endif
 
 				object->list_compl = gtk_list_store_new (1, G_TYPE_POINTER);
 				object->sort_list_compl = gtk_tree_model_sort_new_with_model(GTK_TREE_MODEL(object->list_compl));
@@ -746,7 +756,6 @@ static int complete_line(GtkCompletionLine *object)
 				GdkWindow *top = gtk_widget_get_parent_window(GTK_WIDGET(object));
 				int x, y;
 				gdk_window_get_position(top, &x, &y);
-				// https://developer.gnome.org/gdk2/stable/gdk2-Points-Rectangles-and-Regions.html#GdkRectangle
 				GtkAllocation al;
 				gtk_widget_get_allocation( GTK_WIDGET(object), &al );
 				x += al.x;
