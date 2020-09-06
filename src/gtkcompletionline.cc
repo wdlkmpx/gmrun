@@ -733,12 +733,10 @@ static int complete_line(GtkCompletionLine *object)
 								on_cursor_changed_handler);
 
 				GList *p = ls;
-				object->list_compl_nr_rows = 0;
 				while (p) {
 					GtkTreeIter it;
 					gtk_list_store_append(object->list_compl, &it);
 					gtk_list_store_set (object->list_compl, &it, 0, p, -1);
-					object->list_compl_nr_rows++;
 					p = g_list_next(p);
 				}
 
@@ -958,7 +956,8 @@ on_scroll(GtkCompletionLine *cl, GdkEventScroll *event, gpointer data)
 			gtk_tree_path_free (path);
 #endif
 			if(!valid) {
-				gtk_tree_model_iter_nth_child(cl->sort_list_compl, &(cl->list_compl_it), NULL, cl->list_compl_nr_rows - 1);
+				int rowCount = gtk_tree_model_iter_n_children (cl->sort_list_compl, NULL);
+				gtk_tree_model_iter_nth_child(cl->sort_list_compl, &(cl->list_compl_it), NULL, rowCount - 1);
 			}
 			complete_from_list(cl);
 		} else {
@@ -1024,7 +1023,8 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
 				gtk_tree_path_free (path);
 #endif
 				if(!valid) {
-					gtk_tree_model_iter_nth_child(cl->sort_list_compl, &(cl->list_compl_it), NULL, cl->list_compl_nr_rows - 1);
+					int rowCount = gtk_tree_model_iter_n_children (cl->sort_list_compl, NULL);
+					gtk_tree_model_iter_nth_child(cl->sort_list_compl, &(cl->list_compl_it), NULL, rowCount - 1);
 				}
 				complete_from_list(cl);
 			} else {

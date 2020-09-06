@@ -47,7 +47,6 @@ extern "C++" {
 		GtkTreeModel *sort_list_compl;
 		GtkWidget *tree_compl;
 		GtkTreeIter list_compl_it;
-		int list_compl_nr_rows; /* completion list size */
 		int pos_in_text; /* Cursor position in main "line" */
  
 		GList *cmpl; /* Completion list */
