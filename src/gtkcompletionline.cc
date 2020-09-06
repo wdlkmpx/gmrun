@@ -239,13 +239,11 @@ static void gtk_completion_line_init(GtkCompletionLine *object)
 	// required for gtk3+
 	gtk_widget_add_events(GTK_WIDGET(object), GDK_SCROLL_MASK);
 
-	on_key_press_handler =
-		g_signal_connect(GTK_WIDGET(object), "key_press_event",
-						G_CALLBACK(on_key_press), NULL);
-	g_signal_connect(GTK_WIDGET(object), "key_release_event",
-						G_CALLBACK(on_key_press), NULL);
+	on_key_press_handler = g_signal_connect(GTK_WIDGET(object),
+	                                        "key_press_event",
+	                                        G_CALLBACK(on_key_press), NULL);
 	g_signal_connect(GTK_WIDGET(object), "scroll-event",
-						G_CALLBACK(on_scroll), NULL);
+	                 G_CALLBACK(on_scroll), NULL);
 
 	object->hist = new HistoryFile();
 
