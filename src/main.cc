@@ -540,6 +540,18 @@ int main(int argc, char **argv)
 
 		g_free (geometry_str);
 	}
+	// end of --geometry
+
+	// window icon
+	GtkIconTheme * theme = gtk_icon_theme_get_default ();
+	GdkPixbuf * icon = gtk_icon_theme_load_icon (theme, "system-run", 48, GTK_ICON_LOOKUP_USE_BUILTIN, &error);
+	if (error) {
+		g_object_set (dialog, "icon-name", "gtk-execute", NULL);
+		g_error_free (error);
+	} else {
+		gtk_window_set_icon (GTK_WINDOW (dialog), icon);
+		g_object_unref (icon);
+	}
 
 	gtk_widget_show_all (dialog);
 
