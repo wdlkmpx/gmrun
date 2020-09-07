@@ -70,24 +70,17 @@ static void add_search_off_timeout(guint32 timeout, struct gigi *g, GSourceFunc 
 /// END: TIMEOUT MANAGEMENT
 
 // https://unix.stackexchange.com/questions/457584/gtk3-change-text-color-in-a-label-raspberry-pi
-static void set_info_text_color(GtkWidget *w, const char *text, int spec) {
+static void set_info_text_color (GtkWidget *w, const char *text, int spec)
+{
 	char *markup = NULL;
-	switch (spec) {
-	case W_TEXT_STYLE_NORMAL: // black
-		markup = g_markup_printf_escaped ("<span foreground=\"black\">%s</span>", text);
-		break;
-	case W_TEXT_STYLE_NOTFOUND: // red
-		markup = g_markup_printf_escaped ("<span foreground=\"red\">%s</span>", text);
-		break;
-	case W_TEXT_STYLE_NOTUNIQUE: // blue
-		markup = g_markup_printf_escaped ("<span foreground=\"blue\">%s</span>", text);
-		break;
-	case W_TEXT_STYLE_UNIQUE: //green
-		markup = g_markup_printf_escaped ("<span foreground=\"green\">%s</span>", text);
-		break;
-	default:
-		markup = g_markup_printf_escaped ("<span foreground=\"black\">%s</span>", text);
-	} //switch
+	static const char * colors[] = {
+		"black", /* W_TEXT_STYLE_NORMAL */
+		"red",   /* W_TEXT_STYLE_NOTFOUND */
+		"blue",  /* W_TEXT_STYLE_NOTUNIQUE */
+		"green", /* W_TEXT_STYLE_UNIQUE */
+	};
+	markup = g_markup_printf_escaped ("<span foreground=\"%s\">%s</span>",
+	                                  colors[spec], text);
 	if (markup) {
 		gtk_label_set_markup (GTK_LABEL (w), markup);
 		g_free(markup);
