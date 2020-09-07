@@ -407,16 +407,13 @@ int main(int argc, char **argv)
 						G_CALLBACK(gtk_main_quit), NULL);
 
 	GtkWidget *hhbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 2);
-	gtk_widget_show(hhbox);
 	gtk_box_pack_start (GTK_BOX (main_vbox), hhbox, FALSE, FALSE, 0);
 
 	GtkWidget *label = gtk_label_new("Run program:");
-	gtk_widget_show(label);
 	gtk_widget_set_halign (label, GTK_ALIGN_START);
 	gtk_box_pack_start (GTK_BOX(hhbox), label, FALSE, FALSE, 10);
 
 	label_search = gtk_label_new("");
-	gtk_widget_show(label_search);
 	gtk_widget_set_halign (label, GTK_ALIGN_END);
 	gtk_box_pack_start (GTK_BOX (hhbox), label_search, TRUE, TRUE, 10);
 
@@ -464,7 +461,6 @@ int main(int argc, char **argv)
 
 	g_signal_connect(GTK_WIDGET(compline), "ext_handler",
 						G_CALLBACK(on_ext_handler), &g);
-	gtk_widget_show(compline);
 
 	int shows_last_history_item;
 	if (!configuration.get_int("ShowLast", shows_last_history_item)) {
@@ -544,7 +540,7 @@ int main(int argc, char **argv)
 		g_free (geometry_str);
 	}
 
-	gtk_widget_show(dialog);
+	gtk_widget_show_all (dialog);
 
 	gtk_window_set_focus(GTK_WINDOW(dialog), compline);
 
