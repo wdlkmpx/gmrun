@@ -68,42 +68,22 @@ static string prefix;
 static int g_show_dot_files;
 
 /* callbacks */
-static void gtk_completion_line_class_init(GtkCompletionLineClass *klass);
-static void gtk_completion_line_init(GtkCompletionLine *object);
-
 static gboolean
 on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data);
 static gboolean
 on_scroll(GtkCompletionLine *cl, GdkEventScroll *event, gpointer data);
 
-/* get_type */
-GType gtk_completion_line_get_type(void)
-{
-	static GType type = 0;
-	if (type == 0)
-	{
-		static const GTypeInfo type_info =
-		{
-			sizeof(GtkCompletionLineClass),
-			NULL,
-			NULL,
-			(GClassInitFunc)gtk_completion_line_class_init,
-			NULL,
-			NULL,
-			sizeof(GtkCompletionLine),
-			0,
-			(GInstanceInitFunc)gtk_completion_line_init,
-			NULL
-		};
-		type = g_type_register_static(GTK_TYPE_ENTRY, "GtkCompletionLine",
-                                  &type_info, (GTypeFlags)0);
-	}
-	return type;
-}
+// https://developer.gnome.org/gobject/stable/gobject-Type-Information.html#G-DEFINE-TYPE-EXTENDED:CAPS
+G_DEFINE_TYPE_EXTENDED (GtkCompletionLine,   /* type name */
+                        gtk_completion_line, /* type name in lowercase, separated by '_' */
+                        GTK_TYPE_ENTRY,      /* GType of the parent type */
+                        (GTypeFlags)0,
+                        NULL);
+static void gtk_completion_line_class_init (GtkCompletionLineClass *klass);
+static void gtk_completion_line_init (GtkCompletionLine *object);
 
 /* class_init */
-static void
-gtk_completion_line_class_init(GtkCompletionLineClass *klass)
+static void gtk_completion_line_class_init (GtkCompletionLineClass *klass)
 {
 	GtkWidgetClass *object_class;
 	guint s;
@@ -223,7 +203,7 @@ gtk_completion_line_class_init(GtkCompletionLineClass *klass)
 }
 
 /* init */
-static void gtk_completion_line_init(GtkCompletionLine *object)
+static void gtk_completion_line_init (GtkCompletionLine *object)
 {
 	/* Add object initialization / creation stuff here */
 	object->where = NULL;
