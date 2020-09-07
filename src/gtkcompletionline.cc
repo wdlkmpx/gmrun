@@ -79,8 +79,7 @@ G_DEFINE_TYPE_EXTENDED (GtkCompletionLine,   /* type name */
                         GTK_TYPE_ENTRY,      /* GType of the parent type */
                         (GTypeFlags)0,
                         NULL);
-static void gtk_completion_line_class_init (GtkCompletionLineClass *klass);
-static void gtk_completion_line_init (GtkCompletionLine *object);
+// see also https://developer.gnome.org/gobject/stable/GTypeModule.html#G-DEFINE-DYNAMIC-TYPE:CAPS
 
 /* class_init */
 static void gtk_completion_line_class_init (GtkCompletionLineClass *klass)
@@ -203,32 +202,32 @@ static void gtk_completion_line_class_init (GtkCompletionLineClass *klass)
 }
 
 /* init */
-static void gtk_completion_line_init (GtkCompletionLine *object)
+static void gtk_completion_line_init (GtkCompletionLine *self)
 {
 	/* Add object initialization / creation stuff here */
-	object->where = NULL;
-	object->cmpl = NULL;
-	object->win_compl = NULL;
-	object->list_compl = NULL;
-	object->sort_list_compl = NULL;
-	object->tree_compl = NULL;
-	object->hist_search_mode = GCL_SEARCH_OFF;
-	object->hist_word = new string;
-	object->tabtimeout = 0;
-	object->show_dot_files = 0;
+	self->where = NULL;
+	self->cmpl = NULL;
+	self->win_compl = NULL;
+	self->list_compl = NULL;
+	self->sort_list_compl = NULL;
+	self->tree_compl = NULL;
+	self->hist_search_mode = GCL_SEARCH_OFF;
+	self->hist_word = new string;
+	self->tabtimeout = 0;
+	self->show_dot_files = 0;
 
 	// required for gtk3+
-	gtk_widget_add_events(GTK_WIDGET(object), GDK_SCROLL_MASK);
+	gtk_widget_add_events(GTK_WIDGET(self), GDK_SCROLL_MASK);
 
-	on_key_press_handler = g_signal_connect(G_OBJECT(object),
+	on_key_press_handler = g_signal_connect(G_OBJECT(self),
 	                                        "key_press_event",
 	                                        G_CALLBACK(on_key_press), NULL);
-	g_signal_connect(G_OBJECT(object), "scroll-event",
+	g_signal_connect(G_OBJECT(self), "scroll-event",
 	                 G_CALLBACK(on_scroll), NULL);
 
-	object->hist = new HistoryFile();
+	self->hist = new HistoryFile();
 
-	object->first_key = 1;
+	self->first_key = 1;
 }
 
 void gtk_completion_line_last_history_item(GtkCompletionLine* object) {
