@@ -378,7 +378,7 @@ static void on_compline_activated(GtkCompletionLine *cl, struct gigi *g)
 
 int main(int argc, char **argv)
 {
-	GtkWidget *dialog;
+	GtkWidget *dialog, * main_vbox;
 	GtkWidget *compline;
 	GtkWidget *label_search;
 	struct gigi g;
@@ -393,6 +393,7 @@ int main(int argc, char **argv)
 	dialog = gtk_dialog_new();
 	gtk_window_set_transient_for( (GtkWindow*)dialog, (GtkWindow*)window );
 	gtk_widget_realize(dialog);
+	main_vbox = gtk_dialog_get_content_area (GTK_DIALOG (dialog));
 
 	// this removes the title bar..
 	GdkWindow *gwin = gtk_widget_get_window (GTK_WIDGET(dialog));
@@ -407,22 +408,22 @@ int main(int argc, char **argv)
 
 	GtkWidget *hhbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 2);
 	gtk_widget_show(hhbox);
-	gtk_box_pack_start(GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(dialog))), hhbox, FALSE, FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (main_vbox), hhbox, FALSE, FALSE, 0);
 
 	GtkWidget *label = gtk_label_new("Run program:");
 	gtk_widget_show(label);
 	gtk_widget_set_halign (label, GTK_ALIGN_START);
-	gtk_widget_set_margin_start (label, 10);
-	gtk_box_pack_start(GTK_BOX(hhbox), label, FALSE, FALSE, 0);
+	gtk_box_pack_start (GTK_BOX(hhbox), label, FALSE, FALSE, 10);
 
 	label_search = gtk_label_new("");
 	gtk_widget_show(label_search);
 	gtk_widget_set_halign (label, GTK_ALIGN_END);
-	gtk_widget_set_margin_start (label_search, 10);
-	gtk_box_pack_start(GTK_BOX(hhbox), label_search, TRUE, TRUE, 0);
+	gtk_box_pack_start (GTK_BOX (hhbox), label_search, TRUE, TRUE, 10);
 
 	compline = gtk_completion_line_new();
-	gtk_widget_set_name(compline, "Msh_Run_Compline");
+	gtk_widget_set_name (compline, "gmrun_compline");
+	gtk_box_pack_start (GTK_BOX (main_vbox), compline, TRUE, TRUE, 0);
+
 	int prefs_width;
 	if (!configuration.get_int("Width", prefs_width))
 		prefs_width = 500;
@@ -472,8 +473,6 @@ int main(int argc, char **argv)
 	if (shows_last_history_item) {
 		gtk_completion_line_last_history_item(GTK_COMPLETION_LINE(compline));
 	}
-
-	gtk_box_pack_start(GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(dialog))), compline, TRUE, TRUE, 0);
 
 	int prefs_top = 80;
 	int prefs_left = 100;
