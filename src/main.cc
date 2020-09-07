@@ -33,7 +33,14 @@ using namespace std;
 
 #include "gtkcompletionline.h"
 #include "prefs.h"
-#include "main.h"
+
+enum
+{
+	W_TEXT_STYLE_NORMAL,
+	W_TEXT_STYLE_NOTFOUND,
+	W_TEXT_STYLE_NOTUNIQUE,
+	W_TEXT_STYLE_UNIQUE,
+};
 
 // defined in gtkcompletionline.cc
 int get_words(GtkCompletionLine *object, vector<string>& words);

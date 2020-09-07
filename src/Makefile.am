@@ -8,7 +8,7 @@ gmrun_SOURCES = \
 	gtkcompat.c gtkcompat.h \
 	gtkcompletionline.cc gtkcompletionline.h \
 	history.cc history.h \
-	main.cc main.h \
+	main.cc \
 	prefs.cc prefs.h ci_string.h
 
 # gmrun_LDFLAGS = -s
