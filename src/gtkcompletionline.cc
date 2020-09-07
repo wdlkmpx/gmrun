@@ -106,109 +106,110 @@ static void
 gtk_completion_line_class_init(GtkCompletionLineClass *klass)
 {
 	GtkWidgetClass *object_class;
+	guint s;
 
 	object_class = (GtkWidgetClass*)klass;
 
-	gtk_completion_line_signals[UNIQUE] =
-		g_signal_new("unique",
-					G_TYPE_FROM_CLASS(object_class),
-					G_SIGNAL_RUN_FIRST,
-					G_STRUCT_OFFSET(GtkCompletionLineClass, unique),
-					NULL,
-					NULL,
-					g_cclosure_marshal_VOID__VOID,
-					G_TYPE_NONE,
-					0);
+	s = g_signal_new ("unique",
+	                  G_TYPE_FROM_CLASS (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (GtkCompletionLineClass, unique),
+	                  NULL,
+	                  NULL,
+	                  g_cclosure_marshal_VOID__VOID,
+	                  G_TYPE_NONE, /* return_type */
+	                  0);          /* n_params */
+	gtk_completion_line_signals[UNIQUE] = s;
 
-	gtk_completion_line_signals[NOTUNIQUE] =
-		g_signal_new("notunique",
-					G_TYPE_FROM_CLASS(object_class),
-					G_SIGNAL_RUN_FIRST,
-					G_STRUCT_OFFSET(GtkCompletionLineClass, notunique),
-					NULL,
-					NULL,
-					g_cclosure_marshal_VOID__VOID,
-					G_TYPE_NONE,
-					0);
+	s = g_signal_new ("notunique",
+	                  G_TYPE_FROM_CLASS (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (GtkCompletionLineClass, notunique),
+	                  NULL,
+	                  NULL,
+	                  g_cclosure_marshal_VOID__VOID,
+	                  G_TYPE_NONE, /* return_type */
+	                  0);          /* n_params */
+	gtk_completion_line_signals[NOTUNIQUE] = s;
 
-	gtk_completion_line_signals[INCOMPLETE] =
-		g_signal_new("incomplete",
-					G_TYPE_FROM_CLASS(object_class),
-					G_SIGNAL_RUN_FIRST,
-					G_STRUCT_OFFSET(GtkCompletionLineClass, incomplete),
-					NULL,
-					NULL,
-					g_cclosure_marshal_VOID__VOID,
-					G_TYPE_NONE,
-					0);
+	s = g_signal_new ("incomplete",
+	                  G_TYPE_FROM_CLASS (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (GtkCompletionLineClass, incomplete),
+	                  NULL,
+	                  NULL,
+	                  g_cclosure_marshal_VOID__VOID,
+	                  G_TYPE_NONE, /* return_type */
+	                  0);          /* n_params */
+	gtk_completion_line_signals[INCOMPLETE] = s;
 
-	gtk_completion_line_signals[RUNWITHTERM] =
-		g_signal_new("runwithterm",
-					G_TYPE_FROM_CLASS(object_class),
-					G_SIGNAL_RUN_FIRST,
-					G_STRUCT_OFFSET(GtkCompletionLineClass, runwithterm),
-					NULL,
-					NULL,
-					g_cclosure_marshal_VOID__VOID,
-					G_TYPE_NONE,
-					0);
+	s = g_signal_new ("runwithterm",
+	                  G_TYPE_FROM_CLASS (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (GtkCompletionLineClass, runwithterm),
+	                  NULL,
+	                  NULL,
+	                  g_cclosure_marshal_VOID__VOID,
+	                  G_TYPE_NONE, /* return_type */
+	                  0);          /* n_params */
+	gtk_completion_line_signals[RUNWITHTERM] = s;
 
-	gtk_completion_line_signals[SEARCH_MODE] =
-		g_signal_new("search_mode",
-					G_TYPE_FROM_CLASS(object_class),
-					G_SIGNAL_RUN_FIRST,
-					G_STRUCT_OFFSET(GtkCompletionLineClass, search_mode),
-					NULL,
-					NULL,
-					g_cclosure_marshal_VOID__VOID,
-					G_TYPE_NONE,
-					0);
+	s = g_signal_new ("search_mode",
+	                  G_TYPE_FROM_CLASS (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (GtkCompletionLineClass, search_mode),
+	                  NULL,
+	                  NULL,
+	                  g_cclosure_marshal_VOID__VOID,
+	                  G_TYPE_NONE, /* return_type */
+	                  0);          /* n_params */
+	gtk_completion_line_signals[SEARCH_MODE] = s;
 
-	gtk_completion_line_signals[SEARCH_NOT_FOUND] =
-		g_signal_new("search_not_found",
-					G_TYPE_FROM_CLASS(object_class),
-					G_SIGNAL_RUN_FIRST,
-					G_STRUCT_OFFSET(GtkCompletionLineClass, search_not_found),
-					NULL,
-					NULL,
-					g_cclosure_marshal_VOID__VOID,
-					G_TYPE_NONE,
-					0);
+	s = g_signal_new ("search_not_found",
+	                  G_TYPE_FROM_CLASS (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (GtkCompletionLineClass, search_not_found),
+	                  NULL,
+	                  NULL,
+	                  g_cclosure_marshal_VOID__VOID,
+	                  G_TYPE_NONE, /* return_type */
+	                  0);          /* n_params */
+	gtk_completion_line_signals[SEARCH_NOT_FOUND] = s;
 
-	gtk_completion_line_signals[SEARCH_LETTER] =
-		g_signal_new("search_letter",
-					G_TYPE_FROM_CLASS(object_class),
-					G_SIGNAL_RUN_FIRST,
-					G_STRUCT_OFFSET(GtkCompletionLineClass, search_letter),
-					NULL,
-					NULL,
-					g_cclosure_marshal_VOID__VOID,
-					G_TYPE_NONE,
-					0);
+	s = g_signal_new ("search_letter",
+	                  G_TYPE_FROM_CLASS (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (GtkCompletionLineClass, search_letter),
+	                  NULL,
+	                  NULL,
+	                  g_cclosure_marshal_VOID__VOID,
+	                  G_TYPE_NONE, /* return_type */
+	                  0);          /* n_params */
+	gtk_completion_line_signals[SEARCH_LETTER] = s;
 
-	gtk_completion_line_signals[EXT_HANDLER] =
-		g_signal_new("ext_handler",
-					G_TYPE_FROM_CLASS(object_class),
-					G_SIGNAL_RUN_FIRST,
-					G_STRUCT_OFFSET(GtkCompletionLineClass, ext_handler),
-					NULL,
-					NULL,
-					g_cclosure_marshal_VOID__POINTER,
-					G_TYPE_NONE,
-					1,
-					G_TYPE_POINTER);
+	s = g_signal_new ("ext_handler",
+	                  G_TYPE_FROM_CLASS (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (GtkCompletionLineClass, ext_handler),
+	                  NULL,
+	                  NULL,
+	                  g_cclosure_marshal_VOID__POINTER,
+	                  G_TYPE_NONE, /* return_type */
+	                  1,           /* n_params */
+	                   G_TYPE_POINTER);
+	gtk_completion_line_signals[EXT_HANDLER] = s;
 
-	gtk_completion_line_signals[CANCEL] =
-		g_signal_new("cancel",
-					G_TYPE_FROM_CLASS(object_class),
-					G_SIGNAL_RUN_FIRST,
-					G_STRUCT_OFFSET(GtkCompletionLineClass, ext_handler),
-					NULL,
-					NULL,
-					g_cclosure_marshal_VOID__POINTER,
-					G_TYPE_NONE,
-					1,
-					G_TYPE_POINTER);
+	s = g_signal_new ("cancel",
+	                  G_TYPE_FROM_CLASS (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (GtkCompletionLineClass, ext_handler),
+	                  NULL,
+	                  NULL,
+	                  g_cclosure_marshal_VOID__POINTER,
+	                  G_TYPE_NONE, /* return_type */
+	                  1,           /* n_params */
+	                  G_TYPE_POINTER);
+	gtk_completion_line_signals[CANCEL] = s;
 
 	klass->unique = NULL;
 	klass->notunique = NULL;
