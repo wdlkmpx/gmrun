@@ -240,10 +240,10 @@ static void gtk_completion_line_init(GtkCompletionLine *object)
 	// required for gtk3+
 	gtk_widget_add_events(GTK_WIDGET(object), GDK_SCROLL_MASK);
 
-	on_key_press_handler = g_signal_connect(GTK_WIDGET(object),
+	on_key_press_handler = g_signal_connect(G_OBJECT(object),
 	                                        "key_press_event",
 	                                        G_CALLBACK(on_key_press), NULL);
-	g_signal_connect(GTK_WIDGET(object), "scroll-event",
+	g_signal_connect(G_OBJECT(object), "scroll-event",
 	                 G_CALLBACK(on_scroll), NULL);
 
 	object->hist = new HistoryFile();
@@ -342,9 +342,9 @@ int set_words(GtkCompletionLine *object, const vector<string>& words, int pos = 
 		const string& s = words.back();
 		size_t pos = s.rfind('.');
 		if (pos != string::npos)
-			g_signal_emit_by_name(GTK_WIDGET(object), "ext_handler", s.substr(pos + 1).c_str());
+			g_signal_emit_by_name(G_OBJECT(object), "ext_handler", s.substr(pos + 1).c_str());
 		else
-			g_signal_emit_by_name(GTK_WIDGET(object), "ext_handler", NULL);
+			g_signal_emit_by_name(G_OBJECT(object), "ext_handler", NULL);
 	}
 
 	gtk_entry_set_text(GTK_ENTRY(object), 
@@ -679,13 +679,13 @@ static int complete_line(GtkCompletionLine *object)
 	GList *ls = object->cmpl;
 
 	if (g_list_length(ls) == 1) {
-		g_signal_emit_by_name(GTK_WIDGET(object), "unique");
+		g_signal_emit_by_name(G_OBJECT(object), "unique");
 		return GEN_COMPLETION_OK;
 	} else if (g_list_length(ls) == 0 || ls == NULL) {
-		g_signal_emit_by_name(GTK_WIDGET(object), "incomplete");
+		g_signal_emit_by_name(G_OBJECT(object), "incomplete");
 		return GEN_CANT_COMPLETE;
 	} else if (g_list_length(ls) >  1) {
-		g_signal_emit_by_name(GTK_WIDGET(object), "notunique");
+		g_signal_emit_by_name(G_OBJECT(object), "notunique");
 
 		vector<string> words;
 		int pos = get_words(object, words);
@@ -813,7 +813,7 @@ search_back_history(GtkCompletionLine* cl, bool avance, bool begin)
 		if (avance) {
 			histext = cl->hist->prev_to_first();
 			if (histext == NULL) {
-				g_signal_emit_by_name(GTK_WIDGET(cl), "search_not_found");
+				g_signal_emit_by_name(G_OBJECT(cl), "search_not_found");
 				return 0;
 			}
 		} else {
@@ -828,18 +828,18 @@ search_back_history(GtkCompletionLine* cl, bool avance, bool begin)
 				if (!(avance && strcmp(tmp, histext) == 0)) {
 					gtk_entry_set_text(GTK_ENTRY(cl), 
 					g_locale_to_utf8 (histext, -1, NULL, NULL, NULL));
-					g_signal_emit_by_name(GTK_WIDGET(cl), "search_letter");
+					g_signal_emit_by_name(G_OBJECT(cl), "search_letter");
 					return 1;
 				}
 			}
 			histext = cl->hist->prev_to_first();
 			if (histext == NULL) {
-				g_signal_emit_by_name(GTK_WIDGET(cl), "search_not_found");
+				g_signal_emit_by_name(G_OBJECT(cl), "search_not_found");
 				break;
 			}
 		}
 	} else {
-		g_signal_emit_by_name(GTK_WIDGET(cl), "search_letter");
+		g_signal_emit_by_name(G_OBJECT(cl), "search_letter");
 	}
 
 	return 0;
@@ -852,7 +852,7 @@ static int search_forward_history(GtkCompletionLine* cl, bool avance, bool begin
 		if (avance) {
 			histext = cl->hist->next_to_last();
 			if (histext == NULL) {
-				g_signal_emit_by_name(GTK_WIDGET(cl), "search_not_found");
+				g_signal_emit_by_name(G_OBJECT(cl), "search_not_found");
 				return 0;
 			}
 		} else {
@@ -867,18 +867,18 @@ static int search_forward_history(GtkCompletionLine* cl, bool avance, bool begin
 				if (!(avance && strcmp(tmp, histext) == 0)) {
 					gtk_entry_set_text(GTK_ENTRY(cl), 
 					g_locale_to_utf8 (histext, -1, NULL, NULL, NULL));
-					g_signal_emit_by_name(GTK_WIDGET(cl), "search_letter");
+					g_signal_emit_by_name(G_OBJECT(cl), "search_letter");
 					return 1;
 				}
 			}
 			histext = cl->hist->next_to_last();
 			if (histext == NULL) {
-				g_signal_emit_by_name(GTK_WIDGET(cl), "search_not_found");
+				g_signal_emit_by_name(G_OBJECT(cl), "search_not_found");
 				break;
 			}
 		}
 	} else {
-		g_signal_emit_by_name(GTK_WIDGET(cl), "search_letter");
+		g_signal_emit_by_name(G_OBJECT(cl), "search_letter");
 	}
 
 	return 0;
@@ -903,12 +903,12 @@ static void search_off(GtkCompletionLine* cl)
 {
 	int pos = gtk_editable_get_position(GTK_EDITABLE(cl));
 	cl->hist_search_mode = GCL_SEARCH_OFF;
-	g_signal_emit_by_name(GTK_WIDGET(cl), "search_mode");
+	g_signal_emit_by_name(G_OBJECT(cl), "search_mode");
 	cl->hist->reset_position();
 }
 
 #define STOP_PRESS \
-	(g_signal_stop_emission_by_name(GTK_WIDGET(cl),   "key_press_event"))
+	(g_signal_stop_emission_by_name(G_OBJECT(cl),   "key_press_event"))
 #define MODE_BEG \
 	(cl->hist_search_mode == GCL_SEARCH_BEG)
 #define MODE_REW \
@@ -1075,9 +1075,9 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
 				cl->win_compl = NULL;
 			}
 			if (event->state & GDK_CONTROL_MASK) {
-				g_signal_emit_by_name(GTK_WIDGET(cl), "runwithterm");
+				g_signal_emit_by_name(G_OBJECT(cl), "runwithterm");
 			} else {
-				g_signal_emit_by_name(GTK_WIDGET(cl), "activate");
+				g_signal_emit_by_name(G_OBJECT(cl), "activate");
 			}
 			STOP_PRESS;
 			return TRUE;
@@ -1091,7 +1091,7 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
 					goto ordinary;
 				cl->hist_search_mode = GCL_SEARCH_BEG;
 				cl->hist_word->clear();
-				g_signal_emit_by_name(GTK_WIDGET(cl), "search_mode");
+				g_signal_emit_by_name(G_OBJECT(cl), "search_mode");
 				STOP_PRESS;
 				return true;
 			} else goto ordinary;
@@ -1105,7 +1105,7 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
 					cl->hist_search_mode = GCL_SEARCH_REW;
 					cl->hist_word->clear();
 					cl->hist->reset_position();
-					g_signal_emit_by_name(GTK_WIDGET(cl), "search_mode");
+					g_signal_emit_by_name(G_OBJECT(cl), "search_mode");
 				}
 				STOP_PRESS;
 				return TRUE;
@@ -1120,7 +1120,7 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
 					cl->hist_search_mode = GCL_SEARCH_FWD;
 					cl->hist_word->clear();
 					cl->hist->reset_position();
-					g_signal_emit_by_name(GTK_WIDGET(cl), "search_mode");
+					g_signal_emit_by_name(G_OBJECT(cl), "search_mode");
 				}
 				STOP_PRESS;
 				return TRUE;
@@ -1130,7 +1130,7 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
 			if (MODE_SRC) {
 				if (!cl->hist_word->empty()) {
 					cl->hist_word->erase(cl->hist_word->length() - 1);
-					g_signal_emit_by_name(GTK_WIDGET(cl), "search_letter");
+					g_signal_emit_by_name(G_OBJECT(cl), "search_letter");
 				}
 				STOP_PRESS;
 				return TRUE;
@@ -1150,7 +1150,7 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
 				cl->win_compl = NULL;
 			} else {
 				// user cancelled
-				g_signal_emit_by_name(GTK_WIDGET(cl), "cancel");
+				g_signal_emit_by_name(G_OBJECT(cl), "cancel");
 			}
 			STOP_PRESS;
 			return TRUE;

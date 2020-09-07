@@ -403,7 +403,7 @@ int main(int argc, char **argv)
 	gtk_window_set_title (GTK_WINDOW(window), "A simple launcher with completion");
 
 	gtk_container_set_border_width(GTK_CONTAINER(dialog), 4);
-	g_signal_connect(GTK_WIDGET(dialog), "destroy",
+	g_signal_connect(G_OBJECT(dialog), "destroy",
 						G_CALLBACK(gtk_main_quit), NULL);
 
 	GtkWidget *hhbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 2);
@@ -438,28 +438,28 @@ int main(int argc, char **argv)
 	g.w2 = label_search;
 
 	gtk_widget_set_size_request(compline, prefs_width, -1);
-	g_signal_connect(GTK_WIDGET(compline), "cancel",
+	g_signal_connect(G_OBJECT(compline), "cancel",
 						G_CALLBACK(gtk_main_quit), NULL);
-	g_signal_connect(GTK_WIDGET(compline), "activate",
+	g_signal_connect(G_OBJECT(compline), "activate",
 						G_CALLBACK(on_compline_activated), &g);
-	g_signal_connect(GTK_WIDGET(compline), "runwithterm",
+	g_signal_connect(G_OBJECT(compline), "runwithterm",
 						G_CALLBACK(on_compline_runwithterm), &g);
 
-	g_signal_connect(GTK_WIDGET(compline), "unique",
+	g_signal_connect(G_OBJECT(compline), "unique",
 						G_CALLBACK(on_compline_unique), &g);
-	g_signal_connect(GTK_WIDGET(compline), "notunique",
+	g_signal_connect(G_OBJECT(compline), "notunique",
 						G_CALLBACK(on_compline_notunique), &g);
-	g_signal_connect(GTK_WIDGET(compline), "incomplete",
+	g_signal_connect(G_OBJECT(compline), "incomplete",
 						G_CALLBACK(on_compline_incomplete), &g);
 
-	g_signal_connect(GTK_WIDGET(compline), "search_mode",
+	g_signal_connect(G_OBJECT(compline), "search_mode",
 						G_CALLBACK(on_search_mode), &g);
-	g_signal_connect(GTK_WIDGET(compline), "search_not_found",
+	g_signal_connect(G_OBJECT(compline), "search_not_found",
 						G_CALLBACK(on_search_not_found), &g);
-	g_signal_connect(GTK_WIDGET(compline), "search_letter",
+	g_signal_connect(G_OBJECT(compline), "search_letter",
 						G_CALLBACK(on_search_letter), label_search);
 
-	g_signal_connect(GTK_WIDGET(compline), "ext_handler",
+	g_signal_connect(G_OBJECT(compline), "ext_handler",
 						G_CALLBACK(on_ext_handler), &g);
 
 	int shows_last_history_item;
