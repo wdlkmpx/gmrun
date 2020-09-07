@@ -97,22 +97,30 @@ static void set_info_text_color(GtkWidget *w, const char *text, int spec) {
 static void
 run_the_command(const std::string& command, struct gigi* g)
 {
-	string cmd(command);
-	cmd += '&';
-	int ret = system(cmd.c_str());
-#ifdef DEBUG
-	cerr << "System exit code: " << ret << endl;
-#endif
-	if (ret != -1)
-		gtk_main_quit();
-	else {
-		string error("ERROR: ");
-		error += strerror(errno);
-#ifdef DEBUG
-		cerr << error << endl;
-#endif
-		set_info_text_color(g->w1, error.c_str(), W_TEXT_STYLE_NOTFOUND);
-		add_search_off_timeout(2000, g);
+	const char * cmd = command.c_str();
+	GError * error = NULL;
+	gboolean success;
+	int argc;
+	char ** argv;
+	success = g_shell_parse_argv (cmd, &argc, &argv, &error);
+	if (!success) {
+		set_info_text_color (g->w1, error->message, W_TEXT_STYLE_NOTFOUND);
+		g_error_free (error);
+		add_search_off_timeout (3000, g);
+		return;
+	}
+
+	success = g_spawn_async (NULL, argv, NULL,
+	                         G_SPAWN_SEARCH_PATH, NULL, NULL, NULL, &error);
+	if (argv) {
+		g_strfreev (argv);
+	}
+	if (success) {
+		gtk_main_quit ();
+	} else {
+		set_info_text_color (g->w1, error->message, W_TEXT_STYLE_NOTFOUND);
+		g_error_free (error);
+		add_search_off_timeout (3000, g);
 	}
 }
 
