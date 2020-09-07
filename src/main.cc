@@ -418,12 +418,12 @@ int main(int argc, char **argv)
 	gtk_box_pack_start (GTK_BOX (main_vbox), hhbox, FALSE, FALSE, 0);
 
 	GtkWidget *label = gtk_label_new("Run program:");
-	gtk_widget_set_halign (label, GTK_ALIGN_START);
 	gtk_box_pack_start (GTK_BOX(hhbox), label, FALSE, FALSE, 10);
+	gtkcompat_widget_set_halign_left (GTK_WIDGET (label));
 
 	label_search = gtk_label_new("");
-	gtk_widget_set_halign (label, GTK_ALIGN_END);
-	gtk_box_pack_start (GTK_BOX (hhbox), label_search, TRUE, TRUE, 10);
+	gtk_box_pack_end (GTK_BOX (hhbox), label_search, TRUE, TRUE, 10);
+	gtkcompat_widget_set_halign_right (GTK_WIDGET (label_search));
 
 	compline = gtk_completion_line_new();
 	gtk_widget_set_name (compline, "gmrun_compline");

@@ -5,7 +5,6 @@ AM_CPPFLAGS = @GTK_CFLAGS@
 bin_PROGRAMS = gmrun
 
 gmrun_SOURCES = \
-	gtkcompat.c gtkcompat.h \
 	gtkcompletionline.cc gtkcompletionline.h \
 	history.cc history.h \
 	main.cc \
