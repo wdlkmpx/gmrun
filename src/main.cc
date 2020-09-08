@@ -44,7 +44,6 @@ enum
 
 static void gmrun_exit (void);
 GtkAllocation window_geom = { -1, -1, -1, -1 };
-gboolean apply_geometry_cmd = FALSE;
 
 // defined in gtkcompletionline.cc
 int get_words(GtkCompletionLine *object, vector<string>& words);
@@ -428,10 +427,6 @@ static void gmrun_activate(void)
 	gtk_widget_set_name (compline, "gmrun_compline");
 	gtk_box_pack_start (GTK_BOX (main_vbox), compline, TRUE, TRUE, 0);
 
-	int prefs_width;
-	if (!configuration.get_int("Width", prefs_width))
-		prefs_width = 500;
-
 	// don't show files starting with "." by default
 	if (!configuration.get_int("ShowDotFiles", GTK_COMPLETION_LINE(compline)->show_dot_files))
 		GTK_COMPLETION_LINE(compline)->show_dot_files = 0;
@@ -444,7 +439,6 @@ static void gmrun_activate(void)
 	g.w1 = label;
 	g.w2 = label_search;
 
-	gtk_widget_set_size_request(compline, prefs_width, -1);
 	g_signal_connect(G_OBJECT(compline), "cancel",
 						G_CALLBACK(gmrun_exit), NULL);
 	g_signal_connect(G_OBJECT(compline), "activate",
@@ -477,22 +471,21 @@ static void gmrun_activate(void)
 		gtk_completion_line_last_history_item(GTK_COMPLETION_LINE(compline));
 	}
 
-	int prefs_top = 80;
-	int prefs_left = 100;
-	configuration.get_int("Top", prefs_top);
-	configuration.get_int("Left", prefs_left);
-
-	// geometry
-	if (apply_geometry_cmd) {
-		if (window_geom.x > -1 || window_geom.y > -1) {
-			gtk_window_move (GTK_WINDOW (dialog), window_geom.x, window_geom.y);
-		}
-		if (window_geom.height > -1 || window_geom.width > -1) {
-			gtk_window_set_default_size (GTK_WINDOW (dialog), window_geom.width,
-			                             window_geom.height);
-		}
+	// geometry: window position
+	if (window_geom.x > -1 || window_geom.y > -1) {
+		gtk_window_move (GTK_WINDOW (dialog), window_geom.x, window_geom.y);
 	} else {
+		/* default: centered */
 		gtk_window_set_position (GTK_WINDOW(dialog), GTK_WIN_POS_CENTER_ALWAYS);
+	}
+
+	// geometry: window size
+	if (window_geom.height > -1 || window_geom.width > -1) {
+		gtk_window_set_default_size (GTK_WINDOW (dialog), window_geom.width,
+		                             window_geom.height);
+	} else {
+		/* default width = 400 */
+		gtk_window_set_default_size (GTK_WINDOW (dialog), 400, -1);
 	}
 
 	// window icon
@@ -541,8 +534,17 @@ static void parse_command_line (int argc, char ** argv)
 	if (error)   g_error_free (error);
 	// --
 
-	if (geometry_str) {
-		apply_geometry_cmd = TRUE;
+	if (!geometry_str)
+	{
+		// --geometry was not specified, see config file
+		std::string geomstr;
+		if (configuration.get_string("Geometry", geomstr)) {
+			geometry_str = g_strdup (geomstr.c_str());
+		}
+	}
+
+	if (geometry_str)
+	{
 		// --geometry WxH+X+Y
 		// width x height + posX + posY
 		int width, height, posX, posY;
@@ -581,11 +583,7 @@ static void parse_command_line (int argc, char ** argv)
 
 		g_free (geometry_str);
 	}
-	// end of --geometry
 }
-
-// =============================================================
-
 
 
 // =============================================================
