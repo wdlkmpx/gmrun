@@ -35,6 +35,7 @@ using namespace std;
 
 static int on_cursor_changed_handler = 0;
 static int on_key_press_handler = 0;
+static guint timeout_id = 0;
 
 /* GLOBALS */
 
@@ -902,6 +903,7 @@ static guint tab_pressed(GtkCompletionLine* cl)
 	if (MODE_SRC)
 		search_off(cl);
 	complete_line(cl);
+	timeout_id = 0;
 	return FALSE;
 }
 
@@ -968,9 +970,8 @@ on_scroll(GtkCompletionLine *cl, GdkEventScroll *event, gpointer data)
 static gboolean
 on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
 {
-	static guint timeout_id = 0;
-
-	if (event->type == GDK_KEY_PRESS) {
+	if (event->type == GDK_KEY_PRESS)
+	{
 		switch (event->keyval) {
 		case GDK_KEY_Control_R:
 		case GDK_KEY_Control_L:
