@@ -56,6 +56,7 @@ AC_SUBST(PREFIX)
 
 AC_OUTPUT([
 Makefile
+data/Makefile
 src/Makefile
 ])
 

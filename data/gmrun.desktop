@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=gmrun
+Icon=gmrun.png
+Comment=execute a command
+Exec=gmrun
+Terminal=false
+Type=Application
+Categories=TerminalEmulator
+GenericName=gmrun

@@ -551,7 +551,7 @@ int main(int argc, char **argv)
 
 	// window icon
 	GtkIconTheme * theme = gtk_icon_theme_get_default ();
-	GdkPixbuf * icon = gtk_icon_theme_load_icon (theme, "system-run", 48, GTK_ICON_LOOKUP_USE_BUILTIN, &error);
+	GdkPixbuf * icon = gtk_icon_theme_load_icon (theme, "gmrun", 48, GTK_ICON_LOOKUP_USE_BUILTIN, &error);
 	if (error) {
 		g_object_set (dialog, "icon-name", "gtk-execute", NULL);
 		g_error_free (error);
