@@ -43,6 +43,8 @@ enum
 };
 
 static void gmrun_exit (void);
+GtkAllocation window_geom = { -1, -1, -1, -1 };
+gboolean apply_geometry_cmd = FALSE;
 
 // defined in gtkcompletionline.cc
 int get_words(GtkCompletionLine *object, vector<string>& words);
@@ -386,25 +388,13 @@ static void on_compline_activated(GtkCompletionLine *cl, struct gigi *g)
 }
 
 // =============================================================
-//                           MAIN
 
-void gmrun_exit(void)
-{
-	gtk_main_quit ();
-}
-
-int main(int argc, char **argv)
+static void gmrun_activate(void)
 {
 	GtkWidget *dialog, * main_vbox;
 	GtkWidget *compline;
 	GtkWidget *label_search;
 	struct gigi g;
-
-#ifdef MTRACE
-	mtrace();
-#endif
-
-	gtk_init(&argc, &argv);
 
 	GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	dialog = gtk_dialog_new();
@@ -492,6 +482,40 @@ int main(int argc, char **argv)
 	configuration.get_int("Top", prefs_top);
 	configuration.get_int("Left", prefs_left);
 
+	// geometry
+	if (apply_geometry_cmd) {
+		if (window_geom.x > -1 || window_geom.y > -1) {
+			gtk_window_move (GTK_WINDOW (dialog), window_geom.x, window_geom.y);
+		}
+		if (window_geom.height > -1 || window_geom.width > -1) {
+			gtk_window_set_default_size (GTK_WINDOW (dialog), window_geom.width,
+			                             window_geom.height);
+		}
+	} else {
+		gtk_window_set_position (GTK_WINDOW(dialog), GTK_WIN_POS_CENTER_ALWAYS);
+	}
+
+	// window icon
+	GError * error = NULL;
+	GtkIconTheme * theme = gtk_icon_theme_get_default ();
+	GdkPixbuf * icon = gtk_icon_theme_load_icon (theme, "gmrun", 48, GTK_ICON_LOOKUP_USE_BUILTIN, &error);
+	if (error) {
+		g_object_set (dialog, "icon-name", "gtk-execute", NULL);
+		g_error_free (error);
+	} else {
+		gtk_window_set_icon (GTK_WINDOW (dialog), icon);
+		g_object_unref (icon);
+	}
+
+	gtk_widget_show_all (dialog);
+
+	gtk_window_set_focus(GTK_WINDOW(dialog), compline);
+}
+
+// =============================================================
+
+static void parse_command_line (int argc, char ** argv)
+{
 	// --geometry / parse commandline options
 	char *geometry_str = NULL;
 	GError *error = NULL;
@@ -517,12 +541,11 @@ int main(int argc, char **argv)
 	if (error)   g_error_free (error);
 	// --
 
-	if (!geometry_str) {
-		gtk_window_set_position (GTK_WINDOW(dialog), GTK_WIN_POS_CENTER_ALWAYS);
-	} else {
+	if (geometry_str) {
+		apply_geometry_cmd = TRUE;
 		// --geometry WxH+X+Y
 		// width x height + posX + posY
-		gint64 width, height, posX, posY;
+		int width, height, posX, posY;
 		char *Wstr, *Hstr, *Xstr, *Ystr;
 		Wstr = Hstr = Xstr = Ystr = NULL;
 
@@ -540,7 +563,8 @@ int main(int argc, char **argv)
 			posX = strtoll (Xstr, NULL, 0);
 			posY = strtoll (Ystr, NULL, 0);
 			///fprintf (stderr, "x: %" G_GINT64_FORMAT "\ny: %" G_GINT64_FORMAT "\n", posX, posY);
-			gtk_window_move (GTK_WINDOW (dialog), posX, posY);
+			window_geom.x = posX;
+			window_geom.y = posY;
 		}
 
 		Hstr = strchr (geometry_str, 'x');
@@ -551,28 +575,41 @@ int main(int argc, char **argv)
 			width  = strtoll (Wstr, NULL, 0);
 			height = strtoll (Hstr, NULL, 0);
 			///fprintf (stderr, "w: %" G_GINT64_FORMAT "\nh: %" G_GINT64_FORMAT "\n", width, height);
-			gtk_window_set_default_size (GTK_WINDOW (dialog), width, height);
+			window_geom.width = width;
+			window_geom.height = height;
 		}
 
 		g_free (geometry_str);
 	}
 	// end of --geometry
+}
 
-	// window icon
-	GtkIconTheme * theme = gtk_icon_theme_get_default ();
-	GdkPixbuf * icon = gtk_icon_theme_load_icon (theme, "gmrun", 48, GTK_ICON_LOOKUP_USE_BUILTIN, &error);
-	if (error) {
-		g_object_set (dialog, "icon-name", "gtk-execute", NULL);
-		g_error_free (error);
-	} else {
-		gtk_window_set_icon (GTK_WINDOW (dialog), icon);
-		g_object_unref (icon);
-	}
+// =============================================================
 
-	gtk_widget_show_all (dialog);
 
-	gtk_window_set_focus(GTK_WINDOW(dialog), compline);
+
+// =============================================================
+//                           MAIN
+
+void gmrun_exit(void)
+{
+	gtk_main_quit ();
+}
+
+int main(int argc, char **argv)
+{
+
+#ifdef MTRACE
+	mtrace();
+#endif
+
+	gtk_init(&argc, &argv);
+
+	parse_command_line (argc, argv);
+	gmrun_activate ();
 
 	gtk_main();
+
+	return (0);
 }
 
