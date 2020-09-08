@@ -42,6 +42,8 @@ enum
 	W_TEXT_STYLE_UNIQUE,
 };
 
+static void gmrun_exit (void);
+
 // defined in gtkcompletionline.cc
 int get_words(GtkCompletionLine *object, vector<string>& words);
 string quote_string(const string& str);
@@ -116,7 +118,7 @@ run_the_command(const std::string& command, struct gigi* g)
 		g_strfreev (argv);
 	}
 	if (success) {
-		gtk_main_quit ();
+		gmrun_exit ();
 	} else {
 		set_info_text_color (g->w1, error->message, W_TEXT_STYLE_NOTFOUND);
 		g_error_free (error);
@@ -383,6 +385,13 @@ static void on_compline_activated(GtkCompletionLine *cl, struct gigi *g)
 	}
 }
 
+// =============================================================
+//                           MAIN
+
+void gmrun_exit(void)
+{
+	gtk_main_quit ();
+}
 
 int main(int argc, char **argv)
 {
@@ -412,7 +421,7 @@ int main(int argc, char **argv)
 
 	gtk_container_set_border_width(GTK_CONTAINER(dialog), 4);
 	g_signal_connect(G_OBJECT(dialog), "destroy",
-						G_CALLBACK(gtk_main_quit), NULL);
+						G_CALLBACK(gmrun_exit), NULL);
 
 	GtkWidget *hhbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 2);
 	gtk_box_pack_start (GTK_BOX (main_vbox), hhbox, FALSE, FALSE, 0);
@@ -447,7 +456,7 @@ int main(int argc, char **argv)
 
 	gtk_widget_set_size_request(compline, prefs_width, -1);
 	g_signal_connect(G_OBJECT(compline), "cancel",
-						G_CALLBACK(gtk_main_quit), NULL);
+						G_CALLBACK(gmrun_exit), NULL);
 	g_signal_connect(G_OBJECT(compline), "activate",
 						G_CALLBACK(on_compline_activated), &g);
 	g_signal_connect(G_OBJECT(compline), "runwithterm",
