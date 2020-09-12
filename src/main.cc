@@ -15,15 +15,6 @@
 #include <gdk/gdkkeysyms.h>
 #include <gdk/gdkx.h>
 
-#include <string>
-#include <iostream>
-#include <sstream>
-#include <vector>
-#include <algorithm>
-#include <iterator>
-
-using namespace std;
-
 #ifdef MTRACE
 #include <mcheck.h>
 #endif
@@ -32,7 +23,7 @@ using namespace std;
 #include <errno.h>
 
 #include "gtkcompletionline.h"
-#include "prefs.h"
+#include "config_prefs.h"
 
 enum
 {
@@ -44,10 +35,7 @@ enum
 
 static void gmrun_exit (void);
 GtkAllocation window_geom = { -1, -1, -1, -1 };
-
-// defined in gtkcompletionline.cc
-int get_words(GtkCompletionLine *object, vector<string>& words);
-string quote_string(const string& str);
+GtkWidget * compline;
 
 struct gigi
 {
@@ -98,9 +86,11 @@ static void set_info_text_color (GtkWidget *w, const char *text, int spec)
 }
 
 static void
-run_the_command(const std::string& command, struct gigi* g)
+run_the_command(const char * cmd, struct gigi* g)
 {
-	const char * cmd = command.c_str();
+#if DEBUG
+	fprintf (stderr, "command: %s\n", cmd);
+#endif
 	GError * error = NULL;
 	gboolean success;
 	int argc;
@@ -130,57 +120,44 @@ run_the_command(const std::string& command, struct gigi* g)
 static void
 on_ext_handler(GtkCompletionLine *cl, const char* ext, struct gigi* g)
 {
-	string cmd;
-	if (ext && configuration.get_ext_handler(ext, cmd)) {
-		string str("Handler: ");
-		size_t pos = cmd.find_first_of(" \t");
-		if (pos == string::npos)
-			str += cmd;
-		else
-			str += cmd.substr(0, pos);
-		gtk_label_set_text(GTK_LABEL(g->w2), str.c_str());
-		gtk_widget_show(g->w2);
-		// gtk_timeout_add(1000, GSourceFunc(search_off_timeout), g);
-	} else {
-		search_off_timeout(g);
+	if (!ext) {
+		search_off_timeout (g);
+		return;
+	}
+	const char * handler = config_get_handler_for_extension (ext);
+	if (handler) {
+		char * tmp = g_strconcat ("Handler: ", handler, NULL);
+		gtk_label_set_text (GTK_LABEL(g->w2), tmp);
+		gtk_widget_show (g->w2);
+		g_free (tmp);
 	}
 }
 
-static void on_compline_runwithterm(GtkCompletionLine *cl, struct gigi* g)
+static void on_compline_runwithterm (GtkCompletionLine *cl, struct gigi* g)
 {
-	string command(g_locale_from_utf8 (gtk_entry_get_text(GTK_ENTRY(cl)),
-						-1,
-						NULL,
-						NULL,
-						NULL));
-	string tmp;
-	string term;
+	char cmd[512];
+	char * term;
+	char * entry_text = g_strdup (gtk_entry_get_text (GTK_ENTRY(cl)));
+	g_strstrip (entry_text);
 
-	string::size_type i;
-	i = command.find_first_not_of(" \t");
-
-	if (i != string::npos) {
-		if (!configuration.get_string("TermExec", term)) {
-			term = "xterm -e";
-		}
-		tmp = term;
-		tmp += " ";
-		tmp += command;
-	} else {
-		if (!configuration.get_string("Terminal", term)) {
-			tmp = "xterm";
+	if (*entry_text) {
+		if (config_get_string_expanded ("TermExec", &term)) {
+			snprintf (cmd, sizeof (cmd), "%s %s", term, entry_text);
+			g_free (term);
 		} else {
-			tmp = term;
+			snprintf (cmd, sizeof (cmd), "xterm -e %s", entry_text);
+		}
+	} else {
+		if (config_get_string ("Terminal", &term)) {
+			strncpy (cmd, term, sizeof (cmd));
+		} else {
+			strncpy (cmd, "xterm", sizeof (cmd));
 		}
 	}
 
-#ifdef DEBUG
-	cerr << tmp << endl;
-#endif
-
-	cl->hist->append(command.c_str());
-	cl->hist->sync_the_file();
-	run_the_command(tmp.c_str(), g);
+	history_append (cl->hist, cmd);
+	run_the_command (cmd, g);
+	g_free (entry_text);
 }
 
 static gint search_off_timeout(struct gigi *g)
@@ -215,7 +192,7 @@ on_compline_incomplete(GtkCompletionLine *cl, struct gigi *g)
 static void
 on_search_mode(GtkCompletionLine *cl, struct gigi *g)
 {
-	if (cl->hist_search_mode != GCL_SEARCH_OFF) {
+	if (cl->hist_search_mode == TRUE) {
 		gtk_widget_show(g->w2);
 		gtk_label_set_text(GTK_LABEL(g->w1), "Search:");
 		gtk_label_set_text(GTK_LABEL(g->w2), cl->hist_word->c_str());
@@ -236,6 +213,7 @@ static gint
 search_fail_timeout(struct gigi *g)
 {
 	set_info_text_color(g->w1, "Search:", W_TEXT_STYLE_NOTUNIQUE);
+	g_search_off_timeout_id = 0;
 	return FALSE;
 }
 
@@ -246,144 +224,134 @@ on_search_not_found(GtkCompletionLine *cl, struct gigi *g)
 	add_search_off_timeout(1000, g, GSourceFunc(search_fail_timeout));
 }
 
-static bool url_check(GtkCompletionLine *cl, struct gigi *g)
+static bool url_check(GtkCompletionLine *cl, struct gigi *g, char * entry_text)
 {
-	string text(g_locale_from_utf8 (gtk_entry_get_text(GTK_ENTRY(cl)),
-					-1,
-					NULL,
-					NULL,
-					NULL));
+	// <url_type> <delim>  <url>
+	// http          :     //www.fsf.org
+	//  <f  u  l  l     u  r  l>
+	// config: URL_<url_type>
+	// handler %s (format 1) = run handler with <url>
+	// handler %u (format 2) = run handler with <full url>
+	char * cmd;
+	char * tmp, * delim, * p;
+	char * url, * url_type, * full_url, * chosen_url;
+	char * url_handler;
+	char * config_key;
 
-	string::size_type i;
-	string::size_type sp;
+	delim = strchr (entry_text, ':');
+	if (!delim || !*(delim+1)) {
+		return FALSE;
+	}
+	tmp    = g_strdup (entry_text);
+	delim  = strchr (tmp, ':');
+	*delim = 0;
+	url_type = tmp;       // http
+	url      = delim + 1; // //www.fsf.org
+	full_url = entry_text;
 
-	sp = text.find_first_not_of(" \t");
-	if (sp == string::npos) return true;
-	text = text.substr(sp);
-
-	sp = text.find_first_of(" \t");
-	i = text.find(":");
-
-	if (i != string::npos && i < sp) {
-		// URL entered...
-		string url(text.substr(i + 1));
-		string url_type(text.substr(0, i));
-		string url_handler;
-
-		if (configuration.get_string(string("URL_") + url_type, url_handler)) {
-			string::size_type j = 0;
-
-			do {
-				j = url_handler.find("%s", j);
-				if (j != string::npos) {
-					url_handler.replace(j, 2, url);
-				}
-			} while (j != string::npos);
-
-			j = 0;
-			do {
-				j = url_handler.find("%u", j);
-				if (j != string::npos) {
-					url_handler.replace(j, 2, text);
-				}
-			} while (j != string::npos);
-
-			cl->hist->append(text.c_str());
-			cl->hist->sync_the_file();
-			run_the_command(url_handler.c_str(), g);
-			return true;
+	config_key = g_strconcat ("URL_", url_type);
+	if (config_get_string_expanded (config_key, &url_handler))
+	{
+		chosen_url = url;
+		p = strchr (url_handler, '%');
+		if (p) { // handler %s
+			p++;
+			if (*p == 'u') { // handler %u
+				*p = 's';    // convert %u to %s (for printf)
+				chosen_url = full_url;
+			}
+			cmd = g_strdup_printf (url_handler, chosen_url);
 		} else {
-			set_info_text_color(g->w1,
-							(string("No URL handler for [") + url_type + "]").c_str(),
-							W_TEXT_STYLE_NOTFOUND);
-			add_search_off_timeout(1000, g);
-			return true;
+			cmd = g_strconcat (url_handler, " ", url, NULL);
 		}
+		g_free (url_handler);
 	}
 
-	return false;
+	if (cmd) {
+		history_append (cl->hist, cmd);
+		run_the_command (cmd, g);
+		g_free (cmd);
+	} else {
+		g_free (tmp);
+		tmp = g_strconcat ("No URL handler for [", config_key, "]", NULL);
+		set_info_text_color (g->w1, tmp, W_TEXT_STYLE_NOTFOUND);
+		add_search_off_timeout (1000, g);
+	}
+
+	g_free (entry_text);
+	g_free (config_key);
+	g_free (tmp);
+	return TRUE;
 }
 
-static bool ext_check(GtkCompletionLine *cl, struct gigi *g)
+static bool ext_check (GtkCompletionLine *cl, struct gigi *g, char * entry_text)
 {
-	vector<string> words;
-	get_words(cl, words);
-	vector<string>::const_iterator
-	i     = words.begin(),
-	i_end = words.end();
-
-
-	GRegex *regex = g_regex_new (" ", G_REGEX_OPTIMIZE, G_REGEX_MATCH_NOTEMPTY, NULL);
-	while (i != i_end) {
-		gchar *quoted = g_regex_replace_literal (
-				regex, (*i++).c_str(), -1, 0, "\\ ", G_REGEX_MATCH_NOTEMPTY, NULL);
-		const string w = quoted;
-		if (w[0] == '/') {
-			// absolute path, check for extension
-			size_t pos = w.rfind('.');
-			if (pos != string::npos) {
-				// we have extension
-				string ext = w.substr(pos + 1);
-				string ext_handler;
-				if (configuration.get_ext_handler(ext, ext_handler)) {
-					// we have the handler
-					pos = ext_handler.find("%s");
-					if (pos != string::npos)
-						ext_handler.replace(pos, 2, w);
-					cl->hist->append(w.c_str());
-					cl->hist->sync_the_file();
-					run_the_command(ext_handler.c_str(), g);
-					return true;
-				}
-			}
-		}
-		g_free(quoted);
-		// FIXME: for now we check only one entry
-		break;
+	// example: file.html -> `xdg-open %s` -> `xdg-open file.html`
+	char * cmd;
+	char * ext = strrchr (entry_text, '.');
+	char * handler_format = NULL;
+	if (ext) {
+		handler_format = config_get_handler_for_extension (ext);
 	}
-	g_regex_unref(regex);
 
-	return false;
+	if (handler_format) {
+		if (strchr (handler_format, '%')) { // xdg-open %s
+			cmd = g_strdup_printf (handler_format, entry_text);
+		} else { // xdg-open
+			cmd = g_strconcat (handler_format, " ", entry_text, NULL);
+		}
+		history_append (cl->hist, cmd);
+		run_the_command (cmd, g);
+
+		g_free (entry_text);
+		g_free (cmd);
+		return TRUE;
+	}
+
+	return FALSE;
 }
 
-static void on_compline_activated(GtkCompletionLine *cl, struct gigi *g)
+static void on_compline_activated (GtkCompletionLine *cl, struct gigi *g)
 {
-	if (url_check(cl, g))
+	char * entry_text = g_strdup (gtk_entry_get_text (GTK_ENTRY(cl)));
+	g_strstrip (entry_text);
+
+	if (url_check(cl, g, entry_text))
 		return;
-	if (ext_check(cl, g))
+	if (ext_check(cl, g, entry_text))
 		return;
 
-	string command = g_locale_from_utf8 (gtk_entry_get_text(GTK_ENTRY(cl)),
-						-1,
-						NULL,
-						NULL,
-						NULL);
+	char cmd[512];
+	char * AlwaysInTerm = NULL;
+	char ** term_progs = NULL;
+	char * selected_term_prog = NULL;
 
-	string::size_type i;
-	i = command.find_first_not_of(" \t");
-
-	if (i != string::npos) {
-		string::size_type j = command.find_first_of(" \t", i);
-		string progname = command.substr(i, j - i);
-		list<string> term_progs;
-		if (configuration.get_string_list("AlwaysInTerm", term_progs)) {
-#ifdef DEBUG
-			cerr << "---" << std::endl;
-			std::copy(term_progs.begin(), term_progs.end(),
-					std::ostream_iterator<string>(cerr, "\n"));
-			cerr << "---" << std::endl;
-#endif
-			list<string>::const_iterator w =
-			std::find(term_progs.begin(), term_progs.end(), progname);
-			if (w != term_progs.end()) {
-				on_compline_runwithterm(cl, g);
-				return;
+	if (config_get_string ("AlwaysInTerm", &AlwaysInTerm))
+	{
+		term_progs = g_strsplit (AlwaysInTerm, " ", 0);
+		int i;
+		for (i = 0; term_progs[i]; i++) {
+			if (strcmp (term_progs[i], entry_text) == 0) {
+				selected_term_prog = g_strdup (term_progs[i]);
+				break;
 			}
 		}
-		cl->hist->append(command.c_str());
-		cl->hist->sync_the_file();
-		run_the_command(command, g);
+		g_strfreev (term_progs);
 	}
+
+	if (selected_term_prog) {
+		char * TermExec;
+		config_get_string_expanded ("TermExec", &TermExec);
+		snprintf (cmd, sizeof (cmd), "%s %s", TermExec, selected_term_prog);
+		g_free (selected_term_prog);
+		g_free (TermExec);
+	} else {
+		strncpy (cmd, entry_text, sizeof (cmd));
+	}
+	g_free (entry_text);
+
+	history_append (cl->hist, cmd);
+	run_the_command (cmd, g);
 }
 
 // =============================================================
@@ -391,7 +359,7 @@ static void on_compline_activated(GtkCompletionLine *cl, struct gigi *g)
 static void gmrun_activate(void)
 {
 	GtkWidget *dialog, * main_vbox;
-	GtkWidget *compline;
+
 	GtkWidget *label_search;
 	struct gigi g;
 
@@ -428,11 +396,11 @@ static void gmrun_activate(void)
 	gtk_box_pack_start (GTK_BOX (main_vbox), compline, TRUE, TRUE, 0);
 
 	// don't show files starting with "." by default
-	if (!configuration.get_int("ShowDotFiles", GTK_COMPLETION_LINE(compline)->show_dot_files))
+	if (config_get_int ("ShowDotFiles", &(GTK_COMPLETION_LINE(compline)->show_dot_files))) {
 		GTK_COMPLETION_LINE(compline)->show_dot_files = 0;
-	{
-		int tmp;
-		if (configuration.get_int("TabTimeout", tmp))
+	}
+	int tmp;
+	if (config_get_int ("TabTimeout", &tmp)) {
 		((GtkCompletionLine*)compline)->tabtimeout = tmp;
 	}
 
@@ -464,7 +432,7 @@ static void gmrun_activate(void)
 						G_CALLBACK(on_ext_handler), &g);
 
 	int shows_last_history_item;
-	if (!configuration.get_int("ShowLast", shows_last_history_item)) {
+	if (!config_get_int ("ShowLast", &shows_last_history_item)) {
 		shows_last_history_item = 0;
 	}
 	if (shows_last_history_item) {
@@ -484,8 +452,8 @@ static void gmrun_activate(void)
 		gtk_window_set_default_size (GTK_WINDOW (dialog), window_geom.width,
 		                             window_geom.height);
 	} else {
-		/* default width = 400 */
-		gtk_window_set_default_size (GTK_WINDOW (dialog), 400, -1);
+		/* default width = 450 */
+		gtk_window_set_default_size (GTK_WINDOW (dialog), 450, -1);
 	}
 
 	// window icon
@@ -537,9 +505,9 @@ static void parse_command_line (int argc, char ** argv)
 	if (!geometry_str)
 	{
 		// --geometry was not specified, see config file
-		std::string geomstr;
-		if (configuration.get_string("Geometry", geomstr)) {
-			geometry_str = g_strdup (geomstr.c_str());
+		char * geomstr;
+		if (config_get_string ("Geometry", &geomstr)) {
+			geometry_str = g_strdup (geomstr);
 		}
 	}
 
@@ -591,6 +559,8 @@ static void parse_command_line (int argc, char ** argv)
 
 void gmrun_exit(void)
 {
+	gtk_widget_destroy (compline);
+	config_destroy ();
 	gtk_main_quit ();
 }
 
@@ -603,6 +573,7 @@ int main(int argc, char **argv)
 
 	gtk_init(&argc, &argv);
 
+	config_init ();
 	parse_command_line (argc, argv);
 	gmrun_activate ();
 

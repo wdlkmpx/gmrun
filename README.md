@@ -24,10 +24,7 @@ Features
     * CTRL-Enter runs the command in a terminal.  CTRL-Enter without any
       command starts a new terminal.
 
-    * You can use CTRL-R / CTRL-S to search through history, much like in bash
-      or Emacs.  Also, pressing "!" as the first character enters some special
-      search mode, finding those history entries that begin with the entered
-      text.
+    * You can use CTRL-R / CTRL-S to search through history.
 
     * URL handlers allowing you to enter lines like "http://www.google.com"
       to start your favorite browser on www.google.com.
@@ -38,8 +35,6 @@ Features
       instance, a ".txt" file, assuming that you have configured a handler for
       it in the configuration file.  The default handler for ".txt" files is,
       of course, Emacs.  But you can easily change that, you... you VIM user!
-
-    * UTF-8 support (added in 0.9.2)
 
 Requirements
 -------------

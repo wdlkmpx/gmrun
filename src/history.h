@@ -1,71 +1,77 @@
-/*****************************************************************************
- *  $Id: history.h,v 1.11 2002/08/17 13:19:31 mishoo Exp $
- *  Copyright (C) 2000, Mishoo
- *  Author: Mihai Bazon                  Email: mishoo@fenrir.infoiasi.ro
+
+/*
+ * This is free and unencumbered software released into the public domain.
  *
- *  Distributed under the terms of the GNU General Public License. You are
- *  free to use/modify/distribute this program as long as you comply to the
- *  terms of the GNU General Public License, version 2 or above, at your
- *  option, and provided that this copyright notice remains intact.
- *****************************************************************************/
+ * For more information, please refer to <https://unlicense.org>
+ */
 
+/*
+ * Generic implementation of HistoryFile
+ */
 
-#ifndef __HISTORY_H__
-#define __HISTORY_H__
+#ifndef __HISTORY_H
+#define __HISTORY_H
 
-#include <vector>
-#include <string>
-using namespace std;
-
-class HistoryFile
+#ifdef __cplusplus
+extern "C"
 {
-	protected:
-		int m_file_entries;
-		string m_filename;
-		string m_default;
-		bool m_default_set;
-		int m_current;
+#endif
 
-		typedef vector<string> StrArray;
-		StrArray history;
+#include <glib.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
- public:
-		HistoryFile();
-		~HistoryFile();
+typedef struct _Whistory HistoryFile;
 
-		void append(const char *entry);
-		void set_default(const char *defstr);
-		void clear_default();
+/// create a new HistoryFile
+/// the history is initialized using filename and the filename is stored
+/// maxcount > 0 sets a maximun item count
+HistoryFile * history_new (char * filename, unsigned int maxcount);
 
-		void reset_position();
+/// history is saved to file
+void history_save (HistoryFile * history);
 
-		const char * operator [] (size_t index);
+/// history is destroyed, you must variable to NULL
+void history_destroy (HistoryFile * history);
 
-		const char * prev();
-		const char * next();
+/// clear history and reload from file
+void history_reload (HistoryFile * history);
 
-		const char * prev_to_first();
-		const char * next_to_last();
+/// print history, good for debugging
+void history_print (HistoryFile * history);
 
-		void sync_the_file();
+/// some apps might want to handle prev/next in a special way
+void history_unset_current (HistoryFile * history);
 
-		inline const char* last_item() {
-			return history.empty() ? 0 : history.back().c_str();
-		}
+/// returns string with the current history item
+const char * history_get_current (HistoryFile * history);
 
-		inline const char* first_item() {
-			return history.empty() ? 0 : history.front().c_str();
-		}
+/// returns current index: valid index > 0
+/// assume unser current item if index <= 0
+int history_get_current_index (HistoryFile * history);
 
-	protected:
-		void read_the_file();
-	private:
-		struct DumpString {
-			DumpString(std::ostream& o) : _out(o) {}
-			void operator()(std::string& str) { _out << str << endl; }
-			private:
-				std::ostream& _out;
-		};
-};
+/// moves position to the next entry and returns text
+/// if there is no next entry, the position is not moved and returns NULL
+const char * history_next (HistoryFile * history);
 
-#endif // __HISTORY_H__
+/// moves position to the previous entry and returns text
+/// if there is no next entry, the position is not moved and returns NULL
+const char * history_prev (HistoryFile * history);
+
+/// moves position to the first entry en returns text
+/// if there are no entries, it returns NULL
+const char * history_first (HistoryFile * history);
+
+/// moves position to the last entry en returns text
+/// if there are no entries, it returns NULL
+const char * history_last (HistoryFile * history);
+
+/// append item to history
+void history_append (HistoryFile * history, const char * text);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif

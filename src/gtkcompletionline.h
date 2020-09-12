@@ -31,14 +31,6 @@ extern "C++" {
 	typedef struct _GtkCompletionLine GtkCompletionLine;
 	typedef struct _GtkCompletionLineClass GtkCompletionLineClass;
 
-	enum GCL_SEARCH_MODE
-	{
-		GCL_SEARCH_OFF = 0,
-		GCL_SEARCH_REW = 1,
-		GCL_SEARCH_FWD = 2,
-		GCL_SEARCH_BEG = 3
-	};
-
 	struct _GtkCompletionLine
 	{
 		GtkEntry parent;
@@ -53,7 +45,7 @@ extern "C++" {
 		GList *where; /* current row pointer ??? */
 
 		HistoryFile *hist;
-		GCL_SEARCH_MODE hist_search_mode;
+		gboolean hist_search_mode;
 		std::string *hist_word;
 
 		int first_key;
