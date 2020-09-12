@@ -82,6 +82,7 @@ G_DEFINE_TYPE_EXTENDED (GtkCompletionLine,   /* type name */
                         GTK_TYPE_ENTRY,      /* GType of the parent type */
                         (GTypeFlags)0,
                         NULL);
+static void gtk_completion_line_dispose (GObject *object);
 static void gtk_completion_line_finalize (GObject *object);
 // see also https://developer.gnome.org/gobject/stable/GTypeModule.html#G-DEFINE-DYNAMIC-TYPE:CAPS
 
@@ -92,6 +93,7 @@ static void gtk_completion_line_class_init (GtkCompletionLineClass *klass)
 	guint s;
 
 	GObjectClass * basic_class = G_OBJECT_CLASS (klass);
+	basic_class->dispose  = gtk_completion_line_dispose;
 	basic_class->finalize = gtk_completion_line_finalize;
 
 	s = g_signal_new ("unique",
@@ -246,6 +248,17 @@ static void gtk_completion_line_init (GtkCompletionLine *self)
 	history_unset_current (self->hist);
 
 	self->first_key = 1;
+}
+
+static void gtk_completion_line_dispose (GObject *object)
+{
+	// GTK3: Pango-CRITICAL **: pango_layout_get_cursor_pos: assertion 'index >= 0 && index <= layout->length' failed
+	// -- for some reason there's an error when the object is destroyed
+	// -- The GtkCompletionLine 'cancel' signal makes gmrun destroy the object and exit
+	// -- The current fix is to set an empty text
+	gtk_entry_set_text (GTK_ENTRY (object), "");
+	// --
+	G_OBJECT_CLASS (gtk_completion_line_parent_class)->dispose (object);
 }
 
 static void gtk_completion_line_finalize (GObject *object)
