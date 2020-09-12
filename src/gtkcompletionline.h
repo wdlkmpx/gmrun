@@ -46,7 +46,8 @@ extern "C++" {
 
 		HistoryFile *hist;
 		gboolean hist_search_mode;
-		std::string *hist_word;
+		char hist_word[1024]; /* history search: word that is being typed */
+		int hist_word_count; /* history search: word that is being typed */
 
 		int first_key;
 		int tabtimeout;

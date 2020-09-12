@@ -217,7 +217,8 @@ static void gtk_completion_line_init (GtkCompletionLine *self)
 	self->sort_list_compl = NULL;
 	self->tree_compl = NULL;
 	self->hist_search_mode = FALSE;
-	self->hist_word = new string;
+	self->hist_word[0] = 0;
+	self->hist_word_count = 0;
 	self->tabtimeout = 0;
 	self->show_dot_files = 0;
 
@@ -846,13 +847,13 @@ static int
 search_history (GtkCompletionLine* cl)
 { // must only be called if cl->hist_search_mode = TRUE
 	/* a key is pressed and added to cl->hist_word */
-	if (!cl->hist_word->empty())
+	if (cl->hist_word[0])
 	{
 		const char * history_current_item;
 		const char * search_str;
 		int search_str_len;
 		history_current_item = history_first (cl->hist);
-		search_str = cl->hist_word->c_str();
+		search_str = cl->hist_word;
 		search_str_len = strlen (search_str);
 
 		while (true)
@@ -1046,7 +1047,8 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
 				if (cl->hist_search_mode == FALSE) {
 					history_first (cl->hist);
 					cl->hist_search_mode = TRUE;
-					cl->hist_word->clear();
+					cl->hist_word[0] = 0;
+					cl->hist_word_count = 0;
 					g_signal_emit_by_name(G_OBJECT(cl), "search_mode");
 				}
 				return TRUE; /* stop signal emission */
@@ -1054,8 +1056,9 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
 
 		case GDK_KEY_BackSpace:
 			if (cl->hist_search_mode == TRUE) {
-				if (!cl->hist_word->empty()) {
-					cl->hist_word->erase(cl->hist_word->length() - 1);
+				if (cl->hist_word[0]) {
+					cl->hist_word_count--;
+					cl->hist_word[cl->hist_word_count] = 0;
 					search_history(cl);
 					g_signal_emit_by_name(G_OBJECT(cl), "search_letter");
 				}
@@ -1105,9 +1108,16 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
 			}
 			cl->where = NULL;
 			if (cl->hist_search_mode == TRUE) {
+				// https://developer.gnome.org/gdk2/stable/gdk2-Event-Structures.html#GdkEventKey
+				if (event->state & GDK_CONTROL_MASK)
+					return TRUE; /* stop signal emission */
 				if (event->length > 0) {
-					*cl->hist_word += event->string;
-					search_history(cl);
+					// event->string = char: 'c' 'd'
+					cl->hist_word[cl->hist_word_count] = event->string[0];
+					cl->hist_word_count++;
+					if (cl->hist_word_count <= 1000) {
+						search_history(cl);
+					}
 					return TRUE; /* stop signal emission */
 				} else
 					search_off(cl);

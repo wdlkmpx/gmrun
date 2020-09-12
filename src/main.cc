@@ -195,7 +195,7 @@ on_search_mode(GtkCompletionLine *cl, struct gigi *g)
 	if (cl->hist_search_mode == TRUE) {
 		gtk_widget_show(g->w2);
 		gtk_label_set_text(GTK_LABEL(g->w1), "Search:");
-		gtk_label_set_text(GTK_LABEL(g->w2), cl->hist_word->c_str());
+		gtk_label_set_text(GTK_LABEL(g->w2), cl->hist_word);
 	} else {
 		gtk_widget_hide(g->w2);
 		gtk_label_set_text(GTK_LABEL(g->w1), "Search OFF");
@@ -206,7 +206,7 @@ on_search_mode(GtkCompletionLine *cl, struct gigi *g)
 static void
 on_search_letter(GtkCompletionLine *cl, GtkWidget *label)
 {
-	gtk_label_set_text(GTK_LABEL(label), cl->hist_word->c_str());
+	gtk_label_set_text (GTK_LABEL(label), cl->hist_word);
 }
 
 static gint
