@@ -35,21 +35,17 @@ enum
 
 static void gmrun_exit (void);
 GtkAllocation window_geom = { -1, -1, -1, -1 };
+/* widgets that are used in several functions */
 GtkWidget * compline;
-
-struct gigi
-{
-	GtkWidget *w1;
-	GtkWidget *w2;
-};
+GtkWidget * wlabel;
+GtkWidget * wlabel_search;
 
 /// BEGIN: TIMEOUT MANAGEMENT
 
-static gint search_off_timeout(struct gigi *g);
-
+static gint search_off_timeout (void);
 static guint g_search_off_timeout_id = 0;
 
-static void remove_search_off_timeout()
+static void remove_search_off_timeout (void)
 {
 	if (g_search_off_timeout_id) {
 		g_source_remove(g_search_off_timeout_id);
@@ -57,12 +53,12 @@ static void remove_search_off_timeout()
 	}
 }
 
-static void add_search_off_timeout(guint32 timeout, struct gigi *g, GSourceFunc func = 0)
+static void add_search_off_timeout(guint32 timeout, GSourceFunc func = 0)
 {
 	remove_search_off_timeout();
 	if (!func)
 		func = GSourceFunc(search_off_timeout);
-	g_search_off_timeout_id = g_timeout_add(timeout, func, g);
+	g_search_off_timeout_id = g_timeout_add (timeout, func, NULL);
 }
 
 /// END: TIMEOUT MANAGEMENT
@@ -86,7 +82,7 @@ static void set_info_text_color (GtkWidget *w, const char *text, int spec)
 }
 
 static void
-run_the_command(const char * cmd, struct gigi* g)
+run_the_command (const char * cmd)
 {
 #if DEBUG
 	fprintf (stderr, "command: %s\n", cmd);
@@ -97,9 +93,9 @@ run_the_command(const char * cmd, struct gigi* g)
 	char ** argv;
 	success = g_shell_parse_argv (cmd, &argc, &argv, &error);
 	if (!success) {
-		set_info_text_color (g->w1, error->message, W_TEXT_STYLE_NOTFOUND);
+		set_info_text_color (wlabel, error->message, W_TEXT_STYLE_NOTFOUND);
 		g_error_free (error);
-		add_search_off_timeout (3000, g);
+		add_search_off_timeout (3000);
 		return;
 	}
 
@@ -111,29 +107,29 @@ run_the_command(const char * cmd, struct gigi* g)
 	if (success) {
 		gmrun_exit ();
 	} else {
-		set_info_text_color (g->w1, error->message, W_TEXT_STYLE_NOTFOUND);
+		set_info_text_color (wlabel, error->message, W_TEXT_STYLE_NOTFOUND);
 		g_error_free (error);
-		add_search_off_timeout (3000, g);
+		add_search_off_timeout (3000);
 	}
 }
 
 static void
-on_ext_handler(GtkCompletionLine *cl, const char* ext, struct gigi* g)
+on_ext_handler (GtkCompletionLine *cl, const char* ext)
 {
 	if (!ext) {
-		search_off_timeout (g);
+		search_off_timeout ();
 		return;
 	}
 	const char * handler = config_get_handler_for_extension (ext);
 	if (handler) {
 		char * tmp = g_strconcat ("Handler: ", handler, NULL);
-		gtk_label_set_text (GTK_LABEL(g->w2), tmp);
-		gtk_widget_show (g->w2);
+		gtk_label_set_text (GTK_LABEL (wlabel_search), tmp);
+		gtk_widget_show (wlabel_search);
 		g_free (tmp);
 	}
 }
 
-static void on_compline_runwithterm (GtkCompletionLine *cl, struct gigi* g)
+static void on_compline_runwithterm (GtkCompletionLine *cl)
 {
 	char cmd[512];
 	char * term;
@@ -156,50 +152,50 @@ static void on_compline_runwithterm (GtkCompletionLine *cl, struct gigi* g)
 	}
 
 	history_append (cl->hist, cmd);
-	run_the_command (cmd, g);
+	run_the_command (cmd);
 	g_free (entry_text);
 }
 
-static gint search_off_timeout(struct gigi *g)
+static gint search_off_timeout (void)
 {
-	set_info_text_color(g->w1, "Run program:", W_TEXT_STYLE_NORMAL);
-	gtk_widget_hide(g->w2);
+	set_info_text_color (wlabel, "Run program:", W_TEXT_STYLE_NORMAL);
+	gtk_widget_hide (wlabel_search);
 	g_search_off_timeout_id = 0;
 	return FALSE;
 }
 
 static void
-on_compline_unique(GtkCompletionLine *cl, struct gigi *g)
+on_compline_unique (GtkCompletionLine *cl)
 {
-	set_info_text_color(g->w1, "unique", W_TEXT_STYLE_UNIQUE);
-	add_search_off_timeout(1000, g);
+	set_info_text_color (wlabel, "unique", W_TEXT_STYLE_UNIQUE);
+	add_search_off_timeout (1000);
 }
 
 static void
-on_compline_notunique(GtkCompletionLine *cl, struct gigi *g)
+on_compline_notunique (GtkCompletionLine *cl)
 {
-	set_info_text_color(g->w1, "not unique", W_TEXT_STYLE_NOTUNIQUE);
-	add_search_off_timeout(1000, g);
+	set_info_text_color (wlabel, "not unique", W_TEXT_STYLE_NOTUNIQUE);
+	add_search_off_timeout(1000);
 }
 
 static void
-on_compline_incomplete(GtkCompletionLine *cl, struct gigi *g)
+on_compline_incomplete (GtkCompletionLine *cl)
 {
-	set_info_text_color(g->w1, "not found", W_TEXT_STYLE_NOTFOUND);
-	add_search_off_timeout(1000, g);
+	set_info_text_color (wlabel, "not found", W_TEXT_STYLE_NOTFOUND);
+	add_search_off_timeout(1000);
 }
 
 static void
-on_search_mode(GtkCompletionLine *cl, struct gigi *g)
+on_search_mode (GtkCompletionLine *cl)
 {
 	if (cl->hist_search_mode == TRUE) {
-		gtk_widget_show(g->w2);
-		gtk_label_set_text(GTK_LABEL(g->w1), "Search:");
-		gtk_label_set_text(GTK_LABEL(g->w2), cl->hist_word);
+		gtk_widget_show (wlabel_search);
+		gtk_label_set_text (GTK_LABEL (wlabel), "Search:");
+		gtk_label_set_text (GTK_LABEL (wlabel_search), cl->hist_word);
 	} else {
-		gtk_widget_hide(g->w2);
-		gtk_label_set_text(GTK_LABEL(g->w1), "Search OFF");
-		add_search_off_timeout(1000, g);
+		gtk_widget_hide (wlabel_search);
+		gtk_label_set_text (GTK_LABEL (wlabel), "Search OFF");
+		add_search_off_timeout (1000);
 	}
 }
 
@@ -210,21 +206,21 @@ on_search_letter(GtkCompletionLine *cl, GtkWidget *label)
 }
 
 static gint
-search_fail_timeout(struct gigi *g)
+search_fail_timeout(void)
 {
-	set_info_text_color(g->w1, "Search:", W_TEXT_STYLE_NOTUNIQUE);
+	set_info_text_color (wlabel, "Search:", W_TEXT_STYLE_NOTUNIQUE);
 	g_search_off_timeout_id = 0;
 	return FALSE;
 }
 
 static void
-on_search_not_found(GtkCompletionLine *cl, struct gigi *g)
+on_search_not_found(GtkCompletionLine *cl)
 {
-	set_info_text_color(g->w1, "Not Found!", W_TEXT_STYLE_NOTFOUND);
-	add_search_off_timeout(1000, g, GSourceFunc(search_fail_timeout));
+	set_info_text_color (wlabel, "Not Found!", W_TEXT_STYLE_NOTFOUND);
+	add_search_off_timeout(1000, GSourceFunc(search_fail_timeout));
 }
 
-static bool url_check(GtkCompletionLine *cl, struct gigi *g, char * entry_text)
+static bool url_check(GtkCompletionLine *cl, char * entry_text)
 {
 	// <url_type> <delim>  <url>
 	// http          :     //www.fsf.org
@@ -269,13 +265,13 @@ static bool url_check(GtkCompletionLine *cl, struct gigi *g, char * entry_text)
 
 	if (cmd) {
 		history_append (cl->hist, cmd);
-		run_the_command (cmd, g);
+		run_the_command (cmd);
 		g_free (cmd);
 	} else {
 		g_free (tmp);
 		tmp = g_strconcat ("No URL handler for [", config_key, "]", NULL);
-		set_info_text_color (g->w1, tmp, W_TEXT_STYLE_NOTFOUND);
-		add_search_off_timeout (1000, g);
+		set_info_text_color (wlabel, tmp, W_TEXT_STYLE_NOTFOUND);
+		add_search_off_timeout (1000);
 	}
 
 	g_free (entry_text);
@@ -284,7 +280,7 @@ static bool url_check(GtkCompletionLine *cl, struct gigi *g, char * entry_text)
 	return TRUE;
 }
 
-static bool ext_check (GtkCompletionLine *cl, struct gigi *g, char * entry_text)
+static bool ext_check (GtkCompletionLine *cl, char * entry_text)
 {
 	// example: file.html -> `xdg-open %s` -> `xdg-open file.html`
 	char * cmd;
@@ -301,7 +297,7 @@ static bool ext_check (GtkCompletionLine *cl, struct gigi *g, char * entry_text)
 			cmd = g_strconcat (handler_format, " ", entry_text, NULL);
 		}
 		history_append (cl->hist, cmd);
-		run_the_command (cmd, g);
+		run_the_command (cmd);
 
 		g_free (entry_text);
 		g_free (cmd);
@@ -311,14 +307,14 @@ static bool ext_check (GtkCompletionLine *cl, struct gigi *g, char * entry_text)
 	return FALSE;
 }
 
-static void on_compline_activated (GtkCompletionLine *cl, struct gigi *g)
+static void on_compline_activated (GtkCompletionLine *cl)
 {
 	char * entry_text = g_strdup (gtk_entry_get_text (GTK_ENTRY(cl)));
 	g_strstrip (entry_text);
 
-	if (url_check(cl, g, entry_text))
+	if (url_check (cl, entry_text))
 		return;
-	if (ext_check(cl, g, entry_text))
+	if (ext_check (cl, entry_text))
 		return;
 
 	char cmd[512];
@@ -351,7 +347,7 @@ static void on_compline_activated (GtkCompletionLine *cl, struct gigi *g)
 	g_free (entry_text);
 
 	history_append (cl->hist, cmd);
-	run_the_command (cmd, g);
+	run_the_command (cmd);
 }
 
 // =============================================================
@@ -361,7 +357,6 @@ static void gmrun_activate(void)
 	GtkWidget *dialog, * main_vbox;
 
 	GtkWidget *label_search;
-	struct gigi g;
 
 	GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	dialog = gtk_dialog_new();
@@ -386,10 +381,12 @@ static void gmrun_activate(void)
 	GtkWidget *label = gtk_label_new("Run program:");
 	gtk_box_pack_start (GTK_BOX(hhbox), label, FALSE, FALSE, 10);
 	gtkcompat_widget_set_halign_left (GTK_WIDGET (label));
+	wlabel = label;
 
 	label_search = gtk_label_new("");
 	gtk_box_pack_end (GTK_BOX (hhbox), label_search, TRUE, TRUE, 10);
 	gtkcompat_widget_set_halign_right (GTK_WIDGET (label_search));
+	wlabel_search = label_search;
 
 	compline = gtk_completion_line_new();
 	gtk_widget_set_name (compline, "gmrun_compline");
@@ -404,32 +401,29 @@ static void gmrun_activate(void)
 		((GtkCompletionLine*)compline)->tabtimeout = tmp;
 	}
 
-	g.w1 = label;
-	g.w2 = label_search;
-
 	g_signal_connect(G_OBJECT(compline), "cancel",
 						G_CALLBACK(gmrun_exit), NULL);
 	g_signal_connect(G_OBJECT(compline), "activate",
-						G_CALLBACK(on_compline_activated), &g);
+						G_CALLBACK (on_compline_activated), NULL);
 	g_signal_connect(G_OBJECT(compline), "runwithterm",
-						G_CALLBACK(on_compline_runwithterm), &g);
+						G_CALLBACK (on_compline_runwithterm), NULL);
 
 	g_signal_connect(G_OBJECT(compline), "unique",
-						G_CALLBACK(on_compline_unique), &g);
+						G_CALLBACK (on_compline_unique), NULL);
 	g_signal_connect(G_OBJECT(compline), "notunique",
-						G_CALLBACK(on_compline_notunique), &g);
+						G_CALLBACK (on_compline_notunique), NULL);
 	g_signal_connect(G_OBJECT(compline), "incomplete",
-						G_CALLBACK(on_compline_incomplete), &g);
+						G_CALLBACK (on_compline_incomplete), NULL);
 
 	g_signal_connect(G_OBJECT(compline), "search_mode",
-						G_CALLBACK(on_search_mode), &g);
+						G_CALLBACK (on_search_mode), NULL);
 	g_signal_connect(G_OBJECT(compline), "search_not_found",
-						G_CALLBACK(on_search_not_found), &g);
+						G_CALLBACK (on_search_not_found), NULL);
 	g_signal_connect(G_OBJECT(compline), "search_letter",
 						G_CALLBACK(on_search_letter), label_search);
 
 	g_signal_connect(G_OBJECT(compline), "ext_handler",
-						G_CALLBACK(on_ext_handler), &g);
+						G_CALLBACK (on_ext_handler), NULL);
 
 	int shows_last_history_item;
 	if (!config_get_int ("ShowLast", &shows_last_history_item)) {

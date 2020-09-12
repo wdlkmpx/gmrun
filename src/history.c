@@ -29,11 +29,7 @@ static void _history_clear (HistoryFile * history)
 {
    // keep history->filename (destroyed in _history_free())
    if (history->list) {
-      GList * i ;
-      for (i = history->list;  i;  i = i->next) {
-         if (i->data) g_free (i->data);
-      }
-      g_list_free (history->list);
+      g_list_free_full (history->list, g_free);
       history->list = NULL;
    }
    history->index = 0;
