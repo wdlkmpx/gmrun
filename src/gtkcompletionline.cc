@@ -40,6 +40,11 @@ static int on_cursor_changed_handler = 0;
 static int on_key_press_handler = 0;
 static guint timeout_id = 0;
 
+/* history search - backwards / fordwards -- see history.c */
+const char * (*history_search_first_func) (HistoryFile *);
+const char * (*history_search_next_func)  (HistoryFile *);
+static gboolean searching_history = FALSE;
+
 /* GLOBALS */
 
 /* signals */
@@ -861,12 +866,13 @@ static int
 search_history (GtkCompletionLine* cl)
 { // must only be called if cl->hist_search_mode = TRUE
 	/* a key is pressed and added to cl->hist_word */
+	searching_history = TRUE;
 	if (cl->hist_word[0])
 	{
 		const char * history_current_item;
 		const char * search_str;
 		int search_str_len;
-		history_current_item = history_first (cl->hist);
+		history_current_item = history_search_first_func (cl->hist);
 		search_str = cl->hist_word;
 		search_str_len = strlen (search_str);
 
@@ -881,7 +887,7 @@ search_history (GtkCompletionLine* cl)
 					return 1;
 				}
 			}
-			history_current_item = history_next (cl->hist);
+			history_current_item = history_search_next_func (cl->hist);
 			if (history_current_item == NULL) {
 				g_signal_emit_by_name (G_OBJECT(cl), "search_not_found");
 				break;
@@ -889,6 +895,7 @@ search_history (GtkCompletionLine* cl)
 		}
 	}
 	g_signal_emit_by_name (G_OBJECT(cl), "search_letter");
+	searching_history = FALSE;
 
 	return 1;
 }
@@ -965,9 +972,9 @@ on_scroll(GtkCompletionLine *cl, GdkEventScroll *event, gpointer data)
 static gboolean
 on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
 { // https://developer.gnome.org/gtk2/stable/GtkWidget.html#GtkWidget-key-press-event
-	if (event->type == GDK_KEY_PRESS)
+	int key = event->keyval;
+	switch (key)
 	{
-		switch (event->keyval) {
 		case GDK_KEY_Control_R:
 		case GDK_KEY_Control_L:
 		case GDK_KEY_Shift_R:
@@ -1058,8 +1065,18 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
 		case GDK_KEY_R:
 		case GDK_KEY_r:
 			if (event->state & GDK_CONTROL_MASK) {
+				if (searching_history == FALSE) {
+					/* set proper funcs for forward/backward search */
+					if (key == GDK_KEY_R || key == GDK_KEY_r) {  /* reverse - backward */
+						history_search_first_func = history_last;
+						history_search_next_func  = history_prev;
+					} else { /* from start - forward */
+						history_search_first_func = history_first;
+						history_search_next_func  = history_next;
+					}
+				}
 				if (cl->hist_search_mode == FALSE) {
-					history_first (cl->hist);
+					gtk_entry_set_text (GTK_ENTRY (cl), "");
 					cl->hist_search_mode = TRUE;
 					cl->hist_word[0] = 0;
 					cl->hist_word_count = 0;
@@ -1131,8 +1148,7 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
 				}
 			}
 			break;
-		} //switch
-	} //if
+	} //switch
 	return FALSE;
 }
 

@@ -18,20 +18,22 @@ Features
       can change window position and width, history size, terminal, URL
       handlers, etc.
 
-    * Config file parameter: History.  History is maintained in the file "
-      ~/.gmrun_history ".
-
     * CTRL-Enter runs the command in a terminal.  CTRL-Enter without any
       command starts a new terminal.
 
-    * You can use CTRL-R / CTRL-S to search through history.
+    * Config file parameter: History.  History is maintained in the file "
+      ~/.gmrun_history ".
+
+    * CTRL-R to search backwards through history.
+    * CTRL-S to search forward through history.
+    * Esc to cancel search (only once).
 
     * URL handlers allowing you to enter lines like "http://www.google.com"
       to start your favorite browser on www.google.com.
       The URL-s are configurable from the configuration
       file, in a simple manner (I hope..).
 
-    * Extension handlers (added in 0.8.0).  Basically you can run, for
+    * Extension handlers.  Basically you can run, for
       instance, a ".txt" file, assuming that you have configured a handler for
       it in the configuration file.  The default handler for ".txt" files is,
       of course, Emacs.  But you can easily change that, you... you VIM user!
@@ -92,14 +94,3 @@ Tips and tricks
    - Pressing CTRL+Enter (anytime) runs the command in a terminal (check your
      configuration file).  But if the entry is empty (no text is present, or
      only whitespaces) then a fresh terminal will be started.
-
-5. Suppose you use CTRL-R to search backwards through history.  If,
-   accidentally, you skipped the line that you're interested in, you can use
-   CTRL-S to search forward.  This is more awesome than in bash :)  It
-   basically acts like a filter on history, for which you use CTRL-R instead
-   of UP arrow, and CTRL-S instead of DOWN arrow.
-
-   The same if you search something with "!": only lines that BEGIN with the
-   entered text are matching, but you can reverse the search order using
-   CTRL-R / CTRL-S.  Very flexible approach.
-
