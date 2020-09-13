@@ -384,8 +384,7 @@ static void gmrun_activate(void)
 	wlabel = label;
 
 	label_search = gtk_label_new("");
-	gtk_box_pack_end (GTK_BOX (hhbox), label_search, TRUE, TRUE, 10);
-	gtkcompat_widget_set_halign_right (GTK_WIDGET (label_search));
+	gtk_box_pack_start (GTK_BOX (hhbox), label_search, FALSE, TRUE, 0);
 	wlabel_search = label_search;
 
 	compline = gtk_completion_line_new();
