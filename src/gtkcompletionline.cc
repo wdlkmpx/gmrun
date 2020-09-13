@@ -265,7 +265,8 @@ static void gtk_completion_line_finalize (GObject *object)
 {
 	GtkCompletionLine * self = GTK_COMPLETION_LINE (object);
 	if (self->hist) {
-		history_save (self->hist);
+		                          // 0 = save | 1 = if changed
+		history_save (self->hist, HISTORY_SAVE_IF_CHANGED);
 		//history_print (self->hist); //debug
 		history_destroy (self->hist);
 		self->hist = NULL;

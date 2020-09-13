@@ -24,13 +24,19 @@ extern "C"
 
 typedef struct _Whistory HistoryFile;
 
+enum
+{
+   HISTORY_SAVE_ALWAYS,
+   HISTORY_SAVE_IF_CHANGED,
+};
+
 /// create a new HistoryFile
 /// the history is initialized using filename and the filename is stored
 /// maxcount > 0 sets a maximun item count
 HistoryFile * history_new (char * filename, unsigned int maxcount);
 
-/// history is saved to file
-void history_save (HistoryFile * history);
+/// save history to file, 0 = force save / 1 = save only if history has changed
+void history_save (HistoryFile * history, int save_if_changed);
 
 /// history is destroyed, you must variable to NULL
 void history_destroy (HistoryFile * history);
@@ -67,8 +73,10 @@ const char * history_first (HistoryFile * history);
 /// if there are no entries, it returns NULL
 const char * history_last (HistoryFile * history);
 
-/// append item to history
+/// add entry to history, if entry already exists, it's moved to the end of the list
 void history_append (HistoryFile * history, const char * text);
+
+void history_reverse (HistoryFile * history);
 
 #ifdef __cplusplus
 }
