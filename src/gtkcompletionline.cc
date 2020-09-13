@@ -1097,22 +1097,6 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
 			}
 			return TRUE; /* stop signal emission */
 
-		case GDK_KEY_G:
-		case GDK_KEY_g:
-			if (event->state & GDK_CONTROL_MASK) {
-				search_off(cl);
-				return TRUE; /* stop signal emission */
-			} else goto ordinary;
-
-		case GDK_KEY_E:
-		case GDK_KEY_e:
-			if (event->state & GDK_CONTROL_MASK) {
-				search_off(cl);
-				if (cl->hist_search_mode == TRUE)
-					clear_selection(cl);
-			}
-			goto ordinary;
-
 		ordinary:
 		default:
 			cl->first_key = 0;
