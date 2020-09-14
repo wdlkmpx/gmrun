@@ -28,6 +28,13 @@ ShowDotFiles = 0
 # Set this to NULL if don't like this feature.
 TabTimeout = 0
 
+# use GLib XDG handling? (freedesktop specification)
+USE_XDG = 0
+
+#=======================================================================
+# if not using XDG, you can specify URL and extension Handlers...
+#=======================================================================
+
 # URL handlers
 # If the entered text is "http://www.google.com" then:
 #   - %u gets replaced with the whole URL ("http://www.google.com")

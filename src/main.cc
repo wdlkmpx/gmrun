@@ -40,6 +40,9 @@ GtkWidget * compline;
 GtkWidget * wlabel;
 GtkWidget * wlabel_search;
 
+/* preferences */
+int USE_XDG = 0;
+
 /// BEGIN: TIMEOUT MANAGEMENT
 
 static gint search_off_timeout (void);
@@ -84,9 +87,9 @@ static void set_info_text_color (GtkWidget *w, const char *text, int spec)
 static void
 run_the_command (const char * cmd)
 {
-#if DEBUG
+//#if DEBUG
 	fprintf (stderr, "command: %s\n", cmd);
-#endif
+//#endif
 	GError * error = NULL;
 	gboolean success;
 	int argc;
@@ -114,8 +117,38 @@ run_the_command (const char * cmd)
 }
 
 static void
-on_ext_handler (GtkCompletionLine *cl, const char* ext)
+on_ext_handler (GtkCompletionLine *cl, const char * filename)
 {
+ if (USE_XDG) // GLib XDG handling (freedesktop specification)
+ {
+	gchar * content_type, * mime_type, * msg;
+	const gchar * handler;
+	GAppInfo * app_info;
+
+	if (filename) {
+		content_type = g_content_type_guess (filename, NULL, 0, NULL);
+		if (content_type) {
+			mime_type = g_content_type_get_mime_type (content_type);
+			g_free (content_type);
+			app_info = g_app_info_get_default_for_type (mime_type, FALSE);
+			g_free (mime_type);
+			if (app_info) {
+				handler = g_app_info_get_commandline (app_info);
+				msg = g_strconcat("Handler: ", handler, NULL);
+				gtk_label_set_text (GTK_LABEL (wlabel_search), msg);
+				gtk_widget_show (wlabel_search);
+
+				g_object_unref(app_info);
+				g_free(msg);
+				return;
+			}
+		}
+	}
+	search_off_timeout();
+ }
+ else // custom EXT handlers
+ {
+	const char * ext = strrchr (filename, '.');
 	if (!ext) {
 		search_off_timeout ();
 		return;
@@ -127,6 +160,7 @@ on_ext_handler (GtkCompletionLine *cl, const char* ext)
 		gtk_widget_show (wlabel_search);
 		g_free (tmp);
 	}
+ }
 }
 
 static void on_compline_runwithterm (GtkCompletionLine *cl)
@@ -220,8 +254,64 @@ on_search_not_found(GtkCompletionLine *cl)
 	add_search_off_timeout(1000, GSourceFunc(search_fail_timeout));
 }
 
-static bool url_check(GtkCompletionLine *cl, char * entry_text)
+
+// =============================================================
+
+static void xdg_app_run_command (GAppInfo *app, const gchar *args)
 {
+	// get 
+	char * cmd, * exe;
+	GRegex * regex;
+
+	regex = g_regex_new (".%[fFuUdDnNickvm]", G_REGEX_OPTIMIZE, G_REGEX_MATCH_NOTEMPTY, NULL);
+	exe = g_regex_replace_literal (regex, // Remove xdg desktop files fields from app
+	                               g_app_info_get_commandline (app),
+	                               -1, 0, "", G_REGEX_MATCH_NOTEMPTY, NULL);
+	cmd = g_strconcat (exe, " ", args, NULL);
+	run_the_command (cmd); /* Launch the command */
+	g_regex_unref (regex);
+	g_free (exe);
+	g_free (cmd);
+}
+
+/* Handler for URLs  */
+static bool url_check (GtkCompletionLine *cl, char * entry_text)
+{
+ if (USE_XDG) // GLib XDG handling (freedesktop specification)
+ {
+	char * delim;
+	const char * url, * protocol;
+	GAppInfo * app;
+	delim = strchr (entry_text, ':');
+	if (!delim || !*(delim+1)) {
+		return FALSE;
+	}
+	protocol = entry_text;
+	url = delim + 1;
+	*delim = 0;
+
+	if (url[0] == '/' && url[1] == '/')
+	{
+		app = g_app_info_get_default_for_uri_scheme (protocol);
+		if (app) { // found known uri handler for protocol
+			*delim = ':';
+			xdg_app_run_command (app, entry_text);
+			history_append (cl->hist, entry_text);
+			g_object_unref (app);
+		} else {
+			char *tmp = g_strconcat ("No URL handler for [", protocol, "]", NULL);
+			set_info_text_color (wlabel, tmp, W_TEXT_STYLE_NOTFOUND);
+			add_search_off_timeout (1000);
+			g_free (tmp);
+		}
+		return TRUE;
+	}
+	*delim = ':';
+	return FALSE;
+
+ }
+ else //-------- custom URL handlers
+ {
 	// <url_type> <delim>  <url>
 	// http          :     //www.fsf.org
 	//  <f  u  l  l     u  r  l>
@@ -276,32 +366,90 @@ static bool url_check(GtkCompletionLine *cl, char * entry_text)
 	g_free (config_key);
 	g_free (tmp);
 	return TRUE;
+ }
 }
 
+
+static char * escape_spaces (char * entry_text)
+{   // this for EXT handlers: replace " " with "\ "
+	// it's the only way to make the command run if the filename contains spaces
+	GRegex * regex;
+	char * quoted;
+	if (!strstr (entry_text, "\\ ")) {
+		regex = g_regex_new (" ", G_REGEX_OPTIMIZE, G_REGEX_MATCH_NOTEMPTY, NULL);
+		quoted = g_regex_replace_literal (regex, entry_text, -1, 0, "\\ ", G_REGEX_MATCH_NOTEMPTY, NULL);
+		g_regex_unref (regex);
+	} else {
+		quoted = strdup (entry_text); // already scaped, just duplicate text
+	}
+	return (quoted);
+}
+
+/* Handler for extensions */
 static bool ext_check (GtkCompletionLine *cl, char * entry_text)
 {
+ if (USE_XDG) // GLib XDG handling (freedesktop specification)
+ {
+	char *quoted, *content_type, *mime_type;
+	GAppInfo *app_info;
+	gboolean sure;
+	quoted = escape_spaces (entry_text);
+	/* File is executable: launch it (fail silently if file isn't really executable) */
+	if (g_file_test (quoted, G_FILE_TEST_IS_EXECUTABLE)) {
+		run_the_command (quoted);
+		history_append (cl->hist, entry_text);
+		g_free (quoted);
+		return TRUE;
+	}
+	/* Check mime type through extension */
+	if (quoted[0] == '/' && strchr (quoted, '.')) {
+		content_type = g_content_type_guess (quoted, NULL, 0, &sure);
+		if (content_type) {
+			mime_type = g_content_type_get_mime_type (content_type);
+			g_free (content_type);
+			app_info = g_app_info_get_default_for_type (mime_type, FALSE);
+			g_free (mime_type);
+			if (app_info) { // found mime
+				xdg_app_run_command (app_info, quoted);
+				history_append (cl->hist, entry_text);
+				g_free (quoted);
+				g_object_unref(app_info);
+				return TRUE;
+			}
+		}
+	}
+	g_free (quoted);
+	return FALSE;
+
+ }
+ else //-------- custom EXTension handlers
+ {
 	// example: file.html -> `xdg-open %s` -> `xdg-open file.html`
-	char * cmd;
+	char * cmd, * quoted;
 	char * ext = strrchr (entry_text, '.');
 	char * handler_format = NULL;
 	if (ext) {
 		handler_format = config_get_handler_for_extension (ext);
 	}
-
 	if (handler_format) {
+		quoted = escape_spaces (entry_text);
 		if (strchr (handler_format, '%')) { // xdg-open %s
-			cmd = g_strdup_printf (handler_format, entry_text);
+			cmd = g_strdup_printf (handler_format, quoted);
 		} else { // xdg-open
-			cmd = g_strconcat (handler_format, " ", entry_text, NULL);
+			cmd = g_strconcat (handler_format, " ", quoted, NULL);
 		}
 		history_append (cl->hist, entry_text);
 		run_the_command (cmd);
 		g_free (cmd);
+		g_free (quoted);
 		return TRUE;
 	}
 
 	return FALSE;
+ }
 }
+
+// =============================================================
 
 static void on_compline_activated (GtkCompletionLine *cl)
 {
@@ -347,7 +495,9 @@ static void on_compline_activated (GtkCompletionLine *cl)
 	run_the_command (cmd);
 }
 
+
 // =============================================================
+
 
 static void gmrun_activate(void)
 {
@@ -395,6 +545,9 @@ static void gmrun_activate(void)
 	int tmp;
 	if (!config_get_int ("TabTimeout", &tmp)) {
 		((GtkCompletionLine*)compline)->tabtimeout = tmp;
+	}
+	if (!config_get_int ("USE_XDG", &USE_XDG)) {
+		USE_XDG = 0;
 	}
 
 	g_signal_connect(G_OBJECT(compline), "cancel",

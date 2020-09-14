@@ -1,9 +1,14 @@
 /*
+/*
+ * This is free and unencumbered software released into the public domain.
+ *
+ * For more information, please refer to <https://unlicense.org>
+ */
+
+/** 2020-09-14 **/
+
+/*
  * gtkcompat.h, GTK2+ compatibility layer
- *
- * 2020-09-04
- *
- * License: MIT
  * 
  * This lib makes it easier to support older GTK versions
  * while still avoiding deprecated functions as much as possible.
@@ -110,6 +115,11 @@ extern "C"
 // GLIB < 2.22
 #if ! GLIB_CHECK_VERSION (2, 22, 0)
 #define g_mapped_file_unref(x) g_mapped_file_free(x)
+#endif
+
+// GLIB < 2.20
+#if ! GLIB_CHECK_VERSION (2, 20, 0)
+#define g_app_info_get_commandline(app) g_app_info_get_executable(app)
 #endif
 
 /* glib 2.18+ tested */

@@ -366,9 +366,7 @@ int set_words(GtkCompletionLine *object, const vector<string>& words, int pos = 
 	g_regex_unref (regex);
 
 	if (words.size() == 1) {
-		const char * dot = NULL;
-		dot = strrchr (words.back().c_str(), '.');
-		g_signal_emit_by_name (G_OBJECT(object), "ext_handler", dot);
+		g_signal_emit_by_name (G_OBJECT(object), "ext_handler", words.back().c_str());
 	}
 
 	gtk_entry_set_text(GTK_ENTRY(object), 
