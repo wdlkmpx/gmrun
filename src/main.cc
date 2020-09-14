@@ -264,7 +264,7 @@ static bool url_check(GtkCompletionLine *cl, char * entry_text)
 	}
 
 	if (cmd) {
-		history_append (cl->hist, cmd);
+		history_append (cl->hist, entry_text);
 		run_the_command (cmd);
 		g_free (cmd);
 	} else {
@@ -273,8 +273,6 @@ static bool url_check(GtkCompletionLine *cl, char * entry_text)
 		set_info_text_color (wlabel, tmp, W_TEXT_STYLE_NOTFOUND);
 		add_search_off_timeout (1000);
 	}
-
-	g_free (entry_text);
 	g_free (config_key);
 	g_free (tmp);
 	return TRUE;
@@ -296,10 +294,8 @@ static bool ext_check (GtkCompletionLine *cl, char * entry_text)
 		} else { // xdg-open
 			cmd = g_strconcat (handler_format, " ", entry_text, NULL);
 		}
-		history_append (cl->hist, cmd);
+		history_append (cl->hist, entry_text);
 		run_the_command (cmd);
-
-		g_free (entry_text);
 		g_free (cmd);
 		return TRUE;
 	}
@@ -312,10 +308,11 @@ static void on_compline_activated (GtkCompletionLine *cl)
 	char * entry_text = g_strdup (gtk_entry_get_text (GTK_ENTRY(cl)));
 	g_strstrip (entry_text);
 
-	if (url_check (cl, entry_text))
+	if (url_check (cl, entry_text) == TRUE
+	    || ext_check (cl, entry_text) == TRUE)  {
+		g_free (entry_text);
 		return;
-	if (ext_check (cl, entry_text))
-		return;
+	}
 
 	char cmd[512];
 	char * AlwaysInTerm = NULL;
