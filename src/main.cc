@@ -392,11 +392,11 @@ static void gmrun_activate(void)
 	gtk_box_pack_start (GTK_BOX (main_vbox), compline, TRUE, TRUE, 0);
 
 	// don't show files starting with "." by default
-	if (config_get_int ("ShowDotFiles", &(GTK_COMPLETION_LINE(compline)->show_dot_files))) {
+	if (!config_get_int ("ShowDotFiles", &(GTK_COMPLETION_LINE(compline)->show_dot_files))) {
 		GTK_COMPLETION_LINE(compline)->show_dot_files = 0;
 	}
 	int tmp;
-	if (config_get_int ("TabTimeout", &tmp)) {
+	if (!config_get_int ("TabTimeout", &tmp)) {
 		((GtkCompletionLine*)compline)->tabtimeout = tmp;
 	}
 
@@ -429,7 +429,7 @@ static void gmrun_activate(void)
 		shows_last_history_item = 0;
 	}
 	if (shows_last_history_item) {
-		gtk_completion_line_last_history_item(GTK_COMPLETION_LINE(compline));
+		gtk_completion_line_last_history_item (GTK_COMPLETION_LINE(compline));
 	}
 
 	// geometry: window position
