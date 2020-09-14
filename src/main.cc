@@ -323,7 +323,7 @@ static bool url_check (GtkCompletionLine *cl, char * entry_text)
 	char * url, * url_type, * full_url, * chosen_url;
 	char * url_handler;
 	char * config_key;
-
+	cmd = tmp = delim = p = url_handler = config_key = NULL;
 	delim = strchr (entry_text, ':');
 	if (!delim || !*(delim+1)) {
 		return FALSE;
@@ -335,7 +335,7 @@ static bool url_check (GtkCompletionLine *cl, char * entry_text)
 	url      = delim + 1; // //www.fsf.org
 	full_url = entry_text;
 
-	config_key = g_strconcat ("URL_", url_type);
+	config_key = g_strconcat ("URL_", url_type, NULL);
 	if (config_get_string_expanded (config_key, &url_handler))
 	{
 		chosen_url = url;

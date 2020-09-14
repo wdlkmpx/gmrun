@@ -17,6 +17,7 @@ extern "C"
 {
 #endif
 
+#include "gtkcompat.h"
 #include <glib.h>
 #include <stdio.h>
 #include <stdlib.h>
