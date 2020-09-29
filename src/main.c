@@ -56,11 +56,11 @@ static void remove_search_off_timeout (void)
 	}
 }
 
-static void add_search_off_timeout(guint32 timeout, GSourceFunc func = 0)
+static void add_search_off_timeout (guint32 timeout, GSourceFunc func)
 {
 	remove_search_off_timeout();
 	if (!func)
-		func = GSourceFunc(search_off_timeout);
+		func = (GSourceFunc) search_off_timeout;
 	g_search_off_timeout_id = g_timeout_add (timeout, func, NULL);
 }
 
@@ -87,9 +87,9 @@ static void set_info_text_color (GtkWidget *w, const char *text, int spec)
 static void
 run_the_command (const char * cmd)
 {
-//#if DEBUG
+#if DEBUG
 	fprintf (stderr, "command: %s\n", cmd);
-//#endif
+#endif
 	GError * error = NULL;
 	gboolean success;
 	int argc;
@@ -98,7 +98,7 @@ run_the_command (const char * cmd)
 	if (!success) {
 		set_info_text_color (wlabel, error->message, W_TEXT_STYLE_NOTFOUND);
 		g_error_free (error);
-		add_search_off_timeout (3000);
+		add_search_off_timeout (3000, NULL);
 		return;
 	}
 
@@ -112,7 +112,7 @@ run_the_command (const char * cmd)
 	} else {
 		set_info_text_color (wlabel, error->message, W_TEXT_STYLE_NOTFOUND);
 		g_error_free (error);
-		add_search_off_timeout (3000);
+		add_search_off_timeout (3000, NULL);
 	}
 }
 
@@ -202,21 +202,21 @@ static void
 on_compline_unique (GtkCompletionLine *cl)
 {
 	set_info_text_color (wlabel, "unique", W_TEXT_STYLE_UNIQUE);
-	add_search_off_timeout (1000);
+	add_search_off_timeout (1000, NULL);
 }
 
 static void
 on_compline_notunique (GtkCompletionLine *cl)
 {
 	set_info_text_color (wlabel, "not unique", W_TEXT_STYLE_NOTUNIQUE);
-	add_search_off_timeout(1000);
+	add_search_off_timeout (1000, NULL);
 }
 
 static void
 on_compline_incomplete (GtkCompletionLine *cl)
 {
 	set_info_text_color (wlabel, "not found", W_TEXT_STYLE_NOTFOUND);
-	add_search_off_timeout(1000);
+	add_search_off_timeout (1000, NULL);
 }
 
 static void
@@ -229,7 +229,7 @@ on_search_mode (GtkCompletionLine *cl)
 	} else {
 		gtk_widget_hide (wlabel_search);
 		gtk_label_set_text (GTK_LABEL (wlabel), "Search OFF");
-		add_search_off_timeout (1000);
+		add_search_off_timeout (1000, NULL);
 	}
 }
 
@@ -251,7 +251,7 @@ static void
 on_search_not_found(GtkCompletionLine *cl)
 {
 	set_info_text_color (wlabel, "Not Found!", W_TEXT_STYLE_NOTFOUND);
-	add_search_off_timeout(1000, GSourceFunc(search_fail_timeout));
+	add_search_off_timeout (1000, (GSourceFunc) search_fail_timeout);
 }
 
 
@@ -275,7 +275,7 @@ static void xdg_app_run_command (GAppInfo *app, const gchar *args)
 }
 
 /* Handler for URLs  */
-static bool url_check (GtkCompletionLine *cl, char * entry_text)
+static gboolean url_check (GtkCompletionLine *cl, char * entry_text)
 {
  if (USE_XDG) // GLib XDG handling (freedesktop specification)
  {
@@ -301,7 +301,7 @@ static bool url_check (GtkCompletionLine *cl, char * entry_text)
 		} else {
 			char *tmp = g_strconcat ("No URL handler for [", protocol, "]", NULL);
 			set_info_text_color (wlabel, tmp, W_TEXT_STYLE_NOTFOUND);
-			add_search_off_timeout (1000);
+			add_search_off_timeout (1000, NULL);
 			g_free (tmp);
 		}
 		return TRUE;
@@ -361,7 +361,7 @@ static bool url_check (GtkCompletionLine *cl, char * entry_text)
 		g_free (tmp);
 		tmp = g_strconcat ("No URL handler for [", config_key, "]", NULL);
 		set_info_text_color (wlabel, tmp, W_TEXT_STYLE_NOTFOUND);
-		add_search_off_timeout (1000);
+		add_search_off_timeout (1000, NULL);
 	}
 	g_free (config_key);
 	g_free (tmp);
@@ -386,7 +386,7 @@ static char * escape_spaces (char * entry_text)
 }
 
 /* Handler for extensions */
-static bool ext_check (GtkCompletionLine *cl, char * entry_text)
+static gboolean ext_check (GtkCompletionLine *cl, char * entry_text)
 {
  if (USE_XDG) // GLib XDG handling (freedesktop specification)
  {
@@ -621,13 +621,13 @@ static void gmrun_activate(void)
 static void parse_command_line (int argc, char ** argv)
 {
 	// --geometry / parse commandline options
-	char *geometry_str = NULL;
+	static char *geometry_str = NULL;
 	GError *error = NULL;
 	GOptionContext *context = NULL;
 	static GOptionEntry entries[] =
 	{
-		{ "geometry", 'g', 0, G_OPTION_ARG_STRING, &geometry_str, "This option specifies the initial size and location of the window.", NULL },
-		{ NULL }
+		{ "geometry", 'g', 0, G_OPTION_ARG_STRING, &geometry_str, "This option specifies the initial size and location of the window.", NULL, },
+		{ NULL },
 	};
 
 	context = g_option_context_new (NULL);
