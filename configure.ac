@@ -49,6 +49,11 @@ AC_SUBST(GTK_LIBS)
 PREFIX=${prefix}
 AC_SUBST(PREFIX)
 
+case "$CC" in
+   gcc*) CPPFLAGS="$CPPFLAGS -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers" ;;
+   *) ;;
+esac
+
 AC_OUTPUT([
 Makefile
 data/Makefile

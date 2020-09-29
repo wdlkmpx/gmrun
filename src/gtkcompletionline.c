@@ -681,7 +681,7 @@ static void complete_from_list(GtkCompletionLine *object)
 		g_free(word_i->data);
 		word_i->data = ((char*) (object->where->data));
 		object->pos_in_text = gtk_editable_get_position(GTK_EDITABLE(object));
-		int current_pos = set_words(object, words, pos);
+		set_words(object, words, pos);
 		object->where = g_list_next(object->where);
 	}
 	//g_list_free_full (words, g_free);
@@ -908,7 +908,6 @@ down_history(GtkCompletionLine* cl)
 
 static void search_off (GtkCompletionLine* cl)
 {
-	int pos = gtk_editable_get_position (GTK_EDITABLE(cl));
 	cl->hist_search_mode = FALSE;
 	g_signal_emit_by_name (G_OBJECT(cl), "search_mode");
 	history_unset_current (cl->hist);
