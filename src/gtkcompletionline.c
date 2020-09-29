@@ -787,10 +787,9 @@ static int complete_line(GtkCompletionLine *object)
 #endif
 
 				object->list_compl = gtk_list_store_new (1, G_TYPE_POINTER);
-				object->sort_list_compl = gtk_tree_model_sort_new_with_model(GTK_TREE_MODEL(object->list_compl));
-				object->tree_compl = gtk_tree_view_new_with_model(GTK_TREE_MODEL(object->sort_list_compl));
+				object->sort_list_compl = GTK_TREE_MODEL (object->list_compl);
+				object->tree_compl = gtk_tree_view_new_with_model (object->sort_list_compl);
 				g_object_unref(object->list_compl);
-				g_object_unref(object->sort_list_compl);
 				GtkTreeViewColumn *col;
 				GtkCellRenderer *renderer;
 				col = gtk_tree_view_column_new();
