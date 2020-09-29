@@ -722,6 +722,10 @@ int main(int argc, char **argv)
 
 	gtk_main();
 
+#ifdef MTRACE
+	muntrace();
+#endif
+
 	return (0);
 }
 
