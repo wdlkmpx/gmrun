@@ -6,7 +6,7 @@ bin_PROGRAMS = gmrun
 
 gmrun_SOURCES = config_prefs.c \
 	history.c \
-	gtkcompletionline.cc gtkcompletionline.h \
+	gtkcompletionline.c \
 	main.cc
 
 # gmrun_LDFLAGS = -s

@@ -14,6 +14,7 @@
 
 #include <stddef.h>
 #include <stdio.h>
+#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 #include <dirent.h>
@@ -21,15 +22,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include <iostream>
-#include <set>
-#include <sstream>
-#include <string>
-#include <vector>
-
 #include "config.h"
-
-using namespace std;
 
 #include "config_prefs.h"
 #include "gtkcompletionline.h"
@@ -67,19 +60,15 @@ enum {
 
 static guint gtk_completion_line_signals[LAST_SIGNAL];
 
-typedef set<string> StrSet;
-
-static StrSet path;
-static StrSet execs;
-static StrSet dirlist;
-static string prefix;
+static gchar ** path_gc   = NULL; /* string list (gchar *) containing each directory in PATH */
+static GList * execs_gc   = NULL; /* linked list of executables from current path */
+static GList * dirlist_gc = NULL; /* linked list of directories from current path */
+static gchar * prefix     = NULL;
 static int g_show_dot_files;
 
 /* callbacks */
-static gboolean
-on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data);
-static gboolean
-on_scroll(GtkCompletionLine *cl, GdkEventScroll *event, gpointer data);
+static gboolean on_key_press (GtkCompletionLine *cl, GdkEventKey *event, gpointer data);
+static gboolean on_scroll (GtkCompletionLine *cl, GdkEventScroll *event, gpointer data);
 
 // https://developer.gnome.org/gobject/stable/gobject-Type-Information.html#G-DEFINE-TYPE-EXTENDED:CAPS
 G_DEFINE_TYPE_EXTENDED (GtkCompletionLine,   /* type name */
@@ -257,12 +246,34 @@ static void gtk_completion_line_init (GtkCompletionLine *self)
 
 static void gtk_completion_line_dispose (GObject *object)
 {
+	GtkCompletionLine * self = GTK_COMPLETION_LINE (object);
 	// GTK3: Pango-CRITICAL **: pango_layout_get_cursor_pos: assertion 'index >= 0 && index <= layout->length' failed
 	// -- for some reason there's an error when the object is destroyed
 	// -- The GtkCompletionLine 'cancel' signal makes gmrun destroy the object and exit
 	// -- The current fix is to set an empty text
-	gtk_entry_set_text (GTK_ENTRY (object), "");
+	gtk_entry_set_text (GTK_ENTRY (self), "");
 	// --
+	if (path_gc) {
+		g_strfreev (path_gc);
+		path_gc = NULL;
+	}
+	if (self->cmpl) {
+		// this can be either execs_gc or dirlist_gc
+		g_list_free_full (self->cmpl, g_free);
+		self->cmpl = NULL;
+	}
+	if (execs_gc) {
+		g_list_free_full (execs_gc, g_free);
+		execs_gc = NULL;
+	}
+	if (dirlist_gc) {
+		g_list_free_full (dirlist_gc, g_free);
+		dirlist_gc = NULL;
+	}
+	if (prefix) {
+		g_free (prefix);
+		prefix = NULL;
+	}
 	G_OBJECT_CLASS (gtk_completion_line_parent_class)->dispose (object);
 }
 
@@ -288,118 +299,119 @@ void gtk_completion_line_last_history_item (GtkCompletionLine* object) {
 	}
 }
 
-static void get_token(istream& is, string& s)
+/* Get one word of a string: separator is space, but only unescaped spaces */
+static const gchar *get_token (const gchar *str, char *out_buf, int out_buf_len)
 {
-	s.clear();
-	bool escaped = false;
-	while (!is.eof()) {
-		char c = is.get();
-		if (is.eof())
-			break;
+	gboolean escaped = FALSE;
+	*out_buf = 0;
+	int x = 0;
+	while (*str != '\0')
+	{
 		if (escaped) {
-			s += c;
-			escaped = false;
-		} else if (c == '\\') {
-			// s += c;
-			escaped = true;
-		} else if (::isspace(c)) {
-			while (::isspace(c) && !is.eof()) c = is.get();
-			if (!is.eof())
-				is.unget();
+			escaped = FALSE;
+			out_buf[x++] = *str;
+		} else if (*str == '\\') {
+			escaped = TRUE;
+		} else if (isspace(*str)) {
+			while (isspace(*str)) str++;
 			break;
 		} else {
-			s += c;
+			out_buf[x++] = *str;
 		}
+		if (x >= out_buf_len) {
+			break;
+		}
+		str++;
 	}
+	out_buf[x] = 0;
+	return str;
 }
 
-int get_words(GtkCompletionLine *object, vector<string>& words)
+/* get words before current edit position */
+int get_words (GtkCompletionLine * object, GList ** words)
 {
-	string content(gtk_entry_get_text(GTK_ENTRY(object)));
-	int pos_in_text = gtk_editable_get_position(GTK_EDITABLE(object));
-	int pos = 0;
+	const gchar * content = gtk_entry_get_text (GTK_ENTRY(object));
+	const gchar * i = content;
+	int pos = gtk_editable_get_position (GTK_EDITABLE(object));
+	int n_w = 0;
+	char tmp[2048] = "";
+
+	while (*i != '\0')
 	{
-		string::iterator i = content.begin() + pos_in_text;
-		if (i != content.end())
-			content.insert(i, ' ');
-	}
-	istringstream ss(content);
-
-	while (!ss.eof()) {
-		string s;
-		// ss >> s;
-		get_token(ss, s);
-		words.push_back(s);
-		if (ss.eof()) break;
-		if (ss.tellg() < pos_in_text && ss.tellg() >= 0)
-		++pos;
+		i = get_token (i, tmp, 2000);
+		*words = g_list_append (*words, g_strdup(tmp));
+		if (*i && (i - content < pos) && (i != content))
+			n_w++;
 	}
 
-	return pos;
+	return n_w;
 }
 
-int set_words(GtkCompletionLine *object, const vector<string>& words, int pos = -1)
+/* Replace words in the entry fields, return position of char after first 'pos' words */
+int set_words (GtkCompletionLine *object, GList *words, int pos)
 {
-	ostringstream ss;
+	GList * igl;
+	char * word;
+	char * tmp;
+	int tmp_len = 0;
+
+	// determine buffer length
+	for (igl = words;  igl;  igl = igl->next) {
+		word = (char*) (igl->data);
+		tmp_len += strlen (word) + 5;
+		for (tmp = word;  *tmp;  tmp++)
+			if (*tmp == ' ')
+				tmp_len += 5;
+	}
+	tmp = (char*) g_malloc (sizeof(char) * tmp_len);
+
 	if (pos == -1)
-		pos = words.size() - 1;
+		pos = g_list_length (words) - 1;
 	int cur = 0;
+	int i = 0;
 
-	vector<string>::const_iterator
-	i		= words.begin(),
-	i_end	= words.end();
+	while (words)
+	{
+		// replace ' ' with '\ ' [escape]
+		word = (char *)(words->data);
+		while (*word) {
+			if (*word == ' ') {
+				tmp[i++] = '\\';
+				tmp[i++] = ' ';
+			} else {
+				tmp[i++] = *word;
+			}
+			word++;
+		}
 
-	GRegex *regex = g_regex_new (" ", G_REGEX_OPTIMIZE, G_REGEX_MATCH_NOTEMPTY, NULL);
-	while (i != i_end) {
-		gchar *quoted = g_regex_replace_literal (
-				regex, (*i++).c_str(), -1, 0, "\\ ", G_REGEX_MATCH_NOTEMPTY, NULL);
-		ss << quoted;
-		if (i != i_end)
-			ss << ' ';
-		if (!pos && !cur)
-			cur = ss.tellp();
-		else
+		// add space if not the last word
+		if (words != g_list_last (words)) {
+			tmp[i++] = ' ';
+		}
+		if (!pos && !cur) {
+			cur = strlen (tmp); /* cur: length of string after inserting pos words */
+		} else {
 			--pos;
-		g_free(quoted);
+		}
+		words = words->next;
 	}
-	ss << ends;
-	g_regex_unref (regex);
+	tmp[i] = 0;
 
-	if (words.size() == 1) {
-		g_signal_emit_by_name (G_OBJECT(object), "ext_handler", words.back().c_str());
+	if (g_list_length(words) == 1) {
+		g_signal_emit_by_name (G_OBJECT(object), "ext_handler", NULL);
 	}
 
-	gtk_entry_set_text(GTK_ENTRY(object), 
-				g_locale_to_utf8 (ss.str().c_str(), -1, NULL, NULL, NULL));
-	gtk_editable_set_position(GTK_EDITABLE(object), cur);
+	gtk_entry_set_text (GTK_ENTRY(object), tmp);
+	gtk_editable_set_position (GTK_EDITABLE(object), cur);
+	g_free (tmp);
 	return cur;
 }
 
-static void generate_path()
-{
-	char *path_cstr = (char*)getenv("PATH");
-
-	istringstream path_ss(path_cstr);
-	string tmp;
-
-	path.clear();
-	while (!path_ss.eof()) {
-		tmp = "";
-		do {
-			char c;
-			c = path_ss.get();
-			if (c == ':' || path_ss.eof()) break;
-			else tmp += c;
-		} while (true);
-		if (tmp.length() != 0)
-			path.insert(tmp);
-	}
-}
-
+/* Filter callback for scandir */
 static int select_executables_only(const struct dirent* dent)
 {
 	int len = strlen(dent->d_name);
-	int lenp = prefix.length();
+	int lenp = strlen(prefix);
 
 	if (dent->d_name[0] == '.') {
 		if (!g_show_dot_files)
@@ -416,12 +428,13 @@ static int select_executables_only(const struct dirent* dent)
 	if (lenp > len)
 		return 0;
 
-	if (strncmp(dent->d_name, prefix.c_str(), lenp) == 0)
+	if (strncmp(dent->d_name, prefix, lenp) == 0)
 		return 1;
 
 	return 0;
 }
 
+/* Quicksort callback for scandir, compares two dirent */
 #if defined(__GLIBC__) && __GLIBC_PREREQ(2, 10)
 int my_alphasort (const struct dirent **a, const struct dirent **b)
 #else
@@ -453,86 +466,108 @@ int my_alphasort (const void *_a, const void *_b)
 	return result;
 }
 
-static void generate_execs()
+/* Iterates though PATH and list all executables */
+static void generate_execs_list (void)
 {
-	execs.clear();
+	if (execs_gc) { // generate once, it's a big list
+		return;
+	}
+	// generate_path_list
+	if (!path_gc) {
+		char *path_cstr = (char*) getenv("PATH");
+		path_gc = g_strsplit (path_cstr, ":", -1);
+	}
 
-	for (StrSet::iterator i = path.begin(); i != path.end(); i++) {
+	gchar ** path_gc_i = path_gc;
+	while (*path_gc_i)
+	{
 		struct dirent **eps;
-		int n = scandir(i->c_str(), &eps, select_executables_only, my_alphasort);
+		int n = scandir(*path_gc_i, &eps, select_executables_only, my_alphasort);
 		if (n >= 0) {
 			for (int j = 0; j < n; j++) {
-				execs.insert(eps[j]->d_name);
-				free(eps[j]);
+				execs_gc = g_list_prepend (execs_gc, g_strdup (eps[j]->d_name));
+				free (eps[j]);
 			}
-			free(eps);
+			free (eps);
 		}
+		path_gc_i++;
+	}
+	if (execs_gc && execs_gc->next) {
+		execs_gc = g_list_reverse (execs_gc);
 	}
 }
 
+/* Set executable list as a completion_line widget attribute */
 static int generate_completion_from_execs(GtkCompletionLine *object)
 {
-	g_list_foreach(object->cmpl, (GFunc)g_string_free, NULL);
-	g_list_free(object->cmpl);
-	object->cmpl = NULL;
-
-	for (StrSet::const_iterator i = execs.begin(); i != execs.end(); i++) {
-		GString *the_fucking_gstring = g_string_new(i->c_str());
-		object->cmpl = g_list_append(object->cmpl, the_fucking_gstring);
-	}
-
+	g_list_free_full (object->cmpl, g_free);
+	object->cmpl = execs_gc;
+	execs_gc = NULL;
 	return 0;
 }
 
-static string get_common_part(const char *p1, const char *p2)
+/* get the shortest common begin of two strings */
+static char * get_common_part (const char *p1, const char *p2)
 {
-	string ret;
-
-	while (*p1 == *p2 && *p1 != '\0' && *p2 != '\0') {
-		ret += *p1;
-		p1++;
-		p2++;
+	char * temp;
+	const char * a = p1;
+	const char * b = p2;
+	int count = 0;
+	while ((*a) && (*b) && (*a == *b)) {
+		a++;  b++;  count++;
 	}
-
-	return ret;
+	temp = (char *) malloc (sizeof(char) * (count + 5));
+	strncpy (temp, p1, count);
+	temp[count] = 0;
+	return (temp);
 }
 
-static int complete_common(GtkCompletionLine *object)
+static int complete_common (GtkCompletionLine *object)
 {
-	GList *l;
 	GList *ls = object->cmpl;
-	vector<string> words;
-	int pos = get_words(object, words);
-	words[pos] = ((GString*)ls->data)->str;
-
+	GList *words = NULL;
+	GList *word_i;
+	int pos = get_words (object, &words);
+	gchar *tmp;
+	word_i = g_list_nth (words, pos);
+	g_free (word_i->data);
+	word_i->data = g_strdup ((char*) (ls->data));
 	ls = g_list_next(ls);
-	while (ls != NULL) {
-		words[pos] = get_common_part(words[pos].c_str(),
-                                 ((GString*)ls->data)->str);
+	while (ls != NULL)
+	{
+		/* Before migrating to C/glib, this (gchar *) may be leaking */
+		tmp = get_common_part ((gchar *)word_i->data, (char*) (ls->data));
+		g_free(word_i->data);
+		word_i->data = tmp;
 		ls = g_list_next(ls);
+		if(strlen(tmp) == 1)
+			break;
 	}
 
-	set_words(object, words, pos);
-
-	ls = object->cmpl;
-	l = ls;
+	set_words (object, words, pos);
+	g_list_free_full (words, g_free);
 	return 0;
 }
 
-static int generate_dirlist(const char *what)
+/* list all subdirs in what, return if ok or not */
+static int generate_dirlist (const char * path)
 {
-	char *str = strdup(what);
-	char *p = str + 1;
-	char *filename = str;
-	string dest("/");
+	char * str = strdup (path);
+	char * p = str + 1;
+	char * filename = str;
+	GString * dest = g_string_new("/");
 	int n;
 
-	while (*p != '\0') {
-		dest += *p;
+	/* Check path validity in path */
+	while (*p != '\0')
+	{
+		dest = g_string_append_c(dest, *p);
 		if (*p == '/') {
-			DIR* dir = opendir(dest.c_str());
+			printf ("%s\n", dest->str);
+			DIR* dir = opendir(dest->str);
 			if (!dir) {
 				free(str);
+				g_string_free (dest, TRUE);
 				return GEN_CANT_COMPLETE;
 			}
 			closedir(dir);
@@ -540,51 +575,64 @@ static int generate_dirlist(const char *what)
 		}
 		++p;
 	}
+	g_string_free(dest, TRUE);
 
+	// --
 	*filename = '\0';
 	filename++;
-	dest = str;
-	dest += '/';
+	if (prefix)
+		g_free(prefix);
+	prefix = g_strdup(filename);
+	// --
 
-	dirlist.clear();
+	dest = g_string_new (str);
+	dest = g_string_append_c (dest, '/');
+
+	g_list_free_full (dirlist_gc, g_free);
+	dirlist_gc = NULL;
+
 	struct dirent **eps;
-	prefix = filename;
-	n = scandir(dest.c_str(), &eps, select_executables_only, my_alphasort);
+	char * file;
+	int len;
+
+	n = scandir(dest->str, &eps, select_executables_only, my_alphasort);
 	if (n >= 0) {
-		for (int j = 0; j < n; j++) {
+		for (int j = 0; j < n; j++)
 		{
-			string foo(dest);
-			foo += eps[j]->d_name;
+			file = g_strconcat (dest->str, eps[j]->d_name, "/", NULL);
+			len = strlen (file);
+			file[len-1] = 0;
 			struct stat filestatus;
-			stat(foo.c_str(), &filestatus);
-			if (S_ISDIR(filestatus.st_mode)) foo += '/';
-				dirlist.insert(foo);
+			stat (file, &filestatus);
+			if (S_ISDIR (filestatus.st_mode)) {
+				file[len-1] = '/';
 			}
+			dirlist_gc = g_list_prepend (dirlist_gc, file);
 			free(eps[j]);
 		}
 		free(eps);
 	}
+	if (dirlist_gc && dirlist_gc->next) {
+		dirlist_gc = g_list_reverse (dirlist_gc);
+	}
 
+	g_string_free(dest, TRUE);
 	free(str);
 	return GEN_COMPLETION_OK;
 }
 
+/* Set directories list as completion_line widget attributes */
 static int generate_completion_from_dirlist(GtkCompletionLine *object)
 {
-	g_list_foreach(object->cmpl, (GFunc)g_string_free, NULL);
-	g_list_free(object->cmpl);
-	object->cmpl = NULL;
-
-	for (StrSet::const_iterator i = dirlist.begin(); i != dirlist.end(); i++) {
-		GString *the_fucking_gstring = g_string_new(i->c_str());
-		object->cmpl = g_list_append(object->cmpl, the_fucking_gstring);
-	}
-
+	g_list_free_full (object->cmpl, g_free);
+	object->cmpl = dirlist_gc;
+	dirlist_gc = NULL;
 	return 0;
 }
 
 /* Expand tilde */
-static int parse_tilda(GtkCompletionLine *object) {
+static int parse_tilda (GtkCompletionLine *object)
+{
 	const gchar *text = gtk_entry_get_text(GTK_ENTRY(object));
 	const gchar *match = g_strstr_len(text, -1, "~");
 	if (match) {
@@ -593,13 +641,9 @@ static int parse_tilda(GtkCompletionLine *object) {
 			return 0;
 		if ((guint)cur < strlen(text) - 1 && text[cur + 1] != '/') {
 			// FIXME: Parse another user's home
-			// #include <pwd.h>
-			// struct passwd *p;
-			// p=getpwnam(username);
-			// printf("%s\n", p->pw_dir);
 		} else {
 			gtk_editable_insert_text(GTK_EDITABLE(object),
-			g_get_home_dir(), strlen(g_get_home_dir()), &cur);
+			                         g_get_home_dir(), strlen(g_get_home_dir()), &cur);
 			gtk_editable_delete_text(GTK_EDITABLE(object), cur, cur + 1);
 		}
 	}
@@ -610,10 +654,12 @@ static int parse_tilda(GtkCompletionLine *object) {
 static void complete_from_list(GtkCompletionLine *object)
 {
 	parse_tilda(object);
-	vector<string> words;
-	int pos = get_words(object, words);
+	GList *words = NULL, *word_i;
+	int pos = get_words (object, &words);
+	word_i = g_list_nth (words, pos);
 
-	prefix = words[pos];
+	g_free(prefix);
+	prefix = g_strdup ((gchar *)(word_i->data));
 
 	/* Completion list is opened */
 	if (object->win_compl != NULL) {
@@ -621,7 +667,8 @@ static void complete_from_list(GtkCompletionLine *object)
 		gpointer data;
 		gtk_tree_model_get(object->sort_list_compl, &(object->list_compl_it), 0, &data, -1);
 		object->where=(GList *)data;
-		words[pos] = ((GString*)object->where->data)->str;
+		g_free (word_i->data);
+		word_i->data = ((char *) (object->where->data));
 		current_pos = set_words(object, words, pos);
 
 		GtkTreePath *path = gtk_tree_model_get_path(object->sort_list_compl, &(object->list_compl_it));
@@ -631,14 +678,17 @@ static void complete_from_list(GtkCompletionLine *object)
 
 		gtk_editable_select_region(GTK_EDITABLE(object), object->pos_in_text, current_pos);
 	} else {
-		words[pos] = ((GString*)object->where->data)->str;
+		g_free(word_i->data);
+		word_i->data = ((char*) (object->where->data));
 		object->pos_in_text = gtk_editable_get_position(GTK_EDITABLE(object));
 		int current_pos = set_words(object, words, pos);
 		object->where = g_list_next(object->where);
 	}
+	//g_list_free_full (words, g_free);
 }
 
-static void on_cursor_changed(GtkTreeView *tree, gpointer data) {
+static void on_cursor_changed(GtkTreeView *tree, gpointer data)
+{
 	GtkCompletionLine *object = GTK_COMPLETION_LINE(data);
 
 	GtkTreeSelection *selection;
@@ -658,7 +708,7 @@ static void cell_data_func( GtkTreeViewColumn *col, GtkCellRenderer *renderer,
 	gchar *str;
 
 	gtk_tree_model_get(model, iter, 0, &data, -1);
-	str = ((GString*)(((GList *)data)->data))->str;
+	str = ((char*) (((GList *)data)->data));
 	g_object_set(renderer, "text", str, NULL);
 }
 
@@ -666,20 +716,22 @@ static void cell_data_func( GtkTreeViewColumn *col, GtkCellRenderer *renderer,
 static int complete_line(GtkCompletionLine *object)
 {
 	parse_tilda(object);
-	vector<string> words;
-	int pos = get_words(object, words);
-	prefix = words[pos];
+	GList *words = NULL;
+	int pos = get_words (object, &words);
+	g_free(prefix);
+	words = g_list_nth (words, pos);
+	prefix = g_strdup ((gchar *)(words->data));
+	g_list_free_full (words, g_free);
 
 	g_show_dot_files = object->show_dot_files;
 	if (prefix[0] != '/') {
 		if (object->where == NULL) {
-			generate_path();
-			generate_execs();
+			generate_execs_list ();
 			generate_completion_from_execs(object);
 			object->where = NULL;
 		}
 	} else if (object->where == NULL) {
-		generate_dirlist(prefix.c_str());
+		generate_dirlist(prefix);
 		generate_completion_from_dirlist(object);
 		object->where = NULL;
 	}
@@ -709,11 +761,14 @@ static int complete_line(GtkCompletionLine *object)
 	} else if (g_list_length(ls) >  1) {
 		g_signal_emit_by_name(G_OBJECT(object), "notunique");
 
-		vector<string> words;
-		int pos = get_words(object, words);
+		GList *words = NULL;
+		int pos = get_words(object, &words);
+		words = g_list_nth(words, pos);
 
-		if (words[pos] == ((GString*)ls->data)->str) {
+		if (strcmp((gchar *)(words->data),(char*)ls->data) == 0)
+		{
 
+			/* TODO leak: created once but never freed */
 			if (object->win_compl == NULL) {
 				object->win_compl = gtk_window_new(GTK_WINDOW_POPUP);
 				gtk_widget_set_name(object->win_compl, "gmrun_completion_window");
@@ -796,7 +851,7 @@ static int complete_line(GtkCompletionLine *object)
 				g_signal_handler_unblock(G_OBJECT(object->tree_compl),
 									on_cursor_changed_handler);
 			}
-
+			//g_list_free_full (words, g_free);
 			return GEN_COMPLETION_OK;
 		}
 		return GEN_NOT_UNIQUE;
@@ -874,7 +929,7 @@ search_history (GtkCompletionLine* cl)
 		search_str = cl->hist_word;
 		search_str_len = strlen (search_str);
 
-		while (true)
+		while (1)
 		{
 			const char * s;
 			s = strstr (history_current_item, search_str);
@@ -902,6 +957,13 @@ static guint tab_pressed(GtkCompletionLine* cl)
 {
 	if (cl->hist_search_mode == TRUE)
 		search_off(cl);
+	// -- BUG: gmrun crashes if GtkEntry text is (completely) empty
+	// -- fix: insert a space
+	const char * str = gtk_entry_get_text (GTK_ENTRY (cl));
+	if (!*str) {
+		gtk_entry_set_text (GTK_ENTRY (cl), " ");
+	}
+	// --
 	complete_line(cl);
 	timeout_id = 0;
 	return FALSE;
@@ -1018,15 +1080,12 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
 		case GDK_KEY_space:
 		{
 			cl->first_key = 0;
-			bool search = cl->hist_search_mode;
-			if (search)
-				search_off(cl);
+			if (cl->hist_search_mode) {
+				search_off (cl);
+			}
 			if (cl->win_compl != NULL) {
 				gtk_widget_destroy(cl->win_compl);
 				cl->win_compl = NULL;
-				if (!search) {
-					int pos = gtk_editable_get_position(GTK_EDITABLE(cl));
-				}
 			}
 		}
 		return FALSE;
@@ -1140,9 +1199,9 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
 					g_source_remove(timeout_id);
 					timeout_id = 0;
 				}
-				if (::isprint(*event->string)) {
-					timeout_id = g_timeout_add(cl->tabtimeout,
-							GSourceFunc(tab_pressed), cl);
+				if (isprint (*event->string)) {
+					timeout_id = g_timeout_add (cl->tabtimeout,
+							(GSourceFunc) tab_pressed, cl);
 				}
 			}
 			break;
@@ -1150,7 +1209,3 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
 	return FALSE;
 }
 
-// Local Variables: ***
-// mode: c++ ***
-// c-basic-offset: 2 ***
-// End: ***
