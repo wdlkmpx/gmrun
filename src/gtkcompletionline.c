@@ -341,6 +341,10 @@ int get_words (GtkCompletionLine * object, GList ** words)
          n_w++;
    }
 
+   if (!*words) { // must add empty string otherwise a segfault awaits
+      *words = g_list_append (*words, strdup (""));
+   }
+
    return n_w;
 }
 
@@ -911,18 +915,9 @@ static guint tab_pressed(GtkCompletionLine* cl)
          gtk_tree_model_get_iter_first (cl->sort_list_compl, &(cl->list_compl_it));
       }
       complete_from_list (cl);
-      timeout_id = 0;
-      return FALSE;
+   } else { // complete_line ()
+      complete_line (cl);
    }
-   // complete_line ()
-   // -- BUG: gmrun crashes if GtkEntry text is (completely) empty
-   // -- fix: insert a space
-   const char * str = gtk_entry_get_text (GTK_ENTRY (cl));
-   if (!*str) {
-      gtk_entry_set_text (GTK_ENTRY (cl), " ");
-   }
-   // --
-   complete_line(cl);
    timeout_id = 0;
    return FALSE;
 }
