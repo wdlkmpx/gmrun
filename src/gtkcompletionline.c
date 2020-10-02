@@ -597,44 +597,43 @@ static void complete_from_list(GtkCompletionLine *object)
    if (on_cursor_changed_handler) {
       g_signal_handler_block (G_OBJECT(object->tree_compl), on_cursor_changed_handler);
    }
+
    parse_tilda(object);
-   GList *words = NULL, *word_i;
+   GList *words = NULL, *word_i, * where_i;
    int pos = get_words (object, &words);
    word_i = g_list_nth (words, pos);
    int current_pos;
-
-   g_free(prefix);
-   prefix = g_strdup ((gchar *)(word_i->data));
 
    /* Completion list is opened */
    if (object->win_compl != NULL) {
       gpointer data;
       gtk_tree_model_get(object->sort_list_compl, &(object->list_compl_it), 0, &data, -1);
-      object->where=(GList *)data;
-      g_free (word_i->data);
-      word_i->data = ((char *) (object->where->data));
-      current_pos = set_words(object, words, pos);
+      object->where = (GList *)data;
+      where_i = object->where;
 
       GtkTreePath *path = gtk_tree_model_get_path(object->sort_list_compl, &(object->list_compl_it));
       gtk_tree_view_set_cursor(GTK_TREE_VIEW(object->tree_compl), path, NULL, FALSE);
       gtk_tree_view_scroll_to_cell(GTK_TREE_VIEW(object->tree_compl), path, NULL, TRUE, 0.5, 0.5);
       gtk_tree_path_free(path);
-
-      gtk_editable_select_region(GTK_EDITABLE(object), object->pos_in_text, current_pos);
    } else {
-      g_free(word_i->data);
-      word_i->data = ((char*) (object->where->data));
+      where_i = object->where;
       object->pos_in_text = gtk_editable_get_position(GTK_EDITABLE(object));
       object->where = g_list_next(object->where);
-
-      current_pos = set_words(object, words, pos);
-      gtk_editable_select_region (GTK_EDITABLE(object), object->pos_in_text, current_pos);
    }
+
+   if (where_i && where_i->data) {
+      g_free (word_i->data);
+      word_i->data = strdup ((char*) (where_i->data));
+   }
+
+   current_pos = set_words (object, words, pos);
+   gtk_editable_select_region (GTK_EDITABLE(object), object->pos_in_text, current_pos);
+
+   g_list_free_full (words, g_free);
 
    if (on_cursor_changed_handler) {
       g_signal_handler_unblock (G_OBJECT(object->tree_compl), on_cursor_changed_handler);
    }
-   //g_list_free_full (words, g_free);
 }
 
 static void on_cursor_changed(GtkTreeView *tree, gpointer data)
