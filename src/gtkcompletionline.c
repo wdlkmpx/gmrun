@@ -474,9 +474,6 @@ int my_alphasort (const void *_a, const void *_b)
 /* Iterates though PATH and list all executables */
 static void generate_execs_list (void)
 {
-   if (execs_gc) { // generate once, it's a big list
-      return;
-   }
    // generate_path_list
    if (!path_gc) {
       char *path_cstr = (char*) getenv("PATH");
@@ -500,15 +497,6 @@ static void generate_execs_list (void)
    if (execs_gc && execs_gc->next) {
       execs_gc = g_list_reverse (execs_gc);
    }
-}
-
-/* Set executable list as a completion_line widget attribute */
-static int generate_completion_from_execs(GtkCompletionLine *object)
-{
-   g_list_free_full (object->cmpl, g_free);
-   object->cmpl = execs_gc;
-   execs_gc = NULL;
-   return 0;
 }
 
 /* list all subdirs in what, return if ok or not */
@@ -583,15 +571,6 @@ static int generate_dirlist (const char * path)
    g_string_free(dest, TRUE);
    free(str);
    return GEN_COMPLETION_OK;
-}
-
-/* Set directories list as completion_line widget attributes */
-static int generate_completion_from_dirlist(GtkCompletionLine *object)
-{
-   g_list_free_full (object->cmpl, g_free);
-   object->cmpl = dirlist_gc;
-   dirlist_gc = NULL;
-   return 0;
 }
 
 /* Expand tilde */
@@ -709,15 +688,15 @@ static int complete_line(GtkCompletionLine *object)
    prefix = g_strdup (word);
 
    g_show_dot_files = object->show_dot_files;
-   if (prefix[0] != '/') {
-      if (object->where == NULL) {
+   if (object->where == NULL) {
+      g_list_free_full (object->cmpl, g_free);
+      if (prefix[0] != '/') {
          generate_execs_list ();
-         generate_completion_from_execs(object);
-         object->where = NULL;
+         object->cmpl = execs_gc;
+      } else {
+         generate_dirlist (prefix);
+         object->cmpl = dirlist_gc;
       }
-   } else if (object->where == NULL) {
-      generate_dirlist(prefix);
-      generate_completion_from_dirlist(object);
       object->where = NULL;
    }
 
