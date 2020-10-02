@@ -562,7 +562,6 @@ static int generate_dirlist (const char * path)
    {
       dest = g_string_append_c(dest, *p);
       if (*p == '/') {
-         printf ("%s\n", dest->str);
          DIR* dir = opendir(dest->str);
          if (!dir) {
             free(str);
@@ -715,12 +714,14 @@ static void cell_data_func( GtkTreeViewColumn *col, GtkCellRenderer *renderer,
 static int complete_line(GtkCompletionLine *object)
 {
    parse_tilda(object);
-   GList *words = NULL;
-   int pos = get_words (object, &words);
-   g_free(prefix);
-   words = g_list_nth (words, pos);
-   prefix = g_strdup ((gchar *)(words->data));
-   g_list_free_full (words, g_free);
+
+   GList * list = NULL, * witem = NULL;
+   int pos = get_words (object, &list);
+   witem = g_list_nth (list, pos);
+   char * word = (gchar *)(witem->data);
+
+   g_free (prefix);
+   prefix = g_strdup (word);
 
    g_show_dot_files = object->show_dot_files;
    if (prefix[0] != '/') {
@@ -750,112 +751,111 @@ static int complete_line(GtkCompletionLine *object)
    }
 
    GList *ls = object->cmpl;
-
-   if (g_list_length(ls) == 1) {
-      g_signal_emit_by_name(G_OBJECT(object), "unique");
-      return GEN_COMPLETION_OK;
-   } else if (g_list_length(ls) == 0 || ls == NULL) {
-      g_signal_emit_by_name(G_OBJECT(object), "incomplete");
-      return GEN_CANT_COMPLETE;
-   } else if (g_list_length(ls) >  1) {
-      g_signal_emit_by_name(G_OBJECT(object), "notunique");
-
-      GList *words = NULL;
-      int pos = get_words(object, &words);
-      words = g_list_nth(words, pos);
-
-      if (strcmp((gchar *)(words->data),(char*)ls->data) == 0)
-      {
-
-         /* TODO leak: created once but never freed */
-         if (object->win_compl == NULL) {
-            object->win_compl = gtk_window_new(GTK_WINDOW_POPUP);
-            gtk_widget_set_name(object->win_compl, "gmrun_completion_window");
-
-            /* attemp to silence warning: Gtk-WARNING **: Allocating size to Window ...
-            https://git.eclipse.org/c/platform/eclipse.platform.swt.git/commit/?id=61a598af4dfda586b27d87537bb2d015bd614ba1
-            https://sources.debian.org/src/clutter-gtk/1.8.2-2/clutter-gtk/gtk-clutter-actor.c/?hl=325#L325
-            https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=867427
-            */
-#if GTK_MAJOR_VERSION == 3 && GTK_MINOR_VERSION >= 20 && GTK_MINOR_VERSION < 24
-            // not a proper fix
-            GtkRequisition r, r2;
-            gtk_widget_get_preferred_size (GTK_WIDGET (object->win_compl), &r, &r2);
-            GtkAllocation wal = { 0, 0, r2.width, r.height };
-            gtk_widget_size_allocate (GTK_WIDGET (object->win_compl), &wal);
-#endif
-
-            object->list_compl = gtk_list_store_new (1, G_TYPE_POINTER);
-            object->sort_list_compl = GTK_TREE_MODEL (object->list_compl);
-            object->tree_compl = gtk_tree_view_new_with_model (object->sort_list_compl);
-            g_object_unref(object->list_compl);
-            GtkTreeViewColumn *col;
-            GtkCellRenderer *renderer;
-            col = gtk_tree_view_column_new();
-            gtk_tree_view_append_column(GTK_TREE_VIEW(object->tree_compl), col);
-            renderer = gtk_cell_renderer_text_new();
-            gtk_tree_view_column_pack_start(col, renderer, TRUE);
-            gtk_tree_view_column_set_cell_data_func(col, renderer, cell_data_func, NULL, NULL);
-
-            GtkTreeSelection *selection;
-            selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(object->tree_compl));
-            gtk_tree_selection_set_mode(selection, GTK_SELECTION_BROWSE);
-            gtk_tree_view_set_headers_visible(GTK_TREE_VIEW(object->tree_compl), FALSE);
-
-            on_cursor_changed_handler = g_signal_connect(GTK_TREE_VIEW(object->tree_compl), "cursor-changed",
-                                    G_CALLBACK(on_cursor_changed), object);
-
-            g_signal_handler_block(G_OBJECT(object->tree_compl),
-                        on_cursor_changed_handler);
-
-            GList *p = ls;
-            while (p) {
-               GtkTreeIter it;
-               gtk_list_store_append(object->list_compl, &it);
-               gtk_list_store_set (object->list_compl, &it, 0, p, -1);
-               p = g_list_next(p);
-            }
-
-            GtkWidget *scroll = gtk_scrolled_window_new(NULL, NULL);
-            gtk_scrolled_window_set_shadow_type(GTK_SCROLLED_WINDOW(scroll), GTK_SHADOW_OUT);
-            gtk_widget_show(scroll);
-            gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW (scroll),
-                              GTK_POLICY_NEVER,
-                              GTK_POLICY_AUTOMATIC);
-
-            gtk_container_set_border_width(GTK_CONTAINER(object->tree_compl), 2);
-            gtk_container_add(GTK_CONTAINER (scroll), object->tree_compl);
-            gtk_container_add(GTK_CONTAINER (object->win_compl), scroll);
-
-            GdkWindow *top = gtk_widget_get_parent_window(GTK_WIDGET(object));
-            int x, y;
-            gdk_window_get_position(top, &x, &y);
-            GtkAllocation al;
-            gtk_widget_get_allocation( GTK_WIDGET(object), &al );
-            x += al.x;
-            y += al.y + al.height;
-
-            // gtk_widget_popup(object->win_compl, x, y);
-            gtk_window_move(GTK_WINDOW(object->win_compl), x, y);
-            gtk_widget_show_all(object->win_compl);
-
-            gtk_tree_view_columns_autosize(GTK_TREE_VIEW(object->tree_compl));
-            gtk_widget_get_allocation(object->tree_compl, &al);
-            gtk_widget_set_size_request(scroll, al.width + 40, 150);
-
-            gtk_tree_model_get_iter_first (object->sort_list_compl, &(object->list_compl_it));
-            gtk_tree_selection_select_iter (selection, &(object->list_compl_it));
-
-            g_signal_handler_unblock(G_OBJECT(object->tree_compl),
-                           on_cursor_changed_handler);
-         }
-         //g_list_free_full (words, g_free);
-         return GEN_COMPLETION_OK;
-      }
-      return GEN_NOT_UNIQUE;
+   guint num_items = ls ? g_list_length (ls) : 0;
+   char * ls_word = NULL;
+   if (ls && ls->data) {
+      ls_word = (char*)(ls->data);
    }
 
-   return GEN_COMPLETION_OK;
+   if (num_items == 1) {
+      g_signal_emit_by_name(G_OBJECT(object), "unique");
+      g_list_free_full (list, g_free);
+      return GEN_COMPLETION_OK;
+   } else if (num_items == 0) {
+      g_signal_emit_by_name(G_OBJECT(object), "incomplete");
+      g_list_free_full (list, g_free);
+      return GEN_CANT_COMPLETE;
+   }
+
+   /*** num_items > 1 ***/
+   g_signal_emit_by_name (G_OBJECT(object), "notunique");
+
+   if (strncmp (word, ls_word, strlen(word)) == 0)
+   {
+      /* TODO leak: created once but never freed */
+      if (object->win_compl == NULL)
+      {
+         object->win_compl = gtk_window_new (GTK_WINDOW_POPUP);
+         gtk_widget_set_name (object->win_compl, "gmrun_completion_window");
+
+         /* attemp to silence warning: Gtk-WARNING **: Allocating size to Window ...
+         https://git.eclipse.org/c/platform/eclipse.platform.swt.git/commit/?id=61a598af4dfda586b27d87537bb2d015bd614ba1
+         https://sources.debian.org/src/clutter-gtk/1.8.2-2/clutter-gtk/gtk-clutter-actor.c/?hl=325#L325
+         https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=867427
+         */
+#if GTK_MAJOR_VERSION == 3 && GTK_MINOR_VERSION >= 20 && GTK_MINOR_VERSION < 24
+         // not a proper fix
+         GtkRequisition r, r2;
+         gtk_widget_get_preferred_size (GTK_WIDGET (object->win_compl), &r, &r2);
+         GtkAllocation wal = { 0, 0, r2.width, r.height };
+         gtk_widget_size_allocate (GTK_WIDGET (object->win_compl), &wal);
+#endif
+
+         object->list_compl = gtk_list_store_new (1, G_TYPE_POINTER);
+         object->sort_list_compl = GTK_TREE_MODEL (object->list_compl);
+         object->tree_compl = gtk_tree_view_new_with_model (object->sort_list_compl);
+         g_object_unref (object->list_compl);
+         GtkTreeViewColumn *col;
+         GtkCellRenderer *renderer;
+         col = gtk_tree_view_column_new ();
+         gtk_tree_view_append_column (GTK_TREE_VIEW (object->tree_compl), col);
+         renderer = gtk_cell_renderer_text_new ();
+         gtk_tree_view_column_pack_start (col, renderer, TRUE);
+         gtk_tree_view_column_set_cell_data_func (col, renderer, cell_data_func, NULL, NULL);
+
+         GtkTreeSelection *selection;
+         selection = gtk_tree_view_get_selection (GTK_TREE_VIEW (object->tree_compl));
+         gtk_tree_selection_set_mode (selection, GTK_SELECTION_BROWSE);
+         gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (object->tree_compl), FALSE);
+
+         on_cursor_changed_handler = g_signal_connect (GTK_TREE_VIEW (object->tree_compl),
+                                                       "cursor-changed",
+                                                       G_CALLBACK (on_cursor_changed), object);
+         g_signal_handler_block (G_OBJECT (object->tree_compl),
+                                 on_cursor_changed_handler);
+         GList *p = ls;
+         while (p) {
+            GtkTreeIter it;
+            gtk_list_store_append (object->list_compl, &it);
+            gtk_list_store_set (object->list_compl, &it, 0, p, -1);
+            p = g_list_next (p);
+         }
+
+         GtkWidget *scroll = gtk_scrolled_window_new (NULL, NULL);
+         gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW(scroll), GTK_SHADOW_OUT);
+         gtk_widget_show (scroll);
+         gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scroll),
+                                         GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+         gtk_container_set_border_width (GTK_CONTAINER (object->tree_compl), 2);
+         gtk_container_add (GTK_CONTAINER (scroll), object->tree_compl);
+         gtk_container_add (GTK_CONTAINER (object->win_compl), scroll);
+
+         GdkWindow *top = gtk_widget_get_parent_window (GTK_WIDGET (object));
+         int x, y;
+         gdk_window_get_position(top, &x, &y);
+         GtkAllocation al;
+         gtk_widget_get_allocation( GTK_WIDGET(object), &al );
+         x += al.x;
+         y += al.y + al.height;
+
+         // gtk_widget_popup(object->win_compl, x, y);
+         gtk_window_move (GTK_WINDOW (object->win_compl), x, y);
+         gtk_widget_show_all (object->win_compl);
+
+         gtk_tree_view_columns_autosize (GTK_TREE_VIEW (object->tree_compl));
+         gtk_widget_get_allocation (object->tree_compl, &al);
+         gtk_widget_set_size_request (scroll, al.width + 40, 150);
+
+         gtk_tree_model_get_iter_first (object->sort_list_compl, &(object->list_compl_it));
+         gtk_tree_selection_select_iter (selection, &(object->list_compl_it));
+
+         g_signal_handler_unblock (G_OBJECT(object->tree_compl),
+                                   on_cursor_changed_handler);
+      }
+   }
+
+   g_list_free_full (list, g_free);
+   return GEN_NOT_UNIQUE;
 }
 
 GtkWidget *
