@@ -45,7 +45,6 @@ struct _GtkCompletionLine
    char hist_word[1024]; /* history search: word that is being typed */
    int hist_word_count;  /* history search: word that is being typed */
 
-   int first_key;
    int tabtimeout;
    int show_dot_files;
 };

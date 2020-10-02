@@ -239,8 +239,6 @@ static void gtk_completion_line_init (GtkCompletionLine *self)
    self->hist = history_new (history_file, HIST_MAX_SIZE);
    // hacks for prev/next will be applied
    history_unset_current (self->hist);
-
-   self->first_key = 1;
 }
 
 static void gtk_completion_line_dispose (GObject *object)
@@ -1037,7 +1035,6 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
 
       case GDK_KEY_space:
       {
-         cl->first_key = 0;
          if (cl->hist_search_mode) {
             search_off (cl);
          }
@@ -1128,7 +1125,6 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
 
       ordinary:
       default:
-         cl->first_key = 0;
          if (cl->win_compl != NULL) {
             destroy_completion_window (cl);
          }
