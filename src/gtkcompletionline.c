@@ -329,6 +329,9 @@ static const gchar *get_token (const gchar *str, char *out_buf, int out_buf_len)
 /* get words before current edit position */
 int get_words (GtkCompletionLine * object, GList ** words)
 {
+#ifdef DEBUG
+   printf ("  get_words\n");
+#endif
    const gchar * content = gtk_entry_get_text (GTK_ENTRY(object));
    const gchar * i = content;
    int pos = gtk_editable_get_position (GTK_EDITABLE(object));
@@ -349,6 +352,9 @@ int get_words (GtkCompletionLine * object, GList ** words)
 /* Replace words in the entry fields, return position of char after first 'pos' words */
 int set_words (GtkCompletionLine *object, GList *words, int pos)
 {
+#ifdef DEBUG
+   printf ("  set_words\n");
+#endif
    GList * igl;
    char * word;
    char * tmp;
@@ -523,6 +529,9 @@ static char * get_common_part (const char *p1, const char *p2)
 
 static int complete_common (GtkCompletionLine *object)
 {
+#ifdef DEBUG
+   printf ("complete_common\n");
+#endif
    GList *ls = object->cmpl;
    GList *words = NULL;
    GList *word_i;
@@ -551,6 +560,9 @@ static int complete_common (GtkCompletionLine *object)
 /* list all subdirs in what, return if ok or not */
 static int generate_dirlist (const char * path)
 {
+#ifdef DEBUG
+   printf ("generate_dirlist\n");
+#endif
    char * str = strdup (path);
    char * p = str + 1;
    char * filename = str;
@@ -651,6 +663,9 @@ static int parse_tilda (GtkCompletionLine *object)
 
 static void complete_from_list(GtkCompletionLine *object)
 {
+#ifdef DEBUG
+   printf ("complete_from_list\n");
+#endif
    parse_tilda(object);
    GList *words = NULL, *word_i;
    int pos = get_words (object, &words);
@@ -687,6 +702,9 @@ static void complete_from_list(GtkCompletionLine *object)
 
 static void on_cursor_changed(GtkTreeView *tree, gpointer data)
 {
+#ifdef DEBUG
+   printf ("on_cusor_changed\n");
+#endif
    GtkCompletionLine *object = GTK_COMPLETION_LINE(data);
 
    GtkTreeSelection *selection;
@@ -713,6 +731,9 @@ static void cell_data_func( GtkTreeViewColumn *col, GtkCellRenderer *renderer,
 
 static int complete_line(GtkCompletionLine *object)
 {
+#ifdef DEBUG
+   printf ("complete_line\n");
+#endif
    parse_tilda(object);
 
    GList * list = NULL, * witem = NULL;
@@ -952,6 +973,9 @@ search_history (GtkCompletionLine* cl)
 
 static guint tab_pressed(GtkCompletionLine* cl)
 {
+#ifdef DEBUG
+   printf ("tab_pressed\n");
+#endif
    if (cl->hist_search_mode == TRUE)
       search_off(cl);
    // -- BUG: gmrun crashes if GtkEntry text is (completely) empty
