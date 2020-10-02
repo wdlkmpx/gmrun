@@ -667,7 +667,9 @@ static void clear_selection (GtkCompletionLine* cl)
    gtk_editable_select_region (GTK_EDITABLE(cl), pos, pos);
 }
 
-static int complete_line(GtkCompletionLine *object)
+
+// called by tab_pressed() only if completion window doesn't exist
+static int complete_line (GtkCompletionLine *object)
 {
 #ifdef DEBUG
    printf ("complete_line\n");
@@ -683,44 +685,29 @@ static int complete_line(GtkCompletionLine *object)
    prefix = g_strdup (word);
 
    g_show_dot_files = object->show_dot_files;
-   if (object->where == NULL)
-   {
-      if (execs_gc) {
-         g_list_free_full (execs_gc, g_free);
-         execs_gc = NULL;
-      }
-      if (dirlist_gc) {
-         g_list_free_full (dirlist_gc, g_free);
-         dirlist_gc = NULL;
-      }
-      if (prefix[0] != '/') {
-         generate_execs_list ();
-         object->cmpl = execs_gc;  // exec list
-      } else {
-         generate_dirlist (prefix);
-         object->cmpl = dirlist_gc; // dirlist
-      }
+   object->where = NULL;
+
+   if (execs_gc) {
+      g_list_free_full (execs_gc, g_free);
+      execs_gc = NULL;
+   }
+   if (dirlist_gc) {
+      g_list_free_full (dirlist_gc, g_free);
+      dirlist_gc = NULL;
+   }
+   if (prefix[0] != '/') {
+      generate_execs_list ();
+      object->cmpl = execs_gc;  // exec list
+   } else {
+      generate_dirlist (prefix);
+      object->cmpl = dirlist_gc; // dirlist
    }
 
-   if (object->cmpl != NULL) {
-      object->where = object->cmpl;
-   }
-
-   if (object->where != NULL) {
-      if (object->win_compl != NULL) {
-         gboolean valid = gtk_tree_model_iter_next(object->sort_list_compl, &(object->list_compl_it));
-         if(!valid)
-            gtk_tree_model_get_iter_first(object->sort_list_compl, &(object->list_compl_it));
-      }
-      complete_from_list(object);
-   }
+   object->where = object->cmpl;
+   complete_from_list(object);
 
    GList *ls = object->cmpl;
    guint num_items = ls ? g_list_length (ls) : 0;
-   char * ls_word = NULL;
-   if (ls && ls->data) {
-      ls_word = (char*)(ls->data);
-   }
 
    if (num_items == 1) {
       g_signal_emit_by_name(G_OBJECT(object), "unique");
@@ -736,89 +723,83 @@ static int complete_line(GtkCompletionLine *object)
    /*** num_items > 1 ***/
    g_signal_emit_by_name (G_OBJECT(object), "notunique");
 
-   if (strncmp (word, ls_word, strlen(word)) == 0)
-   {
-      if (object->win_compl == NULL)
-      {
-         object->win_compl = gtk_window_new (GTK_WINDOW_POPUP);
-         gtk_widget_set_name (object->win_compl, "gmrun_completion_window");
+   object->win_compl = gtk_window_new (GTK_WINDOW_POPUP);
+   gtk_widget_set_name (object->win_compl, "gmrun_completion_window");
 
-         /* attemp to silence warning: Gtk-WARNING **: Allocating size to Window ...
-         https://git.eclipse.org/c/platform/eclipse.platform.swt.git/commit/?id=61a598af4dfda586b27d87537bb2d015bd614ba1
-         https://sources.debian.org/src/clutter-gtk/1.8.2-2/clutter-gtk/gtk-clutter-actor.c/?hl=325#L325
-         https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=867427
-         */
+   /* attemp to silence warning: Gtk-WARNING **: Allocating size to Window ...
+   https://git.eclipse.org/c/platform/eclipse.platform.swt.git/commit/?id=61a598af4dfda586b27d87537bb2d015bd614ba1
+   https://sources.debian.org/src/clutter-gtk/1.8.2-2/clutter-gtk/gtk-clutter-actor.c/?hl=325#L325
+   https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=867427
+   */
 #if GTK_MAJOR_VERSION == 3 && GTK_MINOR_VERSION >= 20 && GTK_MINOR_VERSION < 24
-         // not a proper fix
-         GtkRequisition r, r2;
-         gtk_widget_get_preferred_size (GTK_WIDGET (object->win_compl), &r, &r2);
-         GtkAllocation wal = { 0, 0, r2.width, r.height };
-         gtk_widget_size_allocate (GTK_WIDGET (object->win_compl), &wal);
+   // not a proper fix
+   GtkRequisition r, r2;
+   gtk_widget_get_preferred_size (GTK_WIDGET (object->win_compl), &r, &r2);
+   GtkAllocation wal = { 0, 0, r2.width, r.height };
+   gtk_widget_size_allocate (GTK_WIDGET (object->win_compl), &wal);
 #endif
 
-         object->list_compl = gtk_list_store_new (1, G_TYPE_POINTER);
-         object->sort_list_compl = GTK_TREE_MODEL (object->list_compl);
-         object->tree_compl = gtk_tree_view_new_with_model (object->sort_list_compl);
-         g_object_unref (object->list_compl);
+   object->list_compl = gtk_list_store_new (1, G_TYPE_POINTER);
+   object->sort_list_compl = GTK_TREE_MODEL (object->list_compl);
+   object->tree_compl = gtk_tree_view_new_with_model (object->sort_list_compl);
+   g_object_unref (object->list_compl);
 
-         GtkTreeViewColumn *col;
-         GtkCellRenderer *renderer;
-         col = gtk_tree_view_column_new ();
-         gtk_tree_view_append_column (GTK_TREE_VIEW (object->tree_compl), col);
-         renderer = gtk_cell_renderer_text_new ();
-         gtk_tree_view_column_pack_start (col, renderer, TRUE);
-         gtk_tree_view_column_set_cell_data_func (col, renderer, cell_data_func, NULL, NULL);
+   GtkTreeViewColumn *col;
+   GtkCellRenderer *renderer;
+   col = gtk_tree_view_column_new ();
+   gtk_tree_view_append_column (GTK_TREE_VIEW (object->tree_compl), col);
+   renderer = gtk_cell_renderer_text_new ();
+   gtk_tree_view_column_pack_start (col, renderer, TRUE);
+   gtk_tree_view_column_set_cell_data_func (col, renderer, cell_data_func, NULL, NULL);
 
-         GtkTreeSelection *selection;
-         selection = gtk_tree_view_get_selection (GTK_TREE_VIEW (object->tree_compl));
-         gtk_tree_selection_set_mode (selection, GTK_SELECTION_BROWSE);
-         gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (object->tree_compl), FALSE);
+   GtkTreeSelection *selection;
+   selection = gtk_tree_view_get_selection (GTK_TREE_VIEW (object->tree_compl));
+   gtk_tree_selection_set_mode (selection, GTK_SELECTION_BROWSE);
+   gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (object->tree_compl), FALSE);
 
-         on_cursor_changed_handler = g_signal_connect (GTK_TREE_VIEW (object->tree_compl),
-                                                       "cursor-changed",
-                                                       G_CALLBACK (on_cursor_changed), object);
-         g_signal_handler_block (G_OBJECT (object->tree_compl),
-                                 on_cursor_changed_handler);
-         GList *p = ls;
-         while (p) {
-            GtkTreeIter it;
-            gtk_list_store_append (object->list_compl, &it);
-            gtk_list_store_set (object->list_compl, &it, 0, p, -1);
-            p = g_list_next (p);
-         }
-
-         GtkWidget *scroll = gtk_scrolled_window_new (NULL, NULL);
-         gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW(scroll), GTK_SHADOW_OUT);
-         gtk_widget_show (scroll);
-         gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scroll),
-                                         GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
-         gtk_container_set_border_width (GTK_CONTAINER (object->tree_compl), 2);
-         gtk_container_add (GTK_CONTAINER (scroll), object->tree_compl);
-         gtk_container_add (GTK_CONTAINER (object->win_compl), scroll);
-
-         GdkWindow *top = gtk_widget_get_parent_window (GTK_WIDGET (object));
-         int x, y;
-         gdk_window_get_position(top, &x, &y);
-         GtkAllocation al;
-         gtk_widget_get_allocation( GTK_WIDGET(object), &al );
-         x += al.x;
-         y += al.y + al.height;
-
-         // gtk_widget_popup(object->win_compl, x, y);
-         gtk_window_move (GTK_WINDOW (object->win_compl), x, y);
-         gtk_widget_show_all (object->win_compl);
-
-         gtk_tree_view_columns_autosize (GTK_TREE_VIEW (object->tree_compl));
-         gtk_widget_get_allocation (object->tree_compl, &al);
-         gtk_widget_set_size_request (scroll, al.width + 40, 150);
-
-         gtk_tree_model_get_iter_first (object->sort_list_compl, &(object->list_compl_it));
-         gtk_tree_selection_select_iter (selection, &(object->list_compl_it));
-
-         g_signal_handler_unblock (G_OBJECT(object->tree_compl),
-                                   on_cursor_changed_handler);
-      }
+   on_cursor_changed_handler = g_signal_connect (GTK_TREE_VIEW (object->tree_compl),
+                                                 "cursor-changed",
+                                                 G_CALLBACK (on_cursor_changed), object);
+   g_signal_handler_block (G_OBJECT (object->tree_compl),
+                           on_cursor_changed_handler);
+   GList *p = ls;
+   while (p) {
+      GtkTreeIter it;
+      gtk_list_store_append (object->list_compl, &it);
+      gtk_list_store_set (object->list_compl, &it, 0, p, -1);
+      p = g_list_next (p);
    }
+
+   GtkWidget *scroll = gtk_scrolled_window_new (NULL, NULL);
+   gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW(scroll), GTK_SHADOW_OUT);
+   gtk_widget_show (scroll);
+   gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scroll),
+                                   GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+   gtk_container_set_border_width (GTK_CONTAINER (object->tree_compl), 2);
+   gtk_container_add (GTK_CONTAINER (scroll), object->tree_compl);
+   gtk_container_add (GTK_CONTAINER (object->win_compl), scroll);
+
+   GdkWindow *top = gtk_widget_get_parent_window (GTK_WIDGET (object));
+   int x, y;
+   gdk_window_get_position(top, &x, &y);
+   GtkAllocation al;
+   gtk_widget_get_allocation( GTK_WIDGET(object), &al );
+   x += al.x;
+   y += al.y + al.height;
+
+   // gtk_widget_popup(object->win_compl, x, y);
+   gtk_window_move (GTK_WINDOW (object->win_compl), x, y);
+   gtk_widget_show_all (object->win_compl);
+
+   gtk_tree_view_columns_autosize (GTK_TREE_VIEW (object->tree_compl));
+   gtk_widget_get_allocation (object->tree_compl, &al);
+   gtk_widget_set_size_request (scroll, al.width + 40, 150);
+
+   gtk_tree_model_get_iter_first (object->sort_list_compl, &(object->list_compl_it));
+   gtk_tree_selection_select_iter (selection, &(object->list_compl_it));
+
+   g_signal_handler_unblock (G_OBJECT(object->tree_compl),
+                             on_cursor_changed_handler);
 
    g_list_free_full (list, g_free);
    return GEN_NOT_UNIQUE;
@@ -921,8 +902,20 @@ static guint tab_pressed(GtkCompletionLine* cl)
 #ifdef DEBUG
    printf ("tab_pressed\n");
 #endif
-   if (cl->hist_search_mode == TRUE)
+   if (cl->hist_search_mode == TRUE) {
       search_off(cl);
+   }
+   if (cl->win_compl) {
+      // completion window exists, avoid calling complete_line()
+      gboolean valid = gtk_tree_model_iter_next (cl->sort_list_compl, &(cl->list_compl_it));
+      if(!valid) {
+         gtk_tree_model_get_iter_first (cl->sort_list_compl, &(cl->list_compl_it));
+      }
+      complete_from_list (cl);
+      timeout_id = 0;
+      return FALSE;
+   }
+   // complete_line ()
    // -- BUG: gmrun crashes if GtkEntry text is (completely) empty
    // -- fix: insert a space
    const char * str = gtk_entry_get_text (GTK_ENTRY (cl));
