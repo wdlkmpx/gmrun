@@ -256,11 +256,6 @@ static void gtk_completion_line_dispose (GObject *object)
       g_strfreev (path_gc);
       path_gc = NULL;
    }
-   if (self->cmpl) {
-      // this can be either execs_gc or dirlist_gc
-      g_list_free_full (self->cmpl, g_free);
-      self->cmpl = NULL;
-   }
    if (execs_gc) {
       g_list_free_full (execs_gc, g_free);
       execs_gc = NULL;
@@ -688,16 +683,23 @@ static int complete_line(GtkCompletionLine *object)
    prefix = g_strdup (word);
 
    g_show_dot_files = object->show_dot_files;
-   if (object->where == NULL) {
-      g_list_free_full (object->cmpl, g_free);
+   if (object->where == NULL)
+   {
+      if (execs_gc) {
+         g_list_free_full (execs_gc, g_free);
+         execs_gc = NULL;
+      }
+      if (dirlist_gc) {
+         g_list_free_full (dirlist_gc, g_free);
+         dirlist_gc = NULL;
+      }
       if (prefix[0] != '/') {
          generate_execs_list ();
-         object->cmpl = execs_gc;
+         object->cmpl = execs_gc;  // exec list
       } else {
          generate_dirlist (prefix);
-         object->cmpl = dirlist_gc;
+         object->cmpl = dirlist_gc; // dirlist
       }
-      object->where = NULL;
    }
 
    if (object->cmpl != NULL) {
