@@ -511,52 +511,6 @@ static int generate_completion_from_execs(GtkCompletionLine *object)
    return 0;
 }
 
-/* get the shortest common begin of two strings */
-static char * get_common_part (const char *p1, const char *p2)
-{
-   char * temp;
-   const char * a = p1;
-   const char * b = p2;
-   int count = 0;
-   while ((*a) && (*b) && (*a == *b)) {
-      a++;  b++;  count++;
-   }
-   temp = (char *) malloc (sizeof(char) * (count + 5));
-   strncpy (temp, p1, count);
-   temp[count] = 0;
-   return (temp);
-}
-
-static int complete_common (GtkCompletionLine *object)
-{
-#ifdef DEBUG
-   printf ("complete_common\n");
-#endif
-   GList *ls = object->cmpl;
-   GList *words = NULL;
-   GList *word_i;
-   int pos = get_words (object, &words);
-   gchar *tmp;
-   word_i = g_list_nth (words, pos);
-   g_free (word_i->data);
-   word_i->data = g_strdup ((char*) (ls->data));
-   ls = g_list_next(ls);
-   while (ls != NULL)
-   {
-      /* Before migrating to C/glib, this (gchar *) may be leaking */
-      tmp = get_common_part ((gchar *)word_i->data, (char*) (ls->data));
-      g_free(word_i->data);
-      word_i->data = tmp;
-      ls = g_list_next(ls);
-      if(strlen(tmp) == 1)
-         break;
-   }
-
-   set_words (object, words, pos);
-   g_list_free_full (words, g_free);
-   return 0;
-}
-
 /* list all subdirs in what, return if ok or not */
 static int generate_dirlist (const char * path)
 {
@@ -758,7 +712,6 @@ static int complete_line(GtkCompletionLine *object)
    }
 
    if (object->cmpl != NULL) {
-      complete_common(object);
       object->where = object->cmpl;
    }
 
