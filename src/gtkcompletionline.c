@@ -922,6 +922,9 @@ static guint tab_pressed(GtkCompletionLine* cl)
 
 static void destroy_completion_window (GtkCompletionLine *cl)
 {
+   if (on_cursor_changed_handler) {
+      g_signal_handler_block (G_OBJECT (cl->tree_compl), on_cursor_changed_handler);
+   }
    gtk_list_store_clear (cl->list_compl);
    gtk_widget_destroy (cl->tree_compl);
    gtk_widget_destroy (cl->win_compl);
