@@ -618,8 +618,11 @@ static int parse_tilda (GtkCompletionLine *object)
 static void complete_from_list(GtkCompletionLine *object)
 {
 #ifdef DEBUG
-   printf ("complete_from_list\n");
+   printf ("\ncomplete_from_list\n");
 #endif
+   if (on_cursor_changed_handler) {
+      g_signal_handler_block (G_OBJECT(object->tree_compl), on_cursor_changed_handler);
+   }
    parse_tilda(object);
    GList *words = NULL, *word_i;
    int pos = get_words (object, &words);
@@ -653,6 +656,10 @@ static void complete_from_list(GtkCompletionLine *object)
       current_pos = set_words(object, words, pos);
       gtk_editable_select_region (GTK_EDITABLE(object), object->pos_in_text, current_pos);
    }
+
+   if (on_cursor_changed_handler) {
+      g_signal_handler_unblock (G_OBJECT(object->tree_compl), on_cursor_changed_handler);
+   }
    //g_list_free_full (words, g_free);
 }
 
@@ -667,11 +674,7 @@ static void on_cursor_changed(GtkTreeView *tree, gpointer data)
    selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(object->tree_compl));
    gtk_tree_selection_get_selected (selection, &(object->sort_list_compl), &(object->list_compl_it));
 
-   g_signal_handler_block(G_OBJECT(object->tree_compl),
-                      on_cursor_changed_handler);
    complete_from_list(object);
-   g_signal_handler_unblock(G_OBJECT(object->tree_compl),
-                         on_cursor_changed_handler);
 }
 
 static void cell_data_func( GtkTreeViewColumn *col, GtkCellRenderer *renderer,
@@ -754,7 +757,6 @@ static int complete_line(GtkCompletionLine *object)
 
    if (strncmp (word, ls_word, strlen(word)) == 0)
    {
-      /* TODO leak: created once but never freed */
       if (object->win_compl == NULL)
       {
          object->win_compl = gtk_window_new (GTK_WINDOW_POPUP);
@@ -777,6 +779,7 @@ static int complete_line(GtkCompletionLine *object)
          object->sort_list_compl = GTK_TREE_MODEL (object->list_compl);
          object->tree_compl = gtk_tree_view_new_with_model (object->sort_list_compl);
          g_object_unref (object->list_compl);
+
          GtkTreeViewColumn *col;
          GtkCellRenderer *renderer;
          col = gtk_tree_view_column_new ();
@@ -951,6 +954,18 @@ static guint tab_pressed(GtkCompletionLine* cl)
    return FALSE;
 }
 
+static void destroy_completion_window (GtkCompletionLine *cl)
+{
+   gtk_list_store_clear (cl->list_compl);
+   gtk_widget_destroy (cl->tree_compl);
+   gtk_widget_destroy (cl->win_compl);
+   cl->list_compl = NULL;
+   cl->tree_compl = NULL;
+   cl->win_compl = NULL;
+   on_cursor_changed_handler = 0;
+}
+
+
 static gboolean
 on_scroll(GtkCompletionLine *cl, GdkEventScroll *event, gpointer data)
 {
@@ -1059,8 +1074,7 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
             search_off (cl);
          }
          if (cl->win_compl != NULL) {
-            gtk_widget_destroy(cl->win_compl);
-            cl->win_compl = NULL;
+            destroy_completion_window (cl);
          }
       }
       return FALSE;
@@ -1082,8 +1096,7 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
 
       case GDK_KEY_Return:
          if (cl->win_compl != NULL) {
-            gtk_widget_destroy(cl->win_compl);
-            cl->win_compl = NULL;
+            destroy_completion_window (cl);
          }
          if (event->state & GDK_CONTROL_MASK) {
             g_signal_emit_by_name(G_OBJECT(cl), "runwithterm");
@@ -1138,8 +1151,7 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
          if (cl->hist_search_mode == TRUE) {
             search_off(cl);
          } else if (cl->win_compl != NULL) {
-            gtk_widget_destroy(cl->win_compl);
-            cl->win_compl = NULL;
+            destroy_completion_window (cl);
          } else {
             // user cancelled
             g_signal_emit_by_name(G_OBJECT(cl), "cancel");
@@ -1150,8 +1162,7 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
       default:
          cl->first_key = 0;
          if (cl->win_compl != NULL) {
-            gtk_widget_destroy(cl->win_compl);
-            cl->win_compl = NULL;
+            destroy_completion_window (cl);
          }
          cl->where = NULL;
          if (cl->hist_search_mode == TRUE) {
