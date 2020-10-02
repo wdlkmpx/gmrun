@@ -368,7 +368,7 @@ int set_words (GtkCompletionLine *object, GList *words, int pos)
          if (*tmp == ' ')
             tmp_len += 5;
    }
-   tmp = (char*) g_malloc (sizeof(char) * tmp_len);
+   tmp = (char*) g_malloc0 (sizeof(char) * tmp_len);
 
    if (pos == -1)
       pos = g_list_length (words) - 1;
@@ -624,13 +624,13 @@ static void complete_from_list(GtkCompletionLine *object)
    GList *words = NULL, *word_i;
    int pos = get_words (object, &words);
    word_i = g_list_nth (words, pos);
+   int current_pos;
 
    g_free(prefix);
    prefix = g_strdup ((gchar *)(word_i->data));
 
    /* Completion list is opened */
    if (object->win_compl != NULL) {
-      int current_pos;
       gpointer data;
       gtk_tree_model_get(object->sort_list_compl, &(object->list_compl_it), 0, &data, -1);
       object->where=(GList *)data;
@@ -648,8 +648,10 @@ static void complete_from_list(GtkCompletionLine *object)
       g_free(word_i->data);
       word_i->data = ((char*) (object->where->data));
       object->pos_in_text = gtk_editable_get_position(GTK_EDITABLE(object));
-      set_words(object, words, pos);
       object->where = g_list_next(object->where);
+
+      current_pos = set_words(object, words, pos);
+      gtk_editable_select_region (GTK_EDITABLE(object), object->pos_in_text, current_pos);
    }
    //g_list_free_full (words, g_free);
 }
@@ -682,6 +684,11 @@ static void cell_data_func( GtkTreeViewColumn *col, GtkCellRenderer *renderer,
    g_object_set(renderer, "text", str, NULL);
 }
 
+static void clear_selection (GtkCompletionLine* cl)
+{
+   int pos = gtk_editable_get_position (GTK_EDITABLE (cl));
+   gtk_editable_select_region (GTK_EDITABLE(cl), pos, pos);
+}
 
 static int complete_line(GtkCompletionLine *object)
 {
@@ -733,6 +740,7 @@ static int complete_line(GtkCompletionLine *object)
 
    if (num_items == 1) {
       g_signal_emit_by_name(G_OBJECT(object), "unique");
+      clear_selection (object);
       g_list_free_full (list, g_free);
       return GEN_COMPLETION_OK;
    } else if (num_items == 0) {
@@ -941,13 +949,6 @@ static guint tab_pressed(GtkCompletionLine* cl)
    complete_line(cl);
    timeout_id = 0;
    return FALSE;
-}
-
-static void
-clear_selection(GtkCompletionLine* cl)
-{
-   int pos = gtk_editable_get_position(GTK_EDITABLE(cl));
-   gtk_editable_select_region(GTK_EDITABLE(cl), pos, pos);
 }
 
 static gboolean
