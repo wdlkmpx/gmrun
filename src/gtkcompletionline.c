@@ -261,10 +261,6 @@ static void gtk_completion_line_dispose (GObject *object)
       g_list_free_full (dirlist_gc, g_free);
       dirlist_gc = NULL;
    }
-   if (prefix) {
-      g_free (prefix);
-      prefix = NULL;
-   }
    G_OBJECT_CLASS (gtk_completion_line_parent_class)->dispose (object);
 }
 
@@ -468,13 +464,16 @@ int my_alphasort (const void *_a, const void *_b)
 }
 
 /* Iterates though PATH and list all executables */
-static void generate_execs_list (void)
+static void generate_execs_list (char * pfix)
 {
    // generate_path_list
    if (!path_gc) {
       char *path_cstr = (char*) getenv("PATH");
       path_gc = g_strsplit (path_cstr, ":", -1);
    }
+
+   if (prefix) g_free (prefix);
+   prefix = g_strdup (pfix);
 
    gchar ** path_gc_i = path_gc;
    while (*path_gc_i)
@@ -492,6 +491,10 @@ static void generate_execs_list (void)
    }
    if (execs_gc && execs_gc->next) {
       execs_gc = g_list_reverse (execs_gc);
+   }
+   if (prefix) {
+      g_free (prefix);
+      prefix = NULL;
    }
 }
 
@@ -528,8 +531,7 @@ static int generate_dirlist (const char * path)
    // --
    *filename = '\0';
    filename++;
-   if (prefix)
-      g_free(prefix);
+   if (prefix) g_free (prefix);
    prefix = g_strdup(filename);
    // --
 
@@ -564,6 +566,10 @@ static int generate_dirlist (const char * path)
       dirlist_gc = g_list_reverse (dirlist_gc);
    }
 
+   if (prefix) {
+      g_free (prefix);
+      prefix = NULL;
+   }
    g_string_free(dest, TRUE);
    free(str);
    return GEN_COMPLETION_OK;
@@ -670,9 +676,6 @@ static int complete_line (GtkCompletionLine *object)
    witem = g_list_nth (list, pos);
    char * word = (gchar *)(witem->data);
 
-   g_free (prefix);
-   prefix = g_strdup (word);
-
    g_show_dot_files = object->show_dot_files;
 
    if (execs_gc) {
@@ -683,11 +686,11 @@ static int complete_line (GtkCompletionLine *object)
       g_list_free_full (dirlist_gc, g_free);
       dirlist_gc = NULL;
    }
-   if (prefix[0] != '/') {
-      generate_execs_list ();
+   if (word[0] != '/') {
+      generate_execs_list (word);
       object->cmpl = execs_gc;  // exec list
    } else {
-      generate_dirlist (prefix);
+      generate_dirlist (word);
       object->cmpl = dirlist_gc; // dirlist
    }
 
