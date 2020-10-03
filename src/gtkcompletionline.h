@@ -38,7 +38,6 @@ struct _GtkCompletionLine
    int pos_in_text; /* Cursor position in main "line" */
  
    GList * cmpl;  /* Completion list */
-   GList * where; /* current row pointer ??? */
 
    HistoryFile * hist;
    gboolean hist_search_mode;

@@ -205,7 +205,6 @@ static void gtk_completion_line_class_init (GtkCompletionLineClass *klass)
 static void gtk_completion_line_init (GtkCompletionLine *self)
 {
    /* Add object initialization / creation stuff here */
-   self->where = NULL;
    self->cmpl = NULL;
    self->win_compl = NULL;
    self->list_compl = NULL;
@@ -601,31 +600,30 @@ static void complete_from_list(GtkCompletionLine *object)
    }
 
    parse_tilda(object);
-   GList *words = NULL, *word_i, * where_i;
+   GList *words = NULL, *word_i;
    int pos = get_words (object, &words);
    word_i = g_list_nth (words, pos);
    int current_pos;
 
    /* Completion list is opened */
    if (object->win_compl != NULL) {
-      gpointer data;
-      gtk_tree_model_get(object->sort_list_compl, &(object->list_compl_it), 0, &data, -1);
-      object->where = (GList *)data;
-      where_i = object->where;
+      char * word = NULL;
+      gtk_tree_model_get (object->sort_list_compl, &(object->list_compl_it), 0, &word, -1);
+      if (word) {
+         g_free (word_i->data);
+         word_i->data = strdup (word);
+      }
 
       GtkTreePath *path = gtk_tree_model_get_path(object->sort_list_compl, &(object->list_compl_it));
       gtk_tree_view_set_cursor(GTK_TREE_VIEW(object->tree_compl), path, NULL, FALSE);
       gtk_tree_view_scroll_to_cell(GTK_TREE_VIEW(object->tree_compl), path, NULL, TRUE, 0.5, 0.5);
       gtk_tree_path_free(path);
    } else {
-      where_i = object->where;
-      object->pos_in_text = gtk_editable_get_position(GTK_EDITABLE(object));
-      object->where = g_list_next(object->where);
-   }
-
-   if (where_i && where_i->data) {
-      g_free (word_i->data);
-      word_i->data = strdup ((char*) (where_i->data));
+      object->pos_in_text = gtk_editable_get_position (GTK_EDITABLE (object));
+      if (object->cmpl && object->cmpl->data) {
+         g_free (word_i->data);
+         word_i->data = strdup ((char*) (object->cmpl->data));
+      }
    }
 
    current_pos = set_words (object, words, pos);
@@ -652,16 +650,6 @@ static void on_cursor_changed(GtkTreeView *tree, gpointer data)
    complete_from_list(object);
 }
 
-static void cell_data_func( GtkTreeViewColumn *col, GtkCellRenderer *renderer,
-                         GtkTreeModel *model, GtkTreeIter *iter, gpointer user_data) {
-   gpointer data;
-   gchar *str;
-
-   gtk_tree_model_get(model, iter, 0, &data, -1);
-   str = ((char*) (((GList *)data)->data));
-   g_object_set(renderer, "text", str, NULL);
-}
-
 static void clear_selection (GtkCompletionLine* cl)
 {
    int pos = gtk_editable_get_position (GTK_EDITABLE (cl));
@@ -686,7 +674,6 @@ static int complete_line (GtkCompletionLine *object)
    prefix = g_strdup (word);
 
    g_show_dot_files = object->show_dot_files;
-   object->where = NULL;
 
    if (execs_gc) {
       g_list_free_full (execs_gc, g_free);
@@ -704,7 +691,6 @@ static int complete_line (GtkCompletionLine *object)
       object->cmpl = dirlist_gc; // dirlist
    }
 
-   object->where = object->cmpl;
    complete_from_list(object);
 
    GList *ls = object->cmpl;
@@ -740,18 +726,32 @@ static int complete_line (GtkCompletionLine *object)
    gtk_widget_size_allocate (GTK_WIDGET (object->win_compl), &wal);
 #endif
 
-   object->list_compl = gtk_list_store_new (1, G_TYPE_POINTER);
+   object->list_compl = gtk_list_store_new (1, G_TYPE_STRING);
    object->sort_list_compl = GTK_TREE_MODEL (object->list_compl);
    object->tree_compl = gtk_tree_view_new_with_model (object->sort_list_compl);
    g_object_unref (object->list_compl);
 
+   /* fill ListStore before sorting */
+   GtkTreeIter iter;
+   GList *p = ls;
+   while (p) {
+      gtk_list_store_append (object->list_compl, &iter); /* modifies iter */
+      gtk_list_store_set (object->list_compl, &iter,
+                          0, (char*) p->data, -1);
+      p = g_list_next (p);
+   }
+
+   /* sort ListStore, column 0 */
+   GtkTreeSortable * sorted = GTK_TREE_SORTABLE (object->list_compl);
+   gtk_tree_sortable_set_sort_column_id (sorted, 0, GTK_SORT_ASCENDING);
+
    GtkTreeViewColumn *col;
    GtkCellRenderer *renderer;
    col = gtk_tree_view_column_new ();
-   gtk_tree_view_append_column (GTK_TREE_VIEW (object->tree_compl), col);
    renderer = gtk_cell_renderer_text_new ();
    gtk_tree_view_column_pack_start (col, renderer, TRUE);
-   gtk_tree_view_column_set_cell_data_func (col, renderer, cell_data_func, NULL, NULL);
+   gtk_tree_view_column_add_attribute (col, renderer, "text", 0);
+   gtk_tree_view_append_column (GTK_TREE_VIEW (object->tree_compl), col);
 
    GtkTreeSelection *selection;
    selection = gtk_tree_view_get_selection (GTK_TREE_VIEW (object->tree_compl));
@@ -763,13 +763,6 @@ static int complete_line (GtkCompletionLine *object)
                                                  G_CALLBACK (on_cursor_changed), object);
    g_signal_handler_block (G_OBJECT (object->tree_compl),
                            on_cursor_changed_handler);
-   GList *p = ls;
-   while (p) {
-      GtkTreeIter it;
-      gtk_list_store_append (object->list_compl, &it);
-      gtk_list_store_set (object->list_compl, &it, 0, p, -1);
-      p = g_list_next (p);
-   }
 
    GtkWidget *scroll = gtk_scrolled_window_new (NULL, NULL);
    gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW(scroll), GTK_SHADOW_OUT);
@@ -1131,7 +1124,6 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
          if (cl->win_compl != NULL) {
             destroy_completion_window (cl);
          }
-         cl->where = NULL;
          if (cl->hist_search_mode == TRUE) {
             // https://developer.gnome.org/gdk2/stable/gdk2-Event-Structures.html#GdkEventKey
             if (event->state & GDK_CONTROL_MASK)
