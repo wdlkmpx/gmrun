@@ -53,10 +53,6 @@ enum {
    LAST_SIGNAL
 };
 
-#define GEN_COMPLETION_OK  1
-#define GEN_CANT_COMPLETE  2
-#define GEN_NOT_UNIQUE     3
-
 static guint gtk_completion_line_signals[LAST_SIGNAL];
 
 static gchar ** path_gc   = NULL; /* string list (gchar *) containing each directory in PATH */
@@ -654,7 +650,7 @@ static void clear_selection (GtkCompletionLine* cl)
 
 
 // called by tab_pressed() only if completion window doesn't exist
-static int complete_line (GtkCompletionLine *object)
+static void complete_line (GtkCompletionLine *object)
 {
 #ifdef DEBUG
    printf ("complete_line\n");
@@ -688,7 +684,7 @@ static int complete_line (GtkCompletionLine *object)
          g_list_free_full (object->cmpl, g_free);
          object->cmpl = NULL;
       }
-      return GEN_COMPLETION_OK;
+      return;
    } else if (num_items == 0) {
       g_signal_emit_by_name(G_OBJECT(object), "incomplete");
       g_list_free_full (list, g_free);
@@ -696,7 +692,7 @@ static int complete_line (GtkCompletionLine *object)
          g_list_free_full (object->cmpl, g_free);
          object->cmpl = NULL;
       }
-      return GEN_CANT_COMPLETE;
+      return;
    }
 
    /*** num_items > 1 ***/
@@ -792,7 +788,7 @@ static int complete_line (GtkCompletionLine *object)
       g_list_free_full (object->cmpl, g_free);
       object->cmpl = NULL;
    }
-   return GEN_NOT_UNIQUE;
+   return;
 }
 
 GtkWidget *
