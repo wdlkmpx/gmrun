@@ -60,8 +60,6 @@ enum {
 static guint gtk_completion_line_signals[LAST_SIGNAL];
 
 static gchar ** path_gc   = NULL; /* string list (gchar *) containing each directory in PATH */
-static GList * execs_gc   = NULL; /* linked list of executables from current path */
-static GList * dirlist_gc = NULL; /* linked list of directories from current path */
 static gchar * prefix     = NULL;
 static int g_show_dot_files;
 
@@ -252,14 +250,6 @@ static void gtk_completion_line_dispose (GObject *object)
    if (path_gc) {
       g_strfreev (path_gc);
       path_gc = NULL;
-   }
-   if (execs_gc) {
-      g_list_free_full (execs_gc, g_free);
-      execs_gc = NULL;
-   }
-   if (dirlist_gc) {
-      g_list_free_full (dirlist_gc, g_free);
-      dirlist_gc = NULL;
    }
    G_OBJECT_CLASS (gtk_completion_line_parent_class)->dispose (object);
 }
@@ -464,7 +454,7 @@ int my_alphasort (const void *_a, const void *_b)
 }
 
 /* Iterates though PATH and list all executables */
-static void generate_execs_list (char * pfix)
+static GList * generate_execs_list (char * pfix)
 {
    // generate_path_list
    if (!path_gc) {
@@ -472,6 +462,7 @@ static void generate_execs_list (char * pfix)
       path_gc = g_strsplit (path_cstr, ":", -1);
    }
 
+   GList * execs_gc = NULL;
    if (prefix) g_free (prefix);
    prefix = g_strdup (pfix);
 
@@ -496,10 +487,11 @@ static void generate_execs_list (char * pfix)
       g_free (prefix);
       prefix = NULL;
    }
+   return (execs_gc);
 }
 
 /* list all subdirs in what, return if ok or not */
-static int generate_dirlist (const char * path)
+static GList * generate_dirlist (const char * path)
 {
 #ifdef DEBUG
    printf ("generate_dirlist\n");
@@ -509,6 +501,7 @@ static int generate_dirlist (const char * path)
    char * filename = str;
    GString * dest = g_string_new("/");
    int n;
+   GList * dirlist_gc = NULL;
 
    /* Check path validity in path */
    while (*p != '\0')
@@ -517,9 +510,9 @@ static int generate_dirlist (const char * path)
       if (*p == '/') {
          DIR* dir = opendir(dest->str);
          if (!dir) {
-            free(str);
+            free (str);
             g_string_free (dest, TRUE);
-            return GEN_CANT_COMPLETE;
+            return (NULL);
          }
          closedir(dir);
          filename = p;
@@ -537,9 +530,6 @@ static int generate_dirlist (const char * path)
 
    dest = g_string_new (str);
    dest = g_string_append_c (dest, '/');
-
-   g_list_free_full (dirlist_gc, g_free);
-   dirlist_gc = NULL;
 
    struct dirent **eps;
    char * file;
@@ -572,7 +562,7 @@ static int generate_dirlist (const char * path)
    }
    g_string_free(dest, TRUE);
    free(str);
-   return GEN_COMPLETION_OK;
+   return (dirlist_gc);
 }
 
 /* Expand tilde */
@@ -678,23 +668,14 @@ static int complete_line (GtkCompletionLine *object)
 
    g_show_dot_files = object->show_dot_files;
 
-   if (execs_gc) {
-      g_list_free_full (execs_gc, g_free);
-      execs_gc = NULL;
-   }
-   if (dirlist_gc) {
-      g_list_free_full (dirlist_gc, g_free);
-      dirlist_gc = NULL;
-   }
-   if (word[0] != '/') {
-      generate_execs_list (word);
-      object->cmpl = execs_gc;  // exec list
-   } else {
-      generate_dirlist (word);
-      object->cmpl = dirlist_gc; // dirlist
+   /* populate object->cmpl */
+   if (word[0] != '/') { /* exec list */
+      object->cmpl = generate_execs_list (word);
+   } else { /* dirlist */
+      object->cmpl = generate_dirlist (word);
    }
 
-   complete_from_list(object);
+   complete_from_list (object);
 
    GList *ls = object->cmpl;
    guint num_items = ls ? g_list_length (ls) : 0;
@@ -703,10 +684,18 @@ static int complete_line (GtkCompletionLine *object)
       g_signal_emit_by_name(G_OBJECT(object), "unique");
       clear_selection (object);
       g_list_free_full (list, g_free);
+      if (object->cmpl) {
+         g_list_free_full (object->cmpl, g_free);
+         object->cmpl = NULL;
+      }
       return GEN_COMPLETION_OK;
    } else if (num_items == 0) {
       g_signal_emit_by_name(G_OBJECT(object), "incomplete");
       g_list_free_full (list, g_free);
+      if (object->cmpl) {
+         g_list_free_full (object->cmpl, g_free);
+         object->cmpl = NULL;
+      }
       return GEN_CANT_COMPLETE;
    }
 
@@ -799,6 +788,10 @@ static int complete_line (GtkCompletionLine *object)
                              on_cursor_changed_handler);
 
    g_list_free_full (list, g_free);
+   if (object->cmpl) {
+      g_list_free_full (object->cmpl, g_free);
+      object->cmpl = NULL;
+   }
    return GEN_NOT_UNIQUE;
 }
 
