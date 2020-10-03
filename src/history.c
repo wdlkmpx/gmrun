@@ -15,7 +15,6 @@
  *     This is not a good idea if the list is too long
  * - If entry exists it's moved to the end of the list..
  * 
- * HOWTO: see example at the end of the file
  */
 
 #include "history.h"
@@ -40,8 +39,14 @@ struct _Whistory
 static void _history_clear (HistoryFile * history)
 {
    // keep history->filename (destroyed in _history_free())
-   if (history->list) {
-      g_list_free_full (history->list, g_free);
+   if (history->list)
+   {
+      //g_list_free_full (history->list, free);
+      GList * i;
+      for (i = history->list;  i;  i = i->next) {
+         free (i->data);
+      }
+      g_list_free (history->list);
       history->list = NULL;
       history->has_changed = 1;
    }
@@ -54,10 +59,10 @@ static void _history_free (HistoryFile * history)
 {
    _history_clear (history);
    if (history->filename) {
-      g_free (history->filename);
+      free (history->filename);
       history->filename = NULL;
    }
-   g_free (history);
+   free (history);
 }
 
 
@@ -88,10 +93,11 @@ static void _history_load_from_file (HistoryFile * history, const char * filenam
          continue;
       }
 
-      item = g_strdup (p);
+      item = strdup (p);
       len = strlen (buf);
       item[len-1] = 0;
       if (max > 0 && count >= max) {
+         free (item);
          break;
       }
       count++;
@@ -137,10 +143,10 @@ void _history_write_to_file (HistoryFile * history, const char * filename)
 
 HistoryFile * history_new (char * filename, unsigned int maxcount)
 {
-   HistoryFile * history = g_malloc0 (sizeof (HistoryFile));
+   HistoryFile * history = calloc (1, sizeof (HistoryFile));
    history->max = maxcount;
-   if (filename || *filename) {
-      history->filename = g_strdup (filename);
+   if (filename && *filename) {
+      history->filename = strdup (filename);
       _history_load_from_file (history, filename);
    }
    return (history);
@@ -290,6 +296,7 @@ void history_append (HistoryFile * history, const char * text)
       char * ientry = (char *) (i->data);
       if (strcmp (text, ientry) == 0) {
          // entry already exists.. remove
+         free (i->data);
          templist = g_list_remove (i, i->data);
          if (!templist->prev) { // no previous entry.. new start
             history->list = templist;
@@ -316,7 +323,7 @@ void history_append (HistoryFile * history, const char * text)
    }
 
    // add new item
-   char * new_item = g_strdup (text);
+   char * new_item = strdup (text);
    GList * position = history->list_end ? history->list_end : history->list;
    position = g_list_append (position, (gpointer) new_item);
    history->has_changed = 1;
@@ -338,6 +345,7 @@ void history_append (HistoryFile * history, const char * text)
          history->current = history->list->next;
       }
       gpointer data = history->list->data;
+      free (data);
       history->list = g_list_remove (history->list, data);
    }
 }
@@ -355,47 +363,3 @@ void history_reverse (HistoryFile * history)
    }
 }
 
-
-// ============================================================
-//                     example
-// ============================================================
-
-/*
-// gcc -o history history.c -Wall -g -O2 `pkg-config --cflags glib-2.0` `pkg-config --libs glib-2.0`
-
-int main (int argc, char ** argv)
-{
-
-   #define HISTORY_FILE ".history_sample"
-   char * HOME = getenv ("HOME");
-   char history_file[512] = "";
-   if (HOME) {
-      snprintf (history_file, sizeof (history_file), "%s/%s", HOME, HISTORY_FILE);
-   }
-
-   HistoryFile * history;
-   history = history_new (history_file, 11);
-
-   printf ("REVERSE\n");
-   history_reverse (history);
-   history_print (history);
-
-   printf ("APPEND\n");
-   history_append (history, "pegasus fantasy");
-   history_print (history);
-
-   history_append (history, "soldier dream");
-   history_append (history, "soldier dream");
-   history_append (history, "soldier dream");
-   history_print (history);
-
-   history_append (history, "blue dream");
-   history_append (history, "soldier dream");
-   history_print (history);
-
-   history_save (history, HISTORY_SAVE_IF_CHANGED);
-   history_destroy (history);
-   history = NULL;
-   return (0);
-}
-*/
