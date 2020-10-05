@@ -550,16 +550,12 @@ static void complete_from_list(GtkCompletionLine *object)
    GList *words = NULL, *word_i;
    int pos = get_words (object, &words);
    word_i = g_list_nth (words, pos);
-   int current_pos;
+   char * word = NULL;
 
    /* Completion list is opened */
    if (object->win_compl != NULL) {
-      char * word = NULL;
+      /* word will point to a dynamycally allocated string */
       gtk_tree_model_get (object->sort_list_compl, &(object->list_compl_it), 0, &word, -1);
-      if (word) {
-         g_free (word_i->data);
-         word_i->data = strdup (word);
-      }
 
       GtkTreePath *path = gtk_tree_model_get_path(object->sort_list_compl, &(object->list_compl_it));
       gtk_tree_view_set_cursor(GTK_TREE_VIEW(object->tree_compl), path, NULL, FALSE);
@@ -567,12 +563,15 @@ static void complete_from_list(GtkCompletionLine *object)
       gtk_tree_path_free(path);
    } else {
       if (object->cmpl && object->cmpl->data) {
-         g_free (word_i->data);
-         word_i->data = strdup ((char*) (object->cmpl->data));
+         word = strdup ((char*) (object->cmpl->data));
       }
    }
 
-   current_pos = set_words (object, words, pos);
+   if (word) {
+      g_free (word_i->data);
+      word_i->data = word;
+   }
+   int current_pos = set_words (object, words, pos);
    gtk_editable_select_region (GTK_EDITABLE(object), object->pos_in_text, current_pos);
 
    g_list_free_full (words, g_free);
