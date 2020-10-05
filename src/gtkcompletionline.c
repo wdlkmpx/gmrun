@@ -417,20 +417,6 @@ static int select_executables_only(const struct dirent* dent)
    return 0;
 }
 
-/* Quicksort callback for scandir, compares two dirent */
-#if defined(__GLIBC__) && __GLIBC_PREREQ(2, 10)
-int my_alphasort (const struct dirent **a, const struct dirent **b)
-#else
-int my_alphasort (const void *_a, const void *_b)
-#endif
-{
-#if defined(__GLIBC__) && __GLIBC__ == 2 && __GLIBC_MINOR__ < 10
-   dirent const * const *a = (dirent const * const *)_a;
-   dirent const * const *b = (dirent const * const *)_b;
-#endif
-   return (strcmp ((*a)->d_name, (*b)->d_name));
-}
-
 /* Iterates though PATH and list all executables */
 static GList * generate_execs_list (char * pfix)
 {
@@ -448,7 +434,7 @@ static GList * generate_execs_list (char * pfix)
    while (*path_gc_i)
    {
       struct dirent **eps;
-      int n = scandir(*path_gc_i, &eps, select_executables_only, my_alphasort);
+      int n = scandir (*path_gc_i, &eps, select_executables_only, alphasort);
       if (n >= 0) {
          for (int j = 0; j < n; j++) {
             execs_gc = g_list_prepend (execs_gc, g_strdup (eps[j]->d_name));
@@ -501,7 +487,7 @@ static GList * generate_dirlist (const char * path)
    char * file;
    int n, len;
 
-   n = scandir (dir, &eps, select_executables_only, my_alphasort);
+   n = scandir (dir, &eps, select_executables_only, alphasort);
    if (n >= 0) {
       for (int j = 0; j < n; j++)
       {
