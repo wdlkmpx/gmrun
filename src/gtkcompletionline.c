@@ -428,25 +428,7 @@ int my_alphasort (const void *_a, const void *_b)
    dirent const * const *a = (dirent const * const *)_a;
    dirent const * const *b = (dirent const * const *)_b;
 #endif
-
-   const char* s1 = (*a)->d_name;
-   const char* s2 = (*b)->d_name;
-
-   int l1 = strlen(s1);
-   int l2 = strlen(s2);
-   int result = strcmp(s1, s2);
-
-   if (result == 0) return 0;
-
-   if (l1 < l2) {
-      int res2 = strncmp(s1, s2, l1);
-      if (res2 == 0) return -1;
-   } else {
-      int res2 = strncmp(s1, s2, l2);
-      if (res2 == 0) return 1;
-   }
-
-   return result;
+   return (strcmp ((*a)->d_name, (*b)->d_name));
 }
 
 /* Iterates though PATH and list all executables */
