@@ -394,7 +394,7 @@ int set_words (GtkCompletionLine *object, GList *words, int pos)
 static int select_executables_only(const struct dirent* dent)
 {
    int len = strlen(dent->d_name);
-   int lenp = strlen(prefix);
+   int lenp = prefix ? strlen (prefix) : 0;
 
    if (dent->d_name[0] == '.') {
       if (!g_show_dot_files)
@@ -493,49 +493,37 @@ static GList * generate_dirlist (const char * path)
    printf ("generate_dirlist\n");
 #endif
    char * str = strdup (path);
-   char * p = str + 1;
-   char * filename = str;
-   GString * dest = g_string_new("/");
-   int n;
+   char * filename = strrchr (str, '/');
    GList * dirlist_gc = NULL;
 
-   /* Check path validity in path */
-   while (*p != '\0')
-   {
-      dest = g_string_append_c(dest, *p);
-      if (*p == '/') {
-         DIR* dir = opendir(dest->str);
-         if (!dir) {
-            free (str);
-            g_string_free (dest, TRUE);
-            return (NULL);
-         }
-         closedir(dir);
-         filename = p;
-      }
-      ++p;
+   char * p = str;
+   int slashes = 0;
+   while (*p) {
+      if (*p == '/') slashes++;
+      p++;
    }
-   g_string_free(dest, TRUE);
 
-   // --
+   char * dir;
+   if (slashes == 1) {
+      dir = "/";
+   } else {
+      dir = str;
+   }
+
    *filename = '\0';
    filename++;
    if (prefix) g_free (prefix);
    prefix = g_strdup(filename);
-   // --
-
-   dest = g_string_new (str);
-   dest = g_string_append_c (dest, '/');
 
    struct dirent **eps;
    char * file;
-   int len;
+   int n, len;
 
-   n = scandir(dest->str, &eps, select_executables_only, my_alphasort);
+   n = scandir (dir, &eps, select_executables_only, my_alphasort);
    if (n >= 0) {
       for (int j = 0; j < n; j++)
       {
-         file = g_strconcat (dest->str, eps[j]->d_name, "/", NULL);
+         file = g_strconcat (str, "/", eps[j]->d_name, "/", NULL);
          len = strlen (file);
          file[len-1] = 0;
          struct stat filestatus;
@@ -556,8 +544,7 @@ static GList * generate_dirlist (const char * path)
       g_free (prefix);
       prefix = NULL;
    }
-   g_string_free(dest, TRUE);
-   free(str);
+   free (str);
    return (dirlist_gc);
 }
 
