@@ -566,7 +566,6 @@ static void complete_from_list(GtkCompletionLine *object)
       gtk_tree_view_scroll_to_cell(GTK_TREE_VIEW(object->tree_compl), path, NULL, TRUE, 0.5, 0.5);
       gtk_tree_path_free(path);
    } else {
-      object->pos_in_text = gtk_editable_get_position (GTK_EDITABLE (object));
       if (object->cmpl && object->cmpl->data) {
          g_free (word_i->data);
          word_i->data = strdup ((char*) (object->cmpl->data));
@@ -626,12 +625,11 @@ static void complete_line (GtkCompletionLine *object)
       object->cmpl = generate_dirlist (word);
    }
 
-   complete_from_list (object);
-
    GList *ls = object->cmpl;
    guint num_items = ls ? g_list_length (ls) : 0;
 
-   if (num_items == 1) {
+   if (num_items == 1) { // only 1 item
+      complete_from_list (object);
       g_signal_emit_by_name(G_OBJECT(object), "unique");
       clear_selection (object);
       g_list_free_full (list, g_free);
@@ -737,6 +735,10 @@ static void complete_line (GtkCompletionLine *object)
 
    g_signal_handler_unblock (G_OBJECT(object->tree_compl),
                              on_cursor_changed_handler);
+
+   // completion has been created, now use the 1st item from TreeView
+   object->pos_in_text = gtk_editable_get_position (GTK_EDITABLE (object));
+   complete_from_list (object);
 
    g_list_free_full (list, g_free);
    if (object->cmpl) {
