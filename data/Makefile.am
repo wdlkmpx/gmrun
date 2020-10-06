@@ -6,3 +6,5 @@ app_DATA = gmrun.desktop
 icondir = $(datadir)/pixmaps
 icon_DATA = gmrun.png
 
+manualdir = $(mandir)/man1
+manual_DATA = gmrun.1
