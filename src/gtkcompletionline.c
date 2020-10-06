@@ -660,6 +660,9 @@ static void complete_line (GtkCompletionLine *object)
    object->win_compl = gtk_window_new (GTK_WINDOW_POPUP);
    gtk_widget_set_name (object->win_compl, "gmrun_completion_window");
 
+   GtkWidget * main_win = gtk_widget_get_toplevel (GTK_WIDGET (object));
+   gtk_window_set_transient_for (GTK_WINDOW (object->win_compl), GTK_WINDOW (main_win));
+
    /* attemp to silence warning: Gtk-WARNING **: Allocating size to Window ...
    https://git.eclipse.org/c/platform/eclipse.platform.swt.git/commit/?id=61a598af4dfda586b27d87537bb2d015bd614ba1
    https://sources.debian.org/src/clutter-gtk/1.8.2-2/clutter-gtk/gtk-clutter-actor.c/?hl=325#L325
