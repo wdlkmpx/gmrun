@@ -39,6 +39,7 @@ enum
    W_TEXT_STYLE_UNIQUE,
 };
 
+char * gmrun_text = NULL;
 static void gmrun_exit (void);
 GtkAllocation window_geom = { -1, -1, -1, -1 };
 /* widgets that are used in several functions */
@@ -584,7 +585,9 @@ static void gmrun_activate(void)
    if (!config_get_int ("ShowLast", &shows_last_history_item)) {
       shows_last_history_item = 0;
    }
-   if (shows_last_history_item) {
+   if (gmrun_text) {
+      gtk_entry_set_text (GTK_ENTRY(compline), gmrun_text);
+   } else if (shows_last_history_item) {
       gtk_completion_line_last_history_item (GTK_COMPLETION_LINE(compline));
    }
 
@@ -649,6 +652,9 @@ static void parse_command_line (int argc, char ** argv)
    }
    if (context) g_option_context_free (context);
    if (error)   g_error_free (error);
+   if (argc >= 2) {
+      gmrun_text = argv[1];
+   }
    // --
 
    if (!geometry_str)
