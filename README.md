@@ -2,8 +2,6 @@ GMRUN
 -----
 A run utiliy featuring a slim design and bash style auto-completion. 
 
-see AUTHORS file
-
 Features
 ---------
 
@@ -14,15 +12,14 @@ Features
       completion).
 
     * Configuration file: ~/.gmrunrc or /etc/gmrunrc.
-      Check one of them, configuration is very simple.  From that file you
+      Check one of them, configuration is very simple. From that file you
       can change window position and width, history size, terminal, URL
       handlers, etc.
 
-    * CTRL-Enter runs the command in a terminal.  CTRL-Enter without any
-      command starts a new terminal.
+    * CTRL-Enter runs the command in a terminal.
+    * CTRL-Enter without any command starts a new terminal.
 
-    * Config file parameter: History.  History is maintained in the file "
-      ~/.gmrun_history ".
+    * History is maintained in the file "~/.gmrun_history".
 
     * CTRL-R to search backwards through history.
     * CTRL-S to search forward through history.
@@ -30,33 +27,33 @@ Features
 
     * URL handlers allowing you to enter lines like "http://www.google.com"
       to start your favorite browser on www.google.com.
-      The URL-s are configurable from the configuration
-      file, in a simple manner (I hope..).
+      The URL-s are configurable from the configuration file.
 
-    * Extension handlers.  Basically you can run, for
-      instance, a ".txt" file, assuming that you have configured a handler for
-      it in the configuration file.  The default handler for ".txt" files is,
-      of course, Emacs.  But you can easily change that, you... you VIM user!
+    * Extension handlers.  Basically you can run, for instance,
+      a ".txt" file, assuming that you have configured a handler for it
+      in the configuration file.
+
 
 Requirements
 -------------
 
-    * A C++ compiler
-    * GTK-2 / 3
+    * GTK 2/3
+
 
 Compilation, installation
 --------------------------
 
     Use the configure script (run ./autogen.sh if ./configure is missing):
 
-        $ ./configure --prefix=/usr
-        $ make
-        $ make install
+        ./configure --prefix=/usr --sysconfdir=/etc
+        make
+        make install
 
     Pass --enable-gtk3 to ./configure to build the gtk3 ui
 
     Optionally you can configure your window manager to call gmrun
     with WinKey + R or something.
+
 
 Tips and tricks
 ---------------
@@ -73,21 +70,17 @@ Tips and tricks
    A small window appears, allowing you to select from:
 
        - netscape
-       - netscape-communicator
        - netscape-navigator
        - netstat
 
    That is because all these executables have the same prefix, "nets".  You
    type TAB twice to get to the third element ("netscape-navigator").  Now,
-   if you want to add a parameter such as "-url http://blah.blah.org" you
-   can press SPACE (the list disappears, and a SPACE is inserted after the
-   netscape-navigator).
+   if you want to add a parameter, press SPACE (the list disappears,
+   and a SPACE is inserted after the netscape-navigator).
 
-3. If you accidentally pressed TAB more than you wanted (in that small
-   window, described above) you can use UP / DOWN arrows to select the right
-   completion.
+   You can use UP / DOWN arrows to select the right completion.
 
-4. - ESC closes the completion window, leaving the selected text in the entry.
+3. - ESC closes the completion window, leaving the selected text in the entry.
    - HOME / END - the same, but clears the selection.
    - SPACE - the same, but clears the selection and appends one space.
    - Pressing ENTER (anytime) runs the command that is written in the entry.
