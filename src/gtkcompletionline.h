@@ -1,13 +1,19 @@
-/*****************************************************************************
- *  $Id: gtkcompletionline.h,v 1.12 2003/11/16 10:43:32 andreas99 Exp $
- *  Copyright (C) 2000, Mihai Bazon "Mishoo" <mishoo@fenrir.infoiasi.ro>
- *
- *   Distributed under the terms of the GNU General Public License. You are
- *  free to use/modify/distribute this program as long as you comply to the
- *    terms of the GNU General Public License, version 2 or above, at your
- *      option, and provided that this copyright notice remains intact.
- *****************************************************************************/
-
+/*
+ * Copyright 2020 Mihai Bazon
+ * 
+ * Permission to use, copy, modify, and/or distribute this software
+ * for any purpose with or without fee is hereby granted, provided that
+ * the above copyright notice and this permission notice appear in all copies.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR
+ * BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR
+ * ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
+ * WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION,
+ * ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ * 
+ */
 
 #ifndef __GTKCOMPLETIONLINE_H__
 #define __GTKCOMPLETIONLINE_H__
