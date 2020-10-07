@@ -8,7 +8,7 @@
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES
  * OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR
- * BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGESOR
+ * BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR
  * ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
  * WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION,
  * ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
@@ -206,7 +206,6 @@ static void gtk_completion_line_class_init (GtkCompletionLineClass *klass)
 static void gtk_completion_line_init (GtkCompletionLine *self)
 {
    /* Add object initialization / creation stuff here */
-   self->cmpl = NULL;
    self->win_compl = NULL;
    self->list_compl = NULL;
    self->sort_list_compl = NULL;
@@ -544,7 +543,7 @@ static int parse_tilda (GtkCompletionLine *object)
    return 0;
 }
 
-static void complete_from_list(GtkCompletionLine *object)
+static void complete_from_list (GtkCompletionLine *object, char *cword) /* can be NULL */
 {
 #ifdef DEBUG
    printf ("\ncomplete_from_list\n");
@@ -569,9 +568,7 @@ static void complete_from_list(GtkCompletionLine *object)
       gtk_tree_view_scroll_to_cell(GTK_TREE_VIEW(object->tree_compl), path, NULL, TRUE, 0.5, 0.5);
       gtk_tree_path_free(path);
    } else {
-      if (object->cmpl && object->cmpl->data) {
-         word = strdup ((char*) (object->cmpl->data));
-      }
+      word = cword ? strdup (cword) : NULL;
    }
 
    if (word) {
@@ -599,7 +596,7 @@ static void on_cursor_changed(GtkTreeView *tree, gpointer data)
    selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(object->tree_compl));
    gtk_tree_selection_get_selected (selection, &(object->sort_list_compl), &(object->list_compl_it));
 
-   complete_from_list(object);
+   complete_from_list (object, NULL);
 }
 
 static void clear_selection (GtkCompletionLine* cl)
@@ -617,40 +614,34 @@ static void complete_line (GtkCompletionLine *object)
 #endif
    parse_tilda(object);
 
-   GList * list = NULL, * witem = NULL;
-   int pos = get_words (object, &list);
-   witem = g_list_nth (list, pos);
+   GList * WordList = NULL, * witem = NULL;
+   GList * FileList = NULL;
+   int pos = get_words (object, &WordList);
+   witem = g_list_nth (WordList, pos);
    char * word = (gchar *)(witem->data);
 
    g_show_dot_files = object->show_dot_files;
 
-   /* populate object->cmpl */
+   /* populate FileList */
    if (word[0] != '/') { /* exec list */
-      object->cmpl = generate_execs_list (word);
+      FileList = generate_execs_list (word);
    } else { /* dirlist */
-      object->cmpl = generate_dirlist (word);
+      FileList = generate_dirlist (word);
    }
 
-   GList *ls = object->cmpl;
-   guint num_items = ls ? g_list_length (ls) : 0;
+   guint num_items = FileList ? g_list_length (FileList) : 0;
 
    if (num_items == 1) { // only 1 item
-      complete_from_list (object);
+      complete_from_list (object, (char*)(FileList->data));
       g_signal_emit_by_name(G_OBJECT(object), "unique");
       clear_selection (object);
-      g_list_free_full (list, g_free);
-      if (object->cmpl) {
-         g_list_free_full (object->cmpl, g_free);
-         object->cmpl = NULL;
-      }
+      g_list_free_full (WordList, g_free);
+      g_list_free_full (FileList, g_free);
       return;
    } else if (num_items == 0) {
       g_signal_emit_by_name(G_OBJECT(object), "incomplete");
-      g_list_free_full (list, g_free);
-      if (object->cmpl) {
-         g_list_free_full (object->cmpl, g_free);
-         object->cmpl = NULL;
-      }
+      g_list_free_full (WordList, g_free);
+      g_list_free_full (FileList, g_free);
       return;
    }
 
@@ -683,7 +674,7 @@ static void complete_line (GtkCompletionLine *object)
 
    /* fill ListStore before sorting */
    GtkTreeIter iter;
-   GList *p = ls;
+   GList *p = FileList;
    while (p) {
       gtk_list_store_append (object->list_compl, &iter); /* modifies iter */
       gtk_list_store_set (object->list_compl, &iter,
@@ -747,13 +738,10 @@ static void complete_line (GtkCompletionLine *object)
 
    // completion has been created, now use the 1st item from TreeView
    object->pos_in_text = gtk_editable_get_position (GTK_EDITABLE (object));
-   complete_from_list (object);
+   complete_from_list (object, NULL);
 
-   g_list_free_full (list, g_free);
-   if (object->cmpl) {
-      g_list_free_full (object->cmpl, g_free);
-      object->cmpl = NULL;
-   }
+   g_list_free_full (WordList, g_free);
+   g_list_free_full (FileList, g_free);
    return;
 }
 
@@ -863,7 +851,7 @@ static guint tab_pressed(GtkCompletionLine* cl)
       if(!valid) {
          gtk_tree_model_get_iter_first (cl->sort_list_compl, &(cl->list_compl_it));
       }
-      complete_from_list (cl);
+      complete_from_list (cl, NULL);
    } else { // complete_line ()
       complete_line (cl);
    }
@@ -913,7 +901,7 @@ on_scroll(GtkCompletionLine *cl, GdkEventScroll *event, gpointer data)
             int rowCount = gtk_tree_model_iter_n_children (cl->sort_list_compl, NULL);
             gtk_tree_model_iter_nth_child(cl->sort_list_compl, &(cl->list_compl_it), NULL, rowCount - 1);
          }
-         complete_from_list(cl);
+         complete_from_list (cl, NULL);
       } else {
          up_history(cl);
       }
@@ -927,7 +915,7 @@ on_scroll(GtkCompletionLine *cl, GdkEventScroll *event, gpointer data)
          if(!valid) {
             gtk_tree_model_get_iter_first(cl->sort_list_compl, &(cl->list_compl_it));
          }
-         complete_from_list(cl);
+         complete_from_list (cl, NULL);
       } else {
          down_history(cl);
       }
@@ -978,7 +966,7 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
                int rowCount = gtk_tree_model_iter_n_children (cl->sort_list_compl, NULL);
                gtk_tree_model_iter_nth_child(cl->sort_list_compl, &(cl->list_compl_it), NULL, rowCount - 1);
             }
-            complete_from_list(cl);
+            complete_from_list (cl, NULL);
          } else {
             up_history(cl);
          }
@@ -1004,7 +992,7 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
             if(!valid) {
                gtk_tree_model_get_iter_first(cl->sort_list_compl, &(cl->list_compl_it));
             }
-            complete_from_list(cl);
+            complete_from_list (cl, NULL);
          } else {
             down_history(cl);
          }

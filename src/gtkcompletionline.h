@@ -43,8 +43,6 @@ struct _GtkCompletionLine
    GtkTreeIter    list_compl_it;
    int pos_in_text; /* Cursor position in main "line" */
  
-   GList * cmpl;  /* Completion list */
-
    HistoryFile * hist;
    gboolean hist_search_mode;
    char hist_word[1024]; /* history search: word that is being typed */
