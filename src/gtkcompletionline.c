@@ -799,27 +799,31 @@ static void search_off (GtkCompletionLine* cl)
 }
 
 
-static int
-search_history (GtkCompletionLine* cl)
+static void search_history (GtkCompletionLine* cl, int next)
 { // must only be called if cl->hist_search_mode = TRUE
    /* a key is pressed and added to cl->hist_word */
    searching_history = TRUE;
    if (cl->hist_word[0])
    {
-      const char * history_current_item;
-      const char * search_str;
-      history_current_item = history_search_first_func (cl->hist);
-      search_str = cl->hist_word;
+      const char * history_current_item = NULL;
+      const char * search_str = cl->hist_word;
+      if (next) {
+         history_current_item = history_search_next_func (cl->hist);
+      } else {
+         history_current_item = history_search_first_func (cl->hist);
+      }
 
       while (1)
       {
-         const char * s;
-         s = strstr (history_current_item, search_str);
+         const char * s = NULL;
+         if (history_current_item) {
+            s = strstr (history_current_item, search_str);
+         }
          if (s) {
             if (strstr (history_current_item, search_str)) {
                gtk_entry_set_text (GTK_ENTRY(cl), history_current_item);
                g_signal_emit_by_name (G_OBJECT(cl), "search_letter");
-               return 1;
+               return;
             }
          }
          history_current_item = history_search_next_func (cl->hist);
@@ -831,8 +835,6 @@ search_history (GtkCompletionLine* cl)
    }
    g_signal_emit_by_name (G_OBJECT(cl), "search_letter");
    searching_history = FALSE;
-
-   return 1;
 }
 
 static guint tab_pressed(GtkCompletionLine* cl)
@@ -1031,6 +1033,9 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
                cl->hist_word[0] = 0;
                cl->hist_word_count = 0;
                g_signal_emit_by_name(G_OBJECT(cl), "search_mode");
+            } else {
+               // search next result for `cl->hist_word`
+               search_history (cl, 1);
             }
             return TRUE; /* stop signal emission */
          } else goto ordinary;
@@ -1040,7 +1045,7 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
             if (cl->hist_word[0]) {
                cl->hist_word_count--;
                cl->hist_word[cl->hist_word_count] = 0;
-               search_history(cl);
+               search_history (cl, 0);
                g_signal_emit_by_name(G_OBJECT(cl), "search_letter");
             }
             return TRUE; /* stop signal emission */
@@ -1077,7 +1082,7 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
                cl->hist_word[cl->hist_word_count] = event->string[0];
                cl->hist_word_count++;
                if (cl->hist_word_count <= 1000) {
-                  search_history(cl);
+                  search_history (cl, 0);
                }
                return TRUE; /* stop signal emission */
             } else
