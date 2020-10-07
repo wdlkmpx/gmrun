@@ -808,17 +808,15 @@ search_history (GtkCompletionLine* cl)
    {
       const char * history_current_item;
       const char * search_str;
-      int search_str_len;
       history_current_item = history_search_first_func (cl->hist);
       search_str = cl->hist_word;
-      search_str_len = strlen (search_str);
 
       while (1)
       {
          const char * s;
          s = strstr (history_current_item, search_str);
          if (s) {
-            if (strncmp (history_current_item, search_str, search_str_len) == 0) {
+            if (strstr (history_current_item, search_str)) {
                gtk_entry_set_text (GTK_ENTRY(cl), history_current_item);
                g_signal_emit_by_name (G_OBJECT(cl), "search_letter");
                return 1;
