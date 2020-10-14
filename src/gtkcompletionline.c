@@ -807,18 +807,28 @@ static void search_history (GtkCompletionLine* cl, int next)
          history_current_item = history_search_first_func (cl->hist);
       }
 
+      int search_str_len = 0;
+      int search_match_start = cl->hist_search_match_start;
+      if (search_match_start) {  /* ! */
+         search_str_len = strlen (search_str);
+      }
+
       while (1)
       {
          const char * s = NULL;
          if (history_current_item) {
-            s = strstr (history_current_item, search_str);
+            if (search_match_start) { /* ! */
+               if (strncmp (history_current_item, search_str, search_str_len) == 0) {
+                  s = history_current_item;
+               }
+            } else { /* CTRL-R / CTRL-S */
+               s = strstr (history_current_item, search_str);
+            }
          }
          if (s) {
-            if (strstr (history_current_item, search_str)) {
-               gtk_entry_set_text (GTK_ENTRY(cl), history_current_item);
-               g_signal_emit_by_name (G_OBJECT(cl), "search_letter");
-               return;
-            }
+            gtk_entry_set_text (GTK_ENTRY(cl), history_current_item);
+            g_signal_emit_by_name (G_OBJECT(cl), "search_letter");
+            return;
          }
          history_current_item = history_search_next_func (cl->hist);
          if (history_current_item == NULL) {
@@ -1006,6 +1016,7 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
             if (cl->hist_search_mode == FALSE) {
                gtk_entry_set_text (GTK_ENTRY (cl), "");
                cl->hist_search_mode = TRUE;
+               cl->hist_search_match_start = FALSE;
                cl->hist_word[0] = 0;
                cl->hist_word_count = 0;
                g_signal_emit_by_name(G_OBJECT(cl), "search_mode");
@@ -1015,6 +1026,22 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
             }
             return TRUE; /* stop signal emission */
          } else goto ordinary;
+
+      case GDK_KEY_exclam:
+         if (cl->hist_search_mode == FALSE) {
+           const char * entry_text = gtk_entry_get_text (GTK_ENTRY (cl));
+           if (!*entry_text) {
+              history_search_first_func = history_last;
+              history_search_next_func  = history_prev;
+              cl->hist_search_mode = TRUE;
+              cl->hist_search_match_start = TRUE;
+              cl->hist_word[0] = 0;
+              cl->hist_word_count = 0;
+              g_signal_emit_by_name (G_OBJECT(cl), "search_mode");
+              return TRUE; /* stop signal emission */ 
+           }
+         }
+         goto ordinary;
 
       case GDK_KEY_BackSpace:
          if (cl->hist_search_mode == TRUE) {

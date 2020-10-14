@@ -23,7 +23,8 @@ Features
 
     * CTRL-R to search backwards through history.
     * CTRL-S to search forward through history.
-    * Esc to cancel search (only once).
+    * "!" enters a special search mode, matching only the start of strings.
+    -- Esc to cancel search (only once).
 
     * URL handlers allowing you to enter lines like "http://www.google.com"
       to start your favorite browser on www.google.com.

@@ -45,6 +45,7 @@ struct _GtkCompletionLine
  
    HistoryFile * hist;
    gboolean hist_search_mode;
+   gboolean hist_search_match_start;
    char hist_word[1024]; /* history search: word that is being typed */
    int hist_word_count;  /* history search: word that is being typed */
 
