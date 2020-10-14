@@ -4,7 +4,7 @@
  * For more information, please refer to <https://unlicense.org>
  */
 
-/** 2020-09-14 **/
+/** 2020-10-11 **/
 
 /*
  * gtkcompat.h, GTK2+ compatibility layer
@@ -197,6 +197,13 @@ extern "C"
                                        : gtk_vpaned_new())
 #define gtk_widget_get_allocated_height(widget) (GTK_WIDGET(widget)->allocation.height )
 #define gtk_widget_get_allocated_width(widget)  (GTK_WIDGET(widget)->allocation.width  )
+#define gtk_tree_model_iter_previous(model,iter) ({ \
+   GtkTreePath * path = gtk_tree_model_get_path (model, iter); \
+   gboolean valid = gtk_tree_path_prev (path); \
+   if (valid) gtk_tree_model_get_iter (model, iter, path); \
+   gtk_tree_path_free (path); \
+   valid; \
+})
 #define gtkcompat_widget_set_halign_left(w)   gtk_misc_set_alignment(GTK_MISC(w), 0.0, 0.5)
 #define gtkcompat_widget_set_halign_center(w) gtk_misc_set_alignment(GTK_MISC(w), 0.5, 0.5)
 #define gtkcompat_widget_set_halign_right(w)  gtk_misc_set_alignment(GTK_MISC(w), 1.0, 0.5)
@@ -340,16 +347,58 @@ typedef struct _GtkComboBoxPrivate GtkComboBoxTextPrivate;
 #	define GDK_KEY_Home GDK_Home
 #	define GDK_KEY_End GDK_End
 #	define GDK_KEY_Escape GDK_Escape
-#	define GDK_KEY_G GDK_G
-#	define GDK_KEY_g GDK_g
-#	define GDK_KEY_E GDK_E
+#	define GDK_KEY_a GDK_a
+#	define GDK_KEY_A GDK_A
+#	define GDK_KEY_b GDK_b
+#	define GDK_KEY_B GDK_B
+#	define GDK_KEY_c GDK_c
+#	define GDK_KEY_C GDK_C
+#	define GDK_KEY_d GDK_d
+#	define GDK_KEY_D GDK_D
 #	define GDK_KEY_e GDK_e
+#	define GDK_KEY_E GDK_E
+#	define GDK_KEY_f GDK_F
+#	define GDK_KEY_g GDK_g
+#	define GDK_KEY_G GDK_G
+#	define GDK_KEY_h GDK_h
+#	define GDK_KEY_H GDK_H
+#	define GDK_KEY_i GDK_i
+#	define GDK_KEY_I GDK_I
+#	define GDK_KEY_j GDK_j
+#	define GDK_KEY_J GDK_J
+#	define GDK_KEY_k GDK_k
+#	define GDK_KEY_K GDK_K
+#	define GDK_KEY_l GDK_l
+#	define GDK_KEY_L GDK_L
+#	define GDK_KEY_m GDK_m
+#	define GDK_KEY_M GDK_M
 #	define GDK_KEY_n GDK_n
-#	define GDK_KEY_w GDK_w
-#	define GDK_KEY_R GDK_R
+#	define GDK_KEY_N GDK_N
+#	define GDK_KEY_o GDK_o
+#	define GDK_KEY_O GDK_O
+#	define GDK_KEY_p GDK_p
+#	define GDK_KEY_P GDK_P
+#	define GDK_KEY_q GDK_q
+#	define GDK_KEY_Q GDK_Q
 #	define GDK_KEY_r GDK_r
-#	define GDK_KEY_S GDK_S
+#	define GDK_KEY_R GDK_R
 #	define GDK_KEY_s GDK_s
+#	define GDK_KEY_S GDK_S
+#	define GDK_KEY_t GDK_t
+#	define GDK_KEY_T GDK_T
+#	define GDK_KEY_u GDK_u
+#	define GDK_KEY_U GDK_U
+#	define GDK_KEY_v GDK_v
+#	define GDK_KEY_V GDK_V
+#	define GDK_KEY_w GDK_w
+#	define GDK_KEY_W GDK_W
+#	define GDK_KEY_x GDK_x
+#	define GDK_KEY_X GDK_X
+#	define GDK_KEY_y GDK_y
+#	define GDK_KEY_Y GDK_Y
+#	define GDK_KEY_z GDK_z
+#	define GDK_KEY_Z GDK_Z
+#	define GDK_KEY_exclam GDK_exclam
 #endif
 
 
