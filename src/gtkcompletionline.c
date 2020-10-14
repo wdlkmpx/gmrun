@@ -440,7 +440,7 @@ static GList * generate_execs_list (char * pfix)
    while (*path_gc_i)
    {
       struct dirent **eps;
-      int n = scandir (*path_gc_i, &eps, select_executables_only, alphasort);
+      int n = scandir (*path_gc_i, &eps, select_executables_only, NULL);
       if (n >= 0) {
          for (int j = 0; j < n; j++) {
             execs_gc = g_list_prepend (execs_gc, g_strdup (eps[j]->d_name));
@@ -493,7 +493,7 @@ static GList * generate_dirlist (const char * path)
    char * file;
    int n, len;
 
-   n = scandir (dir, &eps, select_executables_only, alphasort);
+   n = scandir (dir, &eps, select_executables_only, NULL);
    if (n >= 0) {
       for (int j = 0; j < n; j++)
       {
