@@ -450,9 +450,6 @@ static GList * generate_execs_list (char * pfix)
       }
       path_gc_i++;
    }
-   if (execs_gc && execs_gc->next) {
-      execs_gc = g_list_reverse (execs_gc);
-   }
    if (prefix) {
       g_free (prefix);
       prefix = NULL;
@@ -509,9 +506,6 @@ static GList * generate_dirlist (const char * path)
          free(eps[j]);
       }
       free(eps);
-   }
-   if (dirlist_gc && dirlist_gc->next) {
-      dirlist_gc = g_list_reverse (dirlist_gc);
    }
 
    if (prefix) {
