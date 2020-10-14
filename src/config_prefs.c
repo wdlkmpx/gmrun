@@ -37,9 +37,9 @@ typedef struct _pref_item pref_item;
 static void pref_item_free (pref_item * item)
 {
    if (item) {
-      if (item->key)   g_free (item->key);
-      if (item->value) g_free (item->value);
-      g_free (item);
+      if (item->key)   free (item->key);
+      if (item->value) free (item->value);
+      free (item);
    }
 }
 
@@ -79,8 +79,8 @@ static void config_replace_key (GList ** list, pref_item * item)
          pref_item_free (item);
          return; /* values are equal, nothing to update */
       }
-      g_free (found_item->value);
-      found_item->value = g_strdup (item->value);
+      free (found_item->value);
+      found_item->value = strdup (item->value);
       pref_item_free (item);
    } else {
       /* append item */
@@ -132,14 +132,14 @@ static void config_load_from_file (const char * filename, GList ** out_list)
          continue;
       }
 
-      item = (pref_item *) g_malloc0 (sizeof (pref_item));
+      item = (pref_item *) calloc (1, sizeof (pref_item));
       keyvalue = g_strsplit (stripped, "=", 2);
       item->key   = g_strstrip (keyvalue[0]);
       item->value = g_strstrip (keyvalue[1]);
 
       if (!*item->key || !*item->value) {
          g_strfreev (keyvalue);
-         g_free (item);
+         free (item);
          continue;
       }
 
@@ -168,9 +168,9 @@ static void create_extension_handler_list (void)
          str_vector = g_strsplit (item->key + 4, ",", 0);
          for (w = 0; str_vector[w]; w++)
          {
-            item_out = (pref_item *) g_malloc0 (sizeof (pref_item));
-            item_out->key   = g_strdup (str_vector[w]);
-            item_out->value = g_strdup (item->value);
+            item_out = (pref_item *) calloc (1, sizeof (pref_item));
+            item_out->key   = strdup (str_vector[w]);
+            item_out->value = strdup (item->value);
             config_replace_key (&ExtensionGList, item_out);
          }
          g_strfreev (str_vector);
@@ -200,12 +200,12 @@ static char * replace_variable (char * txt) /* config_get_string_expanded() */
    }
 
    if (txt[0] != '$' && txt[1] != '$') {
-      pre = g_strdup (txt);
+      pre = strdup (txt);
       p2 = strchr (pre, '$');
       if (p2) p2 = 0;
    }
 
-   variable = g_strdup (p + 2); // variable start
+   variable = strdup (p + 2); // variable start
    p2 = strchr (variable, '}'); // variable end
    *p2 = 0;                     // `Terminal`
    post = p2 + 1;               // ` -e ...`
@@ -222,8 +222,8 @@ static char * replace_variable (char * txt) /* config_get_string_expanded() */
       }
    }
 
-   if (pre)      g_free (pre);
-   if (variable) g_free (variable);
+   if (pre)      free (pre);
+   if (variable) free (variable);
 
    return (new_text);
 }
@@ -315,10 +315,10 @@ gboolean config_get_string_expanded (const char * key, char ** out_str)
       // expand variable up to 2 times
       if (value2 && strstr (value2, "${")) {
          value = replace_variable (value2);
-         g_free (value2);
+         free (value2);
       }
    } else {
-      value = g_strdup (value1);
+      value = strdup (value1);
    }
 
    if (value) {
