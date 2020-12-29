@@ -33,6 +33,8 @@ extern "C"
 typedef struct _GtkCompletionLine GtkCompletionLine;
 typedef struct _GtkCompletionLineClass GtkCompletionLineClass;
 
+#define MAX_HISTWORD_CHARS 1024
+
 struct _GtkCompletionLine
 {
    GtkEntry parent;
@@ -46,7 +48,7 @@ struct _GtkCompletionLine
    HistoryFile * hist;
    gboolean hist_search_mode;
    gboolean hist_search_match_start;
-   char hist_word[1024]; /* history search: word that is being typed */
+   char hist_word[MAX_HISTWORD_CHARS]; /* history search: word that is being typed */
    int hist_word_count;  /* history search: word that is being typed */
 
    int tabtimeout;

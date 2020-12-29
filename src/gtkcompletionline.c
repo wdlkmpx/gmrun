@@ -788,6 +788,10 @@ down_history(GtkCompletionLine* cl)
 static void search_off (GtkCompletionLine* cl)
 {
    cl->hist_search_mode = FALSE;
+   int i;
+   for (i = 0; i < MAX_HISTWORD_CHARS; i++) {
+      cl->hist_word[i] = 0;
+   }
    g_signal_emit_by_name (G_OBJECT(cl), "search_mode");
    history_unset_current (cl->hist);
 }
@@ -1084,7 +1088,7 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
                // event->string = char: 'c' 'd'
                cl->hist_word[cl->hist_word_count] = event->string[0];
                cl->hist_word_count++;
-               if (cl->hist_word_count <= 1000) {
+               if (cl->hist_word_count < MAX_HISTWORD_CHARS) {
                   search_history (cl, 0);
                }
                return TRUE; /* stop signal emission */
