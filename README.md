@@ -25,6 +25,7 @@ Features
     * CTRL-S to search forward through history.
     * "!" enters a special search mode, matching only the start of strings.
     -- Esc to cancel search (only once).
+    -- CTRL-G to cancel search and clear the text entry
 
     * URL handlers allowing you to enter lines like "http://www.google.com"
       to start your favorite browser on www.google.com.

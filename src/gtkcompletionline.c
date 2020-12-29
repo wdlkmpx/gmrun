@@ -1089,6 +1089,14 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
          }
          return TRUE; /* stop signal emission */
 
+      case GDK_KEY_G:
+      case GDK_KEY_g:
+         if ((event->state & GDK_CONTROL_MASK) && cl->hist_search_mode) {
+            search_off(cl);
+            gtk_entry_set_text (GTK_ENTRY (cl), "");
+            return TRUE; /* stop signal emission */
+         } else goto ordinary;
+
       ordinary:
       default:
          if (cl->win_compl != NULL) {
