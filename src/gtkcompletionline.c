@@ -949,6 +949,13 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
          return TRUE; /* stop signal emission */
 
       case GDK_KEY_Up:
+      case GDK_KEY_P:
+      case GDK_KEY_p:
+         if (key == GDK_KEY_p || key == GDK_KEY_P) {
+            if (!(event->state & GDK_CONTROL_MASK)) {
+               goto ordinary;
+            }
+         }
          if (cl->win_compl != NULL) {
             gboolean valid;
             valid = gtk_tree_model_iter_previous(cl->sort_list_compl, &(cl->list_compl_it));

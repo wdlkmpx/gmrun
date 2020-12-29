@@ -80,6 +80,7 @@ Tips and tricks
    and a SPACE is inserted after the netscape-navigator).
 
    You can use UP / DOWN arrows to select the right completion.
+   You can use Ctrl-p / Ctrl-n to select the right completion.
 
 3. - ESC closes the completion window, leaving the selected text in the entry.
    - HOME / END - the same, but clears the selection.
