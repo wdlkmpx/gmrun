@@ -3,7 +3,4 @@
 ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = data src
 
-myrcdir = @sysconfdir@
-myrc_DATA = gmrunrc
-EXTRA_DIST = gmrunrc
 
