@@ -1,26 +1,36 @@
 #!/bin/sh
 # Run this to generate all the initial makefiles, etc.
 
+srcdir=`dirname $0`
+test -z "$srcdir" && srcdir=.
+cd $srcdir
+
 test -z "$AUTOMAKE"   && AUTOMAKE=automake
 test -z "$ACLOCAL"    && ACLOCAL=aclocal
 test -z "$AUTOCONF"   && AUTOCONF=autoconf
 test -z "$AUTOHEADER" && AUTOHEADER=autoheader
+test -z "$LIBTOOLIZE" && LIBTOOLIZE=$(which libtoolize glibtoolize 2>/dev/null | head -1)
+test -z "$LIBTOOLIZE" && LIBTOOLIZE=libtoolize #paranoid precaution
 
-#set -x 
+if test "$1" == "verbose" || test "$1" == "--verbose" ; then
+	set -x
+	verbose='--verbose'
+	verbose2='--debug'
+fi
 
-#Get all required m4 macros required for configure
-libtoolize --copy --force || exit 1
-$ACLOCAL -I m4 || exit 1
+# Get all required m4 macros required for configure
+$LIBTOOLIZE ${verbose} --copy --force || exit 1
+$ACLOCAL ${verbose} -I m4 || exit 1
 
-#Generate config.h.in
-$AUTOHEADER --force || exit 1
+# Generate config.h.in
+$AUTOHEADER ${verbose} --force || exit 1
 
-#Generate Makefile.in's
+# Generate Makefile.in's
 touch config.rpath
-$AUTOMAKE --add-missing --copy --force || exit 1
+$AUTOMAKE ${verbose} --add-missing --copy --force || exit 1
 
 if grep "IT_PROG_INTLTOOL" configure.ac >/dev/null ; then
-	intltoolize -c --automake --force || exit 1
+	intltoolize ${verbose2} -c --automake --force || exit 1
 	# po/Makefile.in.in has these lines:
 	#    mostlyclean:
 	#       rm -f *.pox $(GETTEXT_PACKAGE).pot *.old.po cat-id-tbl.tmp
@@ -29,6 +39,7 @@ if grep "IT_PROG_INTLTOOL" configure.ac >/dev/null ; then
 	mv -f po/Makefile.in.inx po/Makefile.in.in
 fi
 
-#generate configure
-$AUTOCONF --force || exit 1
+# generate configure
+$AUTOCONF ${verbose} --force || exit 1
 
+rm -rf autom4te.cache
