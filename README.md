@@ -62,8 +62,7 @@ Tips and tricks
 
 1. Everything that doesn't start with "/" or "~" gets completed from $PATH
    environment var.  More exactly, all files from $PATH directories are
-   subjects to completion (even if they are NOT executables; this is a
-   bug, but I'm afraid I'm not willing to fix it).
+   subjects to completion.
 
    Pressing TAB once when no text is entered opens the completion window,
    which will contain ALL files under $PATH.
@@ -75,13 +74,10 @@ Tips and tricks
        - netscape-navigator
        - netstat
 
-   That is because all these executables have the same prefix, "nets".  You
-   type TAB twice to get to the third element ("netscape-navigator").  Now,
-   if you want to add a parameter, press SPACE (the list disappears,
-   and a SPACE is inserted after the netscape-navigator).
+   That is because all these executables have the same prefix, "nets".
 
    You can use UP / DOWN arrows to select the right completion.
-   You can use Ctrl-p / Ctrl-n to select the right completion.
+   You can use CTRL-P / CTRL-N or TAB to select the right completion.
 
 3. - ESC closes the completion window, leaving the selected text in the entry.
    - HOME / END - the same, but clears the selection.
