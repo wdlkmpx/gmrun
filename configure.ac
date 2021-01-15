@@ -41,6 +41,7 @@ if test "x$enable_gtk3" = "xyes" ; then
   gtk_modules="gtk+-3.0 >= 3.0.0"
 else
   gtk_modules="gtk+-2.0 >= 2.14.0"
+  CPPFLAGS="$CPPFLAGS -DGDK_DISABLE_DEPRECATED -DGDK_PIXBUF_DISABLE_SINGLE_INCLUDES -DGTK_DISABLE_DEPRECATED -DGTK_DISABLE_SINGLE_INCLUDES"
 fi
 PKG_CHECK_MODULES(GTK, [$gtk_modules])
 AC_SUBST(GTK_CFLAGS)
