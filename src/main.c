@@ -52,7 +52,7 @@ int USE_XDG = 0;
 
 /// BEGIN: TIMEOUT MANAGEMENT
 
-static gint search_off_timeout (void);
+static gboolean search_off_timeout ();
 static guint g_search_off_timeout_id = 0;
 
 static void remove_search_off_timeout (void)
@@ -186,9 +186,9 @@ static void on_compline_runwithterm (GtkCompletionLine *cl)
       }
    } else {
       if (config_get_string ("Terminal", &term)) {
-         strncpy (cmd, term, sizeof (cmd));
+         strncpy (cmd, term, sizeof (cmd) - 1);
       } else {
-         strncpy (cmd, "xterm", sizeof (cmd));
+         strncpy (cmd, "xterm", sizeof (cmd) - 1);
       }
    }
 
@@ -197,12 +197,12 @@ static void on_compline_runwithterm (GtkCompletionLine *cl)
    g_free (entry_text);
 }
 
-static gint search_off_timeout (void)
+static gboolean search_off_timeout ()
 {
    set_info_text_color (wlabel, "Run program:", W_TEXT_STYLE_NORMAL);
    gtk_widget_hide (wlabel_search);
    g_search_off_timeout_id = 0;
-   return FALSE;
+   return G_SOURCE_REMOVE;
 }
 
 static void
@@ -246,12 +246,11 @@ on_search_letter(GtkCompletionLine *cl, GtkWidget *label)
    gtk_label_set_text (GTK_LABEL(label), cl->hist_word);
 }
 
-static gint
-search_fail_timeout(void)
+static gboolean search_fail_timeout (gpointer user_data)
 {
    set_info_text_color (wlabel, "Search:", W_TEXT_STYLE_NOTUNIQUE);
    g_search_off_timeout_id = 0;
-   return FALSE;
+   return G_SOURCE_REMOVE;
 }
 
 static void
@@ -494,7 +493,7 @@ static void on_compline_activated (GtkCompletionLine *cl)
       g_free (selected_term_prog);
       g_free (TermExec);
    } else {
-      strncpy (cmd, entry_text, sizeof (cmd));
+      strncpy (cmd, entry_text, sizeof (cmd) - 1);
    }
    g_free (entry_text);
 
