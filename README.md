@@ -51,7 +51,9 @@ Compilation, installation
         make
         make install
 
-    Pass --enable-gtk3 to ./configure to build the gtk3 ui
+    By default it will use the GTK3 ui if it's available.
+
+    Pass `--enable-gtk2` to `./configure` to build the gtk2 ui
 
     Optionally you can configure your window manager to call gmrun
     with WinKey + R or something.
