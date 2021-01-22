@@ -294,10 +294,11 @@ void history_append (HistoryFile * history, const char * text)
    for (i = history->list;  i;  i = i->next)
    {
       char * ientry = (char *) (i->data);
-      if (strcmp (text, ientry) == 0) {
+      if (strcmp (text, ientry) == 0)
+      {
          // entry already exists.. remove
          free (i->data);
-         templist = g_list_remove (i, i->data);
+         templist = g_list_delete_link (history->list, i);
          if (!templist->prev) { // no previous entry.. new start
             history->list = templist;
          }
@@ -344,9 +345,8 @@ void history_append (HistoryFile * history, const char * text)
       if (history->current == history->list) {
          history->current = history->list->next;
       }
-      gpointer data = history->list->data;
-      free (data);
-      history->list = g_list_remove (history->list, data);
+      free (history->list->data);
+      history->list = g_list_delete_link (history->list, history->list);
    }
 }
 
