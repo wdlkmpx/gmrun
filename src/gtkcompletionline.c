@@ -441,8 +441,9 @@ static GList * generate_execs_list (char * pfix)
    {
       struct dirent **eps;
       int n = scandir (*path_gc_i, &eps, select_executables_only, NULL);
+      int j;
       if (n >= 0) {
-         for (int j = 0; j < n; j++) {
+         for (j = 0; j < n; j++) {
             execs_gc = g_list_prepend (execs_gc, g_strdup (eps[j]->d_name));
             free (eps[j]);
          }
@@ -488,11 +489,11 @@ static GList * generate_dirlist (const char * path)
 
    struct dirent **eps;
    char * file;
-   int n, len;
+   int n, j, len;
 
    n = scandir (dir, &eps, select_executables_only, NULL);
    if (n >= 0) {
-      for (int j = 0; j < n; j++)
+      for (j = 0; j < n; j++)
       {
          file = g_strconcat (str, "/", eps[j]->d_name, "/", NULL);
          len = strlen (file);
@@ -739,14 +740,14 @@ static void complete_line (GtkCompletionLine *object)
    return;
 }
 
-GtkWidget *
-gtk_completion_line_new()
+
+GtkWidget * gtk_completion_line_new()
 {
    return GTK_WIDGET(g_object_new(gtk_completion_line_get_type(), NULL));
 }
 
-static void
-up_history(GtkCompletionLine* cl)
+
+static void up_history (GtkCompletionLine* cl)
 {
    static int pause = 0;
    const char * text_up;
@@ -765,8 +766,7 @@ up_history(GtkCompletionLine* cl)
    }
 }
 
-static void
-down_history(GtkCompletionLine* cl)
+static void down_history (GtkCompletionLine* cl)
 {
    static int pause = 0;
    const char * text_down;
@@ -784,6 +784,7 @@ down_history(GtkCompletionLine* cl)
       gtk_entry_set_text (GTK_ENTRY(cl), text_down);
    }
 }
+
 
 static void search_off (GtkCompletionLine* cl)
 {
