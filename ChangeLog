@@ -1,3 +1,163 @@
+==========
+gmrun 1.0w
+==========
+
+Highlights:
+   - GTK 3 support (default / use --enable-gtk2 to compile the gtk2 port)
+   - should work with GTK 2.12+ (or even older GTK versions)
+   - fixed broken CTRL-R / CTRL-S
+   - gmrun is now a C application
+   - added desktop file and icon
+   - added manual
+   - changed license to ISC (approved by @mishoo)
+   - support Glib XDG handling (set USE_XDG = 1 in gmrunrc)
+   - keep support for custom extension and url handlers
+     (the app is a bit more complex than it should because of this)
+   - restored --geometry param (it's a bit different)
+   - gmrunrc: Geometry = (read comments)
+     (this probably doesn't work with wayland and other protocols)
+
+ changes since 0.9.5w
+
+   Samuel Bauer (6):
+      parse_tilda(): use only glib
+      removed quote_string: use glib regex
+      removed compilation warnings
+      Cosmetic changes
+      renamed main window
+      gtkcompletionline.cc: don't use `goto` in generate_dir_list()
+
+   mazes_80 (1):
+      GtkCList to GtkTreeview
+
+   wdlkmpx (124):
+      update README.markdown (a bit)
+      gtk_signal_* -> g_signal_* / GTK_OBJECT -> GTK_WIDGET
+      Replace GDK_<keyname> with GDK_KEY_<keyname>
+      minimum gtk version = 2.24.0
+      gtkcompletionline.cc: use gtk-widget-get-allocation
+      replace gtk_timeout_add() with g_timeout_add() [not sure what I'm doing]
+      Replace GTK_CHECK_CAST with G_TYPE_CHECK_INSTANCE_CAST
+      Replace gtk_widget_set_usize() with gtk_widget_set_size_request()
+      gtkcompletionline.cc: comment out gtk_window_set_policy()
+      WIP gtk3 support [--enable-gtk3]
+      gtk2/3: remove titlebar from dialog (is this a good idea?)
+      gtk2/3: set_info_text_color() [unify GtkStyle functions]
+      update readme
+      gmrunrc: better defaults
+      gtk2/3: support "navigating" history with mouse wheel
+      indentation style: use tabs
+      Silence "GtkDialog mapped without a transient parent. This is discouraged."
+      update ChangeLog & AUTHORS
+      remove gmrun.glade
+      update README a bit
+      fix setting dialog border, name and title..
+      gmrunrc: remove unused options
+      reimplement `--geometry WxH+X+Y` (cli param) [without libpopt]
+      main.cc: properly free GError and GOptionContext...
+      support gtk >= 2.14
+      update autogen.sh
+      gtkcompletionline.cc: hack for glibc < 2.10 (dirent)
+      src: use gtk_box_new()
+      src: (gtkcompat) use gtk_widget_set_halign/valign
+      src: (gtkcompat) use gtk_widget_set_margin_start/end
+      main.cc: (search) fix "Source ID was not found when attempting to remove it"
+      gtkcompletionline.cc: avoid on_key_press callback when key is released
+      completion: don't create extra column
+      completion: use gtk_tree_selection_select_iter()
+      completion: attemp to silence  Gtk-WARNING **: Allocating size to Window ...
+      completion: use gtk_tree_model_iter_n_children() to get row count
+      gtk_completion_line_class_init(): cosmetic changes
+      main.cc: main_vbox
+      main.cc: gtk_widget_show_all (dialog)
+      use G_OBJECT with g_signal_*
+      run_the_command: use g_shell_parse_argv() and g_spawn_async()
+      set_info_text_color: optimize a bit
+      window icon: use 'system-run' or 'gtk-execute'
+      remove src/main.h
+      update gtkcompat.h
+      gtkcompletionline.cc: use G_DEFINE_TYPE_EXTENDED()
+      gtk_completion_line_init: 'self' instead of 'object'
+      add gmrun.desktop / gmrun.png
+      main.cc: gmrun_exit()
+      main.cc: gmrun_activate() / parse_command_line()
+      new configuration option: Geometry
+      completion: TabTimeout: fix "Source ID was not found when attempting to remove it"
+      *** handle configuration and history with C code ***
+      completion: (search) cl->hist_word is now a char array
+      src/main.cc: get rid of 'struct gigi'
+      completionline.cc: fix Pango-CRITICAL **: pango_layout_get_cursor_pos ...
+      main.cc: (history) show search text next to "Search:" label
+      history.c: improvements
+      completionline: remove handling of ctrl-e/g (what's this?)
+      completionline.cc: make CTRL-R work as intended..
+      main.cc: fix calls to config_get_int()
+      ext_check/url_check: don't include handler in history entry
+      option to use glib XDG handling (disabled by default)
+      fix build with ancient glib
+      add data/zmtrace.sh
+      *** gtkcompletionline.c: use C code ***
+      *** gmrun is now a C application ***
+      configure.ac: enable many gcc warnings
+      gtkcompletionline.c: don't use gtk_tree_model_sort_new_with_model()
+      gtkcompletionline.c: use spaces
+      main.c: use spaces
+      complete_line(): optimize a bit / fix some memory leaks
+      gtkcompletionline.c: add debug code
+      gtkcompletionline.c: remove complete_common()
+      gtkcompletionline.c: fix complete_from_list / set_words / complete_line
+      gtkcompletionline.c: avoid triggering on_cursor_changed() twice
+      merge generate_completion_from_execs/dirlist() into complete_line()
+      gtkcompletionline.c: improve logic to free glists
+      tab_pressed(): don't call complete_line() if completion window exists
+      gtkcompletionline.c: fix memory leak in complete_from_list()
+      get_words(): add empty string if glist is empty
+      gtkcompletionline: remove unused cl->first_key
+      gtkcompletionline.c: fix segfault with gtk3
+      gtkcompletionline.c: properly sort completion list
+      gtkcompletionline: set/unset prefix in generate_execs_list/dirlist()
+      gtkcompletionline.c: use only cl->cmpl to get filelist
+      gtkcompletionline.c: remove unused GEN_COMP...
+      src/history.c: fix memory leaks
+      generate_dir_list(): don't use GString
+      gtkcompletionline.c: simplify my_alphasort()
+      gtkcompletionline.c: (scandir) use standard alphasort
+      complete_line: items > 1: always use 1st item from GtkTreeView
+      complete_from_list: fix memory leak
+      update README a bit
+      Relicense project to ISC
+      gtkcompletionline.c: set completion window transient for main window
+      main.c: gmrun [text]
+      add gmrun.1 (manual)
+      gtkcompletionline: get rid of cl->cmpl
+      completionline.c: CTRL-S/CTRL-R: search matches anywhere in strings
+      gtkcompletionline.c: restore bash-like search for CTRL-S/R
+      config_prefs.c: use free, strdup, calloc..
+      gtkcompletionline.c: (scandir) don't use alphasort
+      gtkcompletionline.c: (scandir) don't reverse GList
+      gtkcompat.h 2020-10-11
+      "!": history search mode that matches only the start of strings
+      update gtkcompat
+      search_off(): properly clear cl->hist_word ..
+      CTRL-p: fetch the previous command from the history list
+      CTRL-n: Fetch the next command from the history list
+      CTRl-g (search mode): cancel search and clear text entry
+      renamed:    COPYING -> LICENSE
+      remove .travis.yml
+      move gmrunrc & zrelease to data/ dir
+      update autogen.sh
+      update README
+      configure.ac: disable deprecated gtk2 stuff
+      fix gcc9 warnings
+      configure.ac: default to GTK3, fall back to GTK2
+      update README
+      history.c: use g_list_delete_link()
+      gtkcompletionline: tweaks / don't declare var inside for loop..
+      use GtkApplication for GTK3
+      add Makefile.true
+
+
+
 ============
 gmrun 0.9.5w
 ============ changes since 0.9.4w:
