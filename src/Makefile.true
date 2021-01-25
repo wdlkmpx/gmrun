@@ -1,0 +1,24 @@
+PROGRAM = gmrun
+OBJS = config_prefs.o gtkcompletionline.o history.o main.o
+BIN_PATH = /usr/local/bin
+CC = gcc
+
+CFLAGS = `pkg-config gtk+-2.0 --cflags` -Wall -O2
+LIBS = `pkg-config gtk+-2.0 --libs`
+
+all: $(OBJS)
+	$(CC) $(CFLAGS) $(OBJS) -o $(PROGRAM) $(LIBS)
+
+strip:
+	strip $(PROGRAM)
+
+clean: 
+	rm -f *.o *~ $(PROGRAM)
+
+install:
+	mkdir -p $(DESTDIR)$(BIN_PATH)
+	install $(PROGRAM) $(DESTDIR)$(BIN_PATH)
+
+uninstall:
+	rm -i $(DESTDIR)$(BIN_PATH)/$(PROGRAM)
+

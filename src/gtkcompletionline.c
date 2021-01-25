@@ -28,8 +28,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "config.h"
-
 #include "config_prefs.h"
 #include "gtkcompletionline.h"
 
