@@ -39,6 +39,8 @@ enum
    W_TEXT_STYLE_UNIQUE,
 };
 
+GtkApplication * gmrun_app;
+
 char * gmrun_text = NULL;
 static void gmrun_exit (void);
 GtkAllocation window_geom = { -1, -1, -1, -1 };
@@ -511,7 +513,7 @@ static void gmrun_activate(void)
 
    GtkWidget *label_search;
 
-   GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+   GtkWidget * window = gtk_application_window_new (gmrun_app);
    dialog = gtk_dialog_new();
    gtk_window_set_transient_for( (GtkWindow*)dialog, (GtkWindow*)window );
    gtk_widget_realize(dialog);
@@ -715,7 +717,7 @@ void gmrun_exit(void)
 {
    gtk_widget_destroy (compline);
    config_destroy ();
-   gtk_main_quit ();
+   g_application_quit (G_APPLICATION (gmrun_app));
 }
 
 int main(int argc, char **argv)
@@ -724,19 +726,26 @@ int main(int argc, char **argv)
 #ifdef MTRACE
    mtrace();
 #endif
-
-   gtk_init(&argc, &argv);
+   int status = 0;
 
    config_init ();
    parse_command_line (argc, argv);
-   gmrun_activate ();
 
-   gtk_main();
+#if GTK_CHECK_VERSION(3, 0, 0)
+   gmrun_app = gtk_application_new ("org.gtk.gmrun", G_APPLICATION_FLAGS_NONE);
+   g_signal_connect (gmrun_app, "activate", gmrun_activate, NULL);
+   status = g_application_run (G_APPLICATION (gmrun_app), argc, argv);
+   g_object_unref (gmrun_app);
+#else
+   gtk_init (&argc, &argv);
+   gmrun_activate ();
+   gtk_main ();
+#endif
 
 #ifdef MTRACE
    muntrace();
 #endif
 
-   return (0);
+   return (status);
 }
 

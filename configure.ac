@@ -28,8 +28,8 @@ fi
 
 #========================================================================
 
-GTK3_CHECK="gtk+-3.0 >= 3.0.0"
-GTK2_CHECK="gtk+-2.0 >= 2.14.0"
+GTK3_CHECK="gtk+-3.0 >= 3.4.0"
+GTK2_CHECK="gtk+-2.0 >= 2.12.0"
 
 AC_ARG_ENABLE(gtk3,
    AS_HELP_STRING([--disable-gtk3],[build with GTK3 (Autodetect)]),[],
