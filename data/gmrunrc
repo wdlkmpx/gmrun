@@ -31,6 +31,13 @@ TabTimeout = 0
 # use GLib XDG handling? (freedesktop specification)
 USE_XDG = 0
 
+# Use libc's system(3) to run commands, this includes any shell command
+#   and special stuff that only a shell interpreter can understand
+# Set to 0 if you want a more conservative approach where the file to run
+#   is validated and errors running files are reported (without closing the gmrun window)
+SHELL_RUN = 1
+
+
 #=======================================================================
 # if not using XDG, you can specify URL and extension Handlers...
 #=======================================================================

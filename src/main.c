@@ -31,6 +31,8 @@
 #include "gtkcompletionline.h"
 #include "config_prefs.h"
 
+#define CMD_LENGTH 1024
+
 enum
 {
    W_TEXT_STYLE_NORMAL,
@@ -51,6 +53,7 @@ GtkWidget * wlabel_search;
 
 /* preferences */
 int USE_XDG = 0;
+int SHELL_RUN = 1;
 
 /// BEGIN: TIMEOUT MANAGEMENT
 
@@ -93,12 +96,30 @@ static void set_info_text_color (GtkWidget *w, const char *text, int spec)
    }
 }
 
-static void
-run_the_command (const char * cmd)
+
+static void run_the_command (char * cmd)
 {
 #if DEBUG
    fprintf (stderr, "command: %s\n", cmd);
 #endif
+ if (SHELL_RUN)
+ {
+   // need to add extra &
+   if (strlen (cmd) < (CMD_LENGTH-10)) {
+      strcat (cmd, " &"); /* safe to use in this case */
+   }
+   int ret = system (cmd);
+   if (ret != -1) {
+      gmrun_exit ();
+   } else {
+      char errmsg[256];
+      snprintf (errmsg, sizeof(errmsg)-1, "ERROR: %s", strerror (errno));
+      set_info_text_color (wlabel, errmsg, W_TEXT_STYLE_NOTFOUND);
+      add_search_off_timeout (3000, NULL);
+   }
+ }
+ else // glib - more conservative approach and robust error reporting
+ {
    GError * error = NULL;
    gboolean success;
    int argc;
@@ -110,7 +131,6 @@ run_the_command (const char * cmd)
       add_search_off_timeout (3000, NULL);
       return;
    }
-
    success = g_spawn_async (NULL, argv, NULL,
                             G_SPAWN_SEARCH_PATH, NULL, NULL, NULL, &error);
    if (argv) {
@@ -123,7 +143,9 @@ run_the_command (const char * cmd)
       g_error_free (error);
       add_search_off_timeout (3000, NULL);
    }
+ }
 }
+
 
 static void
 on_ext_handler (GtkCompletionLine *cl, const char * filename)
@@ -172,9 +194,10 @@ on_ext_handler (GtkCompletionLine *cl, const char * filename)
  }
 }
 
+
 static void on_compline_runwithterm (GtkCompletionLine *cl)
 {
-   char cmd[512];
+   char cmd[CMD_LENGTH];
    char * term;
    char * entry_text = g_strdup (gtk_entry_get_text (GTK_ENTRY(cl)));
    g_strstrip (entry_text);
@@ -470,7 +493,7 @@ static void on_compline_activated (GtkCompletionLine *cl)
       return;
    }
 
-   char cmd[512];
+   char cmd[CMD_LENGTH];
    char * AlwaysInTerm = NULL;
    char ** term_progs = NULL;
    char * selected_term_prog = NULL;
@@ -545,6 +568,10 @@ static void gmrun_activate(void)
    compline = gtk_completion_line_new();
    gtk_widget_set_name (compline, "gmrun_compline");
    gtk_box_pack_start (GTK_BOX (main_vbox), compline, TRUE, TRUE, 0);
+
+   if (!config_get_int ("SHELL_RUN", &SHELL_RUN)) {
+      SHELL_RUN = 1;
+   }
 
    // don't show files starting with "." by default
    if (!config_get_int ("ShowDotFiles", &(GTK_COMPLETION_LINE(compline)->show_dot_files))) {
