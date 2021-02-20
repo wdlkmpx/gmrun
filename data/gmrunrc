@@ -47,14 +47,14 @@ SHELL_RUN = 1
 #   - %u gets replaced with the whole URL ("http://www.google.com")
 #   - %s gets replaced with "//www.google.com".  This is useful for URL-s
 #     like "man:printf" --> %s will get replaced with "printf"
-URL_http = xdg-open %u
-URL_mailto = xdg-email %u
-URL_file = xdg-open %s
-URL_man = ${TermExec} 'man %s'
-URL_info = ${TermExec} 'info %s'
+URL_http = xdg-open '%u'
+URL_mailto = xdg-email '%u'
+URL_file = xdg-open '%s'
+URL_man = ${TermExec} man %s
+URL_info = ${TermExec} info %s
 URL_search = xdg-open 'http://www.google.com/search?q=%s'
 
 # extension handlers
 # Customize your own extension handler.
-EXT:doc,rtf,txt,cc,cpp,h,java,html,htm,epl,tex,latex,js,css,xml,xsl,am,ps,pdf = xdg-open %s
+EXT:doc,rtf,txt,cc,cpp,h,java,html,htm,epl,tex,latex,js,css,xml,xsl,am,ps,pdf = xdg-open '%s'
 
