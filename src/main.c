@@ -402,8 +402,7 @@ static gboolean url_check (GtkCompletionLine *cl, char * entry_text)
 
 
 static char * escape_spaces (char * entry_text)
-{   // this for EXT handlers: replace " " with "\ "
-   // it's the only way to make the command run if the filename contains spaces
+{  // run file with glib: replace " " with "\ "
    GRegex * regex;
    char * quoted;
    if (!strstr (entry_text, "\\ ")) {
@@ -455,7 +454,7 @@ static gboolean ext_check (GtkCompletionLine *cl, char * entry_text)
  }
  else //-------- custom EXTension handlers
  {
-   // example: file.html -> `xdg-open %s` -> `xdg-open file.html`
+   // example: file.html | xdg-open '%s' -> xdg-open 'file.html'
    char * cmd, * quoted;
    char * ext = strrchr (entry_text, '.');
    char * handler_format = NULL;
@@ -463,11 +462,12 @@ static gboolean ext_check (GtkCompletionLine *cl, char * entry_text)
       handler_format = config_get_handler_for_extension (ext);
    }
    if (handler_format) {
-      quoted = escape_spaces (entry_text);
-      if (strchr (handler_format, '%')) { // xdg-open %s
+      quoted = g_strcompress (entry_text); /* unescape chars */
+      if (strstr (handler_format, "%s")) {
          cmd = g_strdup_printf (handler_format, quoted);
-      } else { // xdg-open
-         cmd = g_strconcat (handler_format, " ", quoted, NULL);
+      }
+      else { // xdg-open
+         cmd = g_strconcat (handler_format, " '", quoted, "'", NULL);
       }
       history_append (cl->hist, entry_text);
       run_the_command (cmd);
