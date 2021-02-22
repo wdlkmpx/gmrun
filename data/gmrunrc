@@ -56,5 +56,7 @@ URL_search = xdg-open 'http://www.google.com/search?q=%s'
 
 # extension handlers
 # Customize your own extension handler.
+#   syntax-> EXT:ext,etc = handler '%s'
 EXT:doc,rtf,txt,cc,cpp,h,java,html,htm,epl,tex,latex,js,css,xml,xsl,am,ps,pdf = xdg-open '%s'
-
+EXT:mkv,mp4,avi,asf,wmv = xdg-open '%s'
+EXT:mp3,flac,ogg,aac,wav = xdg-open '%s'
