@@ -28,9 +28,6 @@ ShowDotFiles = 0
 # Set this to NULL if don't like this feature.
 TabTimeout = 0
 
-# use GLib XDG handling? (freedesktop specification)
-USE_XDG = 0
-
 # Use libc's system(3) to run commands, this includes any shell command
 #   and special stuff that only a shell interpreter can understand
 # Set to 0 if you want a more conservative approach where the file to run
@@ -38,15 +35,18 @@ USE_XDG = 0
 SHELL_RUN = 1
 
 
+# use GLib XDG handling? (freedesktop specification)
+USE_GLIB_XDG = 0
+
 #=======================================================================
-# if not using XDG, you can specify URL and extension Handlers...
+# USE_GLIB_XDG = 0, you can specify URL and extension Handlers...
 #=======================================================================
 
 # URL handlers
 # If the entered text is "http://www.google.com" then:
 #   - %u gets replaced with the whole URL ("http://www.google.com")
-#   - %s gets replaced with "//www.google.com".  This is useful for URL-s
-#     like "man:printf" --> %s will get replaced with "printf"
+#   - %s gets replaced with "//www.google.com".
+#        useful for URL's like "man:printf" --> %s becomes printf
 URL_http = xdg-open '%u'
 URL_mailto = xdg-email '%u'
 URL_file = xdg-open '%s'

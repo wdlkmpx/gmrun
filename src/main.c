@@ -52,7 +52,7 @@ GtkWidget * wlabel;
 GtkWidget * wlabel_search;
 
 /* preferences */
-int USE_XDG = 0;
+int USE_GLIB_XDG = 0;
 int SHELL_RUN = 1;
 
 /// BEGIN: TIMEOUT MANAGEMENT
@@ -150,7 +150,7 @@ static void run_the_command (char * cmd)
 static void
 on_ext_handler (GtkCompletionLine *cl, const char * filename)
 {
- if (USE_XDG) // GLib XDG handling (freedesktop specification)
+ if (USE_GLIB_XDG) // GLib XDG handling (freedesktop specification)
  {
    gchar * content_type, * mime_type, * msg;
    const gchar * handler;
@@ -308,7 +308,7 @@ static void xdg_app_run_command (GAppInfo *app, const gchar *args)
 /* Handler for URLs  */
 static gboolean url_check (GtkCompletionLine *cl, char * entry_text)
 {
- if (USE_XDG) // GLib XDG handling (freedesktop specification)
+ if (USE_GLIB_XDG) // GLib XDG handling (freedesktop specification)
  {
    char * delim;
    const char * url, * protocol;
@@ -418,7 +418,7 @@ static char * escape_spaces (char * entry_text)
 /* Handler for extensions */
 static gboolean ext_check (GtkCompletionLine *cl, char * entry_text)
 {
- if (USE_XDG) // GLib XDG handling (freedesktop specification)
+ if (USE_GLIB_XDG) // GLib XDG handling (freedesktop specification)
  {
    char *quoted, *content_type, *mime_type;
    GAppInfo *app_info;
@@ -581,8 +581,8 @@ static void gmrun_activate(void)
    if (!config_get_int ("TabTimeout", &tmp)) {
       ((GtkCompletionLine*)compline)->tabtimeout = tmp;
    }
-   if (!config_get_int ("USE_XDG", &USE_XDG)) {
-      USE_XDG = 0;
+   if (!config_get_int ("USE_GLIB_XDG", &USE_GLIB_XDG)) {
+      USE_GLIB_XDG = 0;
    }
 
    g_signal_connect(G_OBJECT(compline), "cancel",
