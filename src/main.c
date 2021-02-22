@@ -761,7 +761,7 @@ int main(int argc, char **argv)
    // Handling cmd line args with GApplication is a nightmare
    // follow this: https://developer.gnome.org/gtkmm-tutorial/stable/sec-multi-item-containers.html.en#boxes-command-line-options
    argc = 1; /* hide args from GApplication */
-   gmrun_app = gtk_application_new ("org.gtk.gmrun", G_APPLICATION_FLAGS_NONE);
+   gmrun_app = gtk_application_new ("org.gtk.gmrun", G_APPLICATION_NON_UNIQUE);
    g_signal_connect (gmrun_app, "activate", gmrun_activate, NULL);
    status = g_application_run (G_APPLICATION (gmrun_app), argc, argv);
    g_object_unref (gmrun_app);
