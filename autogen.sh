@@ -1,6 +1,22 @@
 #!/bin/sh
 # Run this to generate all the initial makefiles, etc.
 
+if test "$1" == "release" || test "$1" == "--release" ; then
+	pkg="$(grep -m1 AC_INIT configure.ac | cut -f 2 -d '[' | cut -f 1 -d ']')"
+	ver="$(grep -m1 AC_INIT configure.ac | cut -f 3 -d '[' | cut -f 1 -d ']')"
+	ver=$(echo $ver)
+	dir=${pkg}-${ver}
+	rm -rf ../$dir
+	mkdir -p ../$dir
+	cp -rf $PWD/* ../$dir
+	( cd ../$dir ; ./autogen.sh )
+	cd ..
+	tar -Jcf ${dir}.tar.xz $dir
+	exit
+fi
+
+#===========================================================================
+
 srcdir=`dirname $0`
 test -z "$srcdir" && srcdir=.
 cd $srcdir
