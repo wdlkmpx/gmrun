@@ -1,4 +1,21 @@
 ==========
+gmrun 1.1w
+==========
+
+PRESFIL (1):
+      Fix xterm -e handling with multiword queryes
+
+wdlkmpx (7):
+      restore system(3) call as the default option to run commands
+      main.c: ext_check(): escape spaces only if USE_XDG = 1
+      rename USE_XDG to USE_GLIB_XDG
+      gmrunrc: EXT syntax-> EXT:ext,etc = handler '%s'
+      main.c: main() gtk3.4+:  hide cmd line args from GApplication
+      main.c (gtk3.4+): G_APPLICATION_NON_UNIQUE
+      merge data/zrelease into autogen.sh ..
+
+
+==========
 gmrun 1.0w
 ==========
 
