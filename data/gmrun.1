@@ -1,7 +1,7 @@
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH gmrun 1 "2020"
+.TH gmrun 1.1w "2021"
 .\" Please adjust this date whenever revising the manpage.
 .\"
 .\" Some roff macros, for reference:
@@ -54,10 +54,10 @@ Whether to show the last command as initial text, or an empty textarea (1 or 0).
 Whether the initial text should be selected or not (1 or 0).
 .SH URL/File HANDLING
 .TP
-.B USE_XDG = 1
+.B USE_GLIB_XDG = 1
 For automatic URL and File handling using the freedesktop specification.
 .TP
-See /etc/gmrunrc for custom URL and extension handlers (USE_XDG = 0)
+See /etc/gmrunrc for custom URL and extension handlers (USE_GLIB_XDG = 0)
 .TP
 The included configuration files have a few examples which you can work with. You should also note that the protocol part of URL_protocol can be *anything*. You can set up "URL_foobarbazcustom", and so long as you enter in "foobarbazcustom:<whatever>", it will use the given program.
 .SH SEE ALSO
