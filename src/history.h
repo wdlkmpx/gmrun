@@ -34,7 +34,7 @@ enum
 /// create a new HistoryFile
 /// the history is initialized using filename and the filename is stored
 /// maxcount > 0 sets a maximun item count
-HistoryFile * history_new (char * filename, unsigned int maxcount);
+HistoryFile * history_new (const char * filename, unsigned int maxcount);
 
 /// save history to file, 0 = force save / 1 = save only if history has changed
 void history_save (HistoryFile * history, int save_if_changed);

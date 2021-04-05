@@ -239,16 +239,22 @@ void config_init ()
       return;
    }
    char config_file[512];
-   char * HOME;
 
    snprintf (config_file, sizeof (config_file), "/etc/%s", APP_CONFIG_FILE);
    config_load_from_file (config_file, &PrefsGList);
 
+#ifdef FOLLOW_XDG_SPEC
+   const gchar *config_home = g_get_user_config_dir ();
+   snprintf (config_file, sizeof (config_file), "%s/%s", config_home, APP_CONFIG_FILE);
+   config_load_from_file (config_file, &PrefsGList);
+#else
+   char * HOME;
    HOME = getenv ("HOME");
    if (HOME) {
       snprintf (config_file, sizeof (config_file), "%s/.%s", HOME, APP_CONFIG_FILE);
       config_load_from_file (config_file, &PrefsGList);
    }
+#endif
 
    create_extension_handler_list ();
 }

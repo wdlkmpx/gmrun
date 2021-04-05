@@ -141,7 +141,7 @@ void _history_write_to_file (HistoryFile * history, const char * filename)
 //                     PUBLIC
 // ============================================================
 
-HistoryFile * history_new (char * filename, unsigned int maxcount)
+HistoryFile * history_new (const char * filename, unsigned int maxcount)
 {
    HistoryFile * history = calloc (1, sizeof (HistoryFile));
    history->max = maxcount;

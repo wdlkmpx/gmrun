@@ -31,7 +31,7 @@
 #include "config_prefs.h"
 #include "gtkcompletionline.h"
 
-#define HISTORY_FILE ".gmrun_history"
+#define HISTORY_FILE "gmrun_history"
 
 static int on_cursor_changed_handler = 0;
 static int on_key_press_handler = 0;
@@ -223,11 +223,16 @@ static void gtk_completion_line_init (GtkCompletionLine *self)
    g_signal_connect(G_OBJECT(self), "scroll-event",
                     G_CALLBACK(on_scroll), NULL);
 
-   char * HOME = getenv ("HOME");
    char history_file[512] = "";
+#ifdef FOLLOW_XDG_SPEC
+   const gchar * history_dir = g_get_user_cache_dir ();
+   snprintf (history_file, sizeof (history_file), "%s/%s", history_dir, HISTORY_FILE);
+#else
+   char * HOME = getenv ("HOME");
    if (HOME) {
-      snprintf (history_file, sizeof (history_file), "%s/%s", HOME, HISTORY_FILE);
+      snprintf (history_file, sizeof (history_file), "%s/.%s", HOME, HISTORY_FILE);
    }
+#endif
 
    int HIST_MAX_SIZE;
    if (!config_get_int ("History", &HIST_MAX_SIZE))
