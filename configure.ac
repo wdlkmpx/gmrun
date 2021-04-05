@@ -69,7 +69,7 @@ AC_ARG_ENABLE(xdg,
               AS_HELP_STRING([--enable-xdg],[follow xdg spec for configuration and history files location]),[],
    enable_xdg=no)
 
-if [ test "x$enable_popt" != "xyes"]; then
+if test "x$enable_popt" != "xyes"; then
    CFLAGS="$CFLAGS -DFOLLOW_XDG_SPEC"
 fi
 
