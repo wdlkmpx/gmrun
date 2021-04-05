@@ -65,6 +65,14 @@ PKG_CHECK_MODULES([GTK], [$gtk_modules], [], [AC_ERROR([$errmsg])])
 AC_SUBST([GTK_CFLAGS])
 AC_SUBST([GTK_LIBS])
 
+AC_ARG_ENABLE(xdg,
+              AS_HELP_STRING([--enable-xdg],[follow xdg spec for configuration and history files location]),[],
+   enable_xdg=no)
+
+if test "x$enable_xdg" = "xyes"; then
+   CFLAGS="$CFLAGS -DFOLLOW_XDG_SPEC"
+fi
+
 #========================================================================
 
 case "$CC" in

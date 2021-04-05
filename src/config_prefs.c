@@ -238,17 +238,18 @@ void config_init ()
    if (PrefsGList) {
       return;
    }
-   char config_file[512];
-   char * HOME;
 
-   snprintf (config_file, sizeof (config_file), "/etc/%s", APP_CONFIG_FILE);
+   char * config_file = g_build_filename ("/etc", APP_CONFIG_FILE, NULL);
    config_load_from_file (config_file, &PrefsGList);
+   g_free (config_file);
 
-   HOME = getenv ("HOME");
-   if (HOME) {
-      snprintf (config_file, sizeof (config_file), "%s/.%s", HOME, APP_CONFIG_FILE);
-      config_load_from_file (config_file, &PrefsGList);
-   }
+#ifdef FOLLOW_XDG_SPEC
+   config_file = g_build_filename (g_get_user_config_dir(), APP_CONFIG_FILE, NULL);
+#else
+   config_file = g_build_filename (g_get_home_dir(), "." APP_CONFIG_FILE, NULL);
+#endif
+   config_load_from_file (config_file, &PrefsGList);
+   g_free (config_file);
 
    create_extension_handler_list ();
 }
