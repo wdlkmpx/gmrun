@@ -198,29 +198,30 @@ on_ext_handler (GtkCompletionLine *cl, const char * filename)
 
 static void on_compline_runwithterm (GtkCompletionLine *cl)
 {
-   char cmd[CMD_LENGTH];
+   gchar *cmd;
    char * term;
    char * entry_text = g_strdup (gtk_entry_get_text (GTK_ENTRY(cl)));
    g_strstrip (entry_text);
 
    if (*entry_text) {
       if (config_get_string_expanded ("TermExec", &term)) {
-         snprintf (cmd, sizeof (cmd), "%s %s", term, entry_text);
+         cmd = g_strconcat( term, " ", entry_text, NULL);
          g_free (term);
       } else {
-         snprintf (cmd, sizeof (cmd), "xterm -e %s", entry_text);
+         cmd = g_strconcat( "xterm -e ", entry_text, NULL);
       }
    } else {
       if (config_get_string ("Terminal", &term)) {
-         strncpy (cmd, term, sizeof (cmd) - 1);
+         cmd = g_strdup(term);
       } else {
-         strncpy (cmd, "xterm", sizeof (cmd) - 1);
+         cmd = g_strdup("xterm");
       }
    }
 
    history_append (cl->hist, cmd);
    run_the_command (cmd);
    g_free (entry_text);
+   g_free (cmd);
 }
 
 static gboolean search_off_timeout ()
