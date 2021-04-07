@@ -112,10 +112,11 @@ static void run_the_command (char * cmd)
    if (ret != -1) {
       gmrun_exit ();
    } else {
-      char errmsg[256];
-      snprintf (errmsg, sizeof(errmsg)-1, "ERROR: %s", strerror (errno));
+      gchar *errmsg = g_strconcat("ERROR: ", strerror(errno), NULL);
+      printf(errmsg);
       set_info_text_color (wlabel, errmsg, W_TEXT_STYLE_NOTFOUND);
       add_search_off_timeout (3000, NULL);
+      g_free(errmsg);
    }
  }
  else // glib - more conservative approach and robust error reporting
