@@ -31,8 +31,6 @@
 #include "gtkcompletionline.h"
 #include "config_prefs.h"
 
-#define CMD_LENGTH 1024
-
 enum
 {
    W_TEXT_STYLE_NORMAL,
@@ -104,16 +102,14 @@ static void run_the_command (char * cmd)
 #endif
  if (SHELL_RUN)
  {
-   // need to add extra &
-   if (strlen (cmd) < (CMD_LENGTH-10)) {
-      strcat (cmd, " &"); /* safe to use in this case */
-   }
-   int ret = system (cmd);
+   /* need to add extra &   */
+   char * cmd2 = g_strconcat (cmd, " &", NULL);
+   int ret = system (cmd2);
+   g_free (cmd2);
    if (ret != -1) {
       gmrun_exit ();
    } else {
       gchar *errmsg = g_strconcat("ERROR: ", strerror(errno), NULL);
-      printf(errmsg);
       set_info_text_color (wlabel, errmsg, W_TEXT_STYLE_NOTFOUND);
       add_search_off_timeout (3000, NULL);
       g_free(errmsg);
