@@ -22,3 +22,6 @@ stamp-h1
 .deps
 .libs
 src/gmrun
+build-aux
+autoconf
+autoconf-m4
