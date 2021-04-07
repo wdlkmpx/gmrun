@@ -495,7 +495,7 @@ static void on_compline_activated (GtkCompletionLine *cl)
       return;
    }
 
-   char cmd[CMD_LENGTH];
+   gchar * cmd;
    char * AlwaysInTerm = NULL;
    char ** term_progs = NULL;
    char * selected_term_prog = NULL;
@@ -516,16 +516,17 @@ static void on_compline_activated (GtkCompletionLine *cl)
    if (selected_term_prog) {
       char * TermExec;
       config_get_string_expanded ("TermExec", &TermExec);
-      snprintf (cmd, sizeof (cmd), "%s %s", TermExec, selected_term_prog);
+      cmd = g_strconcat(TermExec, " ", selected_term_prog, NULL);
       g_free (selected_term_prog);
       g_free (TermExec);
    } else {
-      strncpy (cmd, entry_text, sizeof (cmd) - 1);
+      cmd = g_strdup(entry_text);
    }
    g_free (entry_text);
 
    history_append (cl->hist, cmd);
    run_the_command (cmd);
+   g_free(cmd);
 }
 
 
