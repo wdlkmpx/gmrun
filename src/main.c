@@ -98,13 +98,16 @@ static void set_info_text_color (GtkWidget *w, const char *text, int spec)
 static void run_the_command (char * cmd)
 {
 #if DEBUG
-   fprintf (stderr, "command: %s\n", cmd);
+   fprintf (stderr, "cmd: %s\n", cmd);
 #endif
  if (SHELL_RUN)
  {
    /* need to add extra &   */
    char * cmd2 = g_strconcat (cmd, " &", NULL);
    int ret = system (cmd2);
+#if DEBUG
+   fprintf (stderr, "cmd2: %s\n", cmd2);
+#endif
    g_free (cmd2);
    if (ret != -1) {
       gmrun_exit ();
@@ -453,27 +456,33 @@ static gboolean ext_check (GtkCompletionLine *cl, char * entry_text)
  else //-------- custom EXTension handlers
  {
    // example: file.html | xdg-open '%s' -> xdg-open 'file.html'
-   char * cmd, * quoted;
+   char * cmd;
+   char * unescaped = g_strcompress (entry_text); /* unescape chars */
    char * ext = strrchr (entry_text, '.');
    char * handler_format = NULL;
+   if (access (unescaped, F_OK) == -1) {
+      // entry_text must be a valid filename
+      g_free (unescaped);
+      return FALSE;
+   }
    if (ext) {
       handler_format = config_get_handler_for_extension (ext);
    }
    if (handler_format) {
-      quoted = g_strcompress (entry_text); /* unescape chars */
       if (strstr (handler_format, "%s")) {
-         cmd = g_strdup_printf (handler_format, quoted);
+         cmd = g_strdup_printf (handler_format, unescaped);
       }
       else { // xdg-open
-         cmd = g_strconcat (handler_format, " '", quoted, "'", NULL);
+         cmd = g_strconcat (handler_format, " '", unescaped, "'", NULL);
       }
       history_append (cl->hist, entry_text);
       run_the_command (cmd);
       g_free (cmd);
-      g_free (quoted);
+      g_free (unescaped);
       return TRUE;
    }
 
+   g_free (unescaped);
    return FALSE;
  }
 }
