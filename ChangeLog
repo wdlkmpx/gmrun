@@ -1,4 +1,12 @@
 ==========
+gmrun 1.2w
+==========
+  - Fix some issues / tweaks
+  - New configure option: --enable-xdg
+      'follow xdf spec for configuration and history file location'
+
+
+==========
 gmrun 1.1w
 ==========
 
