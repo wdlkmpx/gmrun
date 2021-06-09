@@ -15,16 +15,8 @@ AC_ARG_ENABLE(debug,
 	[  --enable-debug=[no/yes]	Debugging information == no <--> optimization == yes],[],
 	enable_debug=no)
 
-if [ ! test "x$enable_debug" != xyes]; then
+if test "x$enable_debug" = xyes; then
 	CFLAGS="-g -DDEBUG"
-fi
-
-AC_ARG_ENABLE(mtrace,
-    [  --enable-mtrace=[no/yes]  Trace memory (de)allocation calls to detect memory leaks ],[],
-    enable_mtrace=no)
-
-if [ ! test "x$enable_mtrace" != "xyes"]; then
-   CFLAGS="$CFLAGS -DMTRACE"
 fi
 
 #========================================================================

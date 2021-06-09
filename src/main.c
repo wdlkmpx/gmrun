@@ -21,10 +21,6 @@
 #include <gdk/gdkkeysyms.h>
 #include <gdk/gdkx.h>
 
-#ifdef MTRACE
-#include <mcheck.h>
-#endif
-
 #include <unistd.h>
 #include <errno.h>
 
@@ -756,10 +752,6 @@ void gmrun_exit(void)
 
 int main(int argc, char **argv)
 {
-
-#ifdef MTRACE
-   mtrace();
-#endif
    int status = 0;
 
    config_init ();
@@ -777,10 +769,6 @@ int main(int argc, char **argv)
    gtk_init (&argc, &argv);
    gmrun_activate ();
    gtk_main ();
-#endif
-
-#ifdef MTRACE
-   muntrace();
 #endif
 
    return (status);
