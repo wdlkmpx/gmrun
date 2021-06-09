@@ -1,0 +1,458 @@
+#!/bin/sh
+# This is free and unencumbered software released into the public domain.
+# For more information, please refer to <http://unlicense.org/>
+
+PACKAGE=gmrun
+VERSION=1.2w
+PACKAGE_URL=
+
+PROJECT_TYPE='c' # c / c++ 
+
+APP_CFLAGS='-Wall -g -O2 -DHAVE_CONFIG_H'
+APP_CXXFLAGS="${APP_CFLAGS}"
+APP_CPPFLAGS=
+APP_LDFLAGS=
+APP_LIBS=
+
+cd $(dirname "$0") || exit 1
+
+#==========================================================
+
+PACKAGE_NAME="${PACKAGE}"
+PACKAGE_STRING="${PACKAGE} ${VERSION}"
+PACKAGE_TARNAME="${PACKAGE}"
+PACKAGE_BUGREPORT="${PACKAGE_URL}"
+PACKAGE_VERSION="${VERSION}"
+
+#==========================================================
+
+exit_error() {
+	test "$1" && echo "$@"
+	exit 1
+}
+
+set_cc() # [cross-prefix]
+{
+	printf "Checking for C compiler... "
+	if test -n "$CC" ; then # environment
+		if test -x $CC ; then
+			echo "$CC"
+			return
+		fi
+	fi
+	#--
+	for i in gcc clang cc
+	do
+		if command -v $i >/dev/null 2>&1 ; then
+			CC=${i}
+			echo "$CC"
+			return
+		fi
+	done
+	exit_error "$CC not found"
+}
+
+set_cxx()
+{
+	if test "$PROJECT_TYPE" = "c" ; then
+		return # don't need a c++ compiler
+	fi
+	printf "Checking for C++ compiler... "
+	if test -n "$CXX" ; then # environment
+		if test -x $CXX ; then
+			echo "$CXX"
+			return
+		fi
+	fi
+	#--
+	for i in g++ clang++ c++
+	do
+		if command -v $i >/dev/null 2>&1 ; then
+			CXX=${i}
+			echo "$CXX"
+			return
+		fi
+	done
+	exit_error "$CXX not found"
+}
+
+run_pkg_config()
+{
+	pkgconfig='pkg-config'
+	if test -n "$PKG_CONFIG" ; then
+		pkgconfig="$PKG_CONFIG"
+	fi
+	${pkgconfig} "$@"
+}
+
+#test "$CC"    || CC='gcc'
+#test "$CXX"   || CXX='g++'
+test "$STRIP"  || STRIP='strip'
+test "$AR"     || AR='ar'
+test "$AS"     || AS='as'
+test "$RANLIB" || RANLIB='ranlib'
+test "$OBJCOPY" || OBJCOPY='objcopy'
+test "$OBJDUMP" || OBJDUMP='objdump'
+
+#==========================================================
+
+prefix=/usr/local
+exec_prefix='${prefix}'
+libdir='${exec_prefix}/lib'
+bindir='${exec_prefix}/bin'
+sbindir='${exec_prefix}/sbin'
+libexecdir='${exec_prefix}/libexec'
+includedir='${prefix}/include'
+oldincludedir=/usr/include
+datarootdir='${prefix}/share'
+datadir='${datarootdir}'
+localstatedir='${prefix}/var'
+sysconfdir='${prefix}/etc'
+docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
+dvidir='${docdir}'
+htmldir='${docdir}'
+pdfdir='${docdir}'
+psdir='${docdir}'
+infodir='${datarootdir}/info'
+mandir='${datarootdir}/man'
+localedir='${datarootdir}/locale'
+runstatedir='${localstatedir}/run'
+top_builddir="$(pwd)"
+top_srcdir="$(pwd)"
+builddir=.
+srcdir=.
+mkdir_p='mkdir -p'
+MKDIR_P='mkdir -p'
+
+#==========================================================
+
+help() {
+	echo "
+Usage: ./configure [OPTION]... [VAR=VALUE]...
+
+To assign environment variables (e.g., CC, CFLAGS...), specify them as
+VAR=VALUE.  See below for descriptions of some of the useful variables.
+
+Defaults for the options are specified in brackets.
+
+Installation directories:
+  --prefix=PREFIX         install architecture-independent files in PREFIX
+                          [${prefix}]
+  --exec-prefix=EPREFIX   install architecture-dependent files in EPREFIX
+                          [${exec_prefix}]
+
+By default, 'make install' will install all the files in
+'/usr/local/bin', '/usr/local/lib' etc.  You can specify
+an installation prefix other than '/usr/local' using '--prefix',
+for instance '--prefix=\$HOME'.
+
+For better control, use the options below.
+
+Fine tuning of the installation directories:
+  --bindir=DIR            user executables [${bindir}]
+  --sbindir=DIR           system admin executables [${sbindir}]
+  --libexecdir=DIR        program executables [${libexecdir}]
+  --sysconfdir=DIR        read-only single-machine data [${sysconfdir}]
+  --localstatedir=DIR     modifiable single-machine data [${localstatedir}]
+  --runstatedir=DIR       modifiable per-process data [${runstatedir}]
+  --libdir=DIR            object code libraries [${libdir}]
+  --includedir=DIR        C header files [${includedir}]
+  --oldincludedir=DIR     C header files for non-gcc [${oldincludedir}]
+  --datarootdir=DIR       read-only arch.-independent data root [${datarootdir}]
+  --datadir=DIR           read-only architecture-independent data [${datadir}]
+  --infodir=DIR           info documentation [${infodir}]
+  --localedir=DIR         locale-dependent data [${localedir}]
+  --mandir=DIR            man documentation [${mandir}]
+  --docdir=DIR            documentation root [${docdir}]
+  --htmldir=DIR           html documentation [${htmldir}]
+  --dvidir=DIR            dvi documentation [${dvidir}]
+  --pdfdir=DIR            pdf documentation [${pdfdir}]
+  --psdir=DIR             ps documentation [${psdir}]
+
+$(print_optional_features)
+
+Some influential environment variables:
+  CC          C compiler command
+  CFLAGS      C compiler flags
+  LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
+              nonstandard directory <lib dir>
+  LIBS        libraries to pass to the linker, e.g. -l<library>
+  CPPFLAGS    (Objective) C/C++ preprocessor flags, e.g. -I<include dir> if
+              you have headers in a nonstandard directory <include dir>
+  PKG_CONFIG  path to pkg-config utility
+  PKG_CONFIG_PATH
+              directories to add to pkg-config's search path
+  PKG_CONFIG_LIBDIR
+              path overriding pkg-config's built-in search path
+$(print_extra_env_variables)
+
+Use these variables to override the choices made by 'configure' or to help
+it to find libraries and programs with nonstandard names/locations.
+"
+	exit
+}
+
+#==========================================================
+
+print_optional_features() {
+	echo 'Optional Features:
+  --disable-gtk3          build with GTK3 (Autodetect)
+  --enable-gtk2           build with GTK2 (Autodetect)
+  --enable-debug          produce debug build
+  --enable-xdg            follow xdg spec for configuration and history files location'
+}
+
+print_extra_env_variables() {
+	echo '  GTK_CFLAGS  C compiler flags for GTK, overriding pkg-config
+  GTK_LIBS    linker flags for GTK, overriding pkg-config'
+}
+
+#==========================================================
+
+getvalue() {
+	echo $1 | cut -f 2 -d '='
+}
+
+for i in $@
+do
+	case $i in
+		--host=*) host="$(getvalue $i)" ;;
+		CFLAGS=*)   CFLAGS="$CFLAGS $(getvalue $i)"     ;;
+		CPPFLAGS=*) CPPFLAGS="$CPPFLAGS $(getvalue $i)" ;;
+		LDFLAGS=*)  LDFLAGS="$LDFLAGS $(getvalue $i)"   ;;
+		CXXFLAGS=*) CXXFLAGS="$CXXFLAGS $(getvalue $i)"   ;;
+		LIBS=*)  LIBS="$LDFLAGS $(getvalue $i)"   ;;
+		CC=*)    CC="$(getvalue $i)"     ;;
+		CXX=*)   CXX="$(getvalue $i)"    ;;
+		STRIP=*) STRIP="$(getvalue $i)"  ;;
+		AR=*)    AR="$(getvalue $i)"     ;;
+
+		--prefix=*)     prefix="$(getvalue $i)"     ;;
+		--exec_prefix=*) exec_prefix="$(getvalue $i)"     ;;
+		--libdir=*)     libdir="$(getvalue $i)"     ;;
+		--bindir=*)     bindir="$(getvalue $i)"     ;;
+		--sbindir=*)    sbindir="$(getvalue $i)"    ;;
+		--libexecdir=*) libexecdir="$(getvalue $i)" ;;
+		--includedir=*) includedi="$(getvalue $i)"  ;;
+		--oldincludedir=*)  oldincludedi="$(getvalue $i)" ;;
+		--datarootdir=*)   datarootdir="$(getvalue $i)"   ;;
+		--datadir=*)    datadir="$(getvalue $i)"          ;;
+		--localstatedir=*) localstatedir="$(getvalue $i)" ;;
+		--sysconfdir=*)    sysconfdir="$(getvalue $i)"    ;;
+		--docdir=*)    docdir="$(getvalue $i)"   ;;
+		--dvidir=*)    dvidir="$(getvalue $i)"   ;;
+		--htmldir=*)   htmldir="$(getvalue $i)"  ;;
+		--pdfdir=*)    pdfdir="$(getvalue $i)"   ;;
+		--psdir=*)     psdir="$(getvalue $i)"    ;;
+		--infodir=*)   infodir="$(getvalue $i)"  ;;
+		--mandir=*)    mandir="$(getvalue $i)"   ;;
+		--localedir=*)   localedir="$(getvalue $i)"   ;;
+		--runstatedir=*) runstatedir="$(getvalue $i)" ;;
+
+		-h|--help) help ;;
+	esac
+done
+
+set_cc
+set_cxx
+
+if test -n "$host" ; then
+	printf "Checking cross-compiler... "
+	if test -f ${host}-${CC} || command -v ${host}-${CC} >/dev/null 2>&1 ; then
+		CC=${host}-${CC}
+		CXX=${host}-${CXX}
+		LD=${host}-${LD}
+		STRIP=${host}-${STRIP}
+		AR=${host}-${AR}
+		AS=${host}-${AS}
+		RANLIB=${host}-${RANLIB}
+		OBJCOPY=${host}-${OBJCOPY}
+		OBJDUMP=${host}-${OBJDUMP}
+		echo "$host"
+	else
+		exit_error "not found"
+	fi
+fi
+
+#==========================================================
+
+enable_gtk3='check'
+enable_gtk2='check'
+force_gtk3=no
+force_gtk2=no
+enable_debug=no
+enable_xdg=no
+
+for i in $@
+do
+	case $i in
+		--enable-gtk2)
+			enable_gtk3='no'
+			force_gtk2=yes
+			;;
+		--disable-gtk2)
+			enable_gtk2='no'
+			;;
+		--enable-gtk3)
+			enable_gtk2='no'
+			force_gtk3=yes
+			;;
+		--disable-gtk3)
+			enable_gtk3='no'
+			;;
+		--enable-debug)  enable_debug='yes' ;;
+		--disable-debug) enable_debug='no'  ;;
+		--enable-xdg)  enable_xdg='yes' ;;
+		--disable-xdg) enable_xdg='no'  ;;
+	esac
+done
+
+if test "$enable_debug" = "yes" ; then
+	CFLAGS="$CFLAGS -g -DDEBUG"
+fi
+
+if test "$enable_xdg" = "yes"  ; then
+	CFLAGS="$CFLAGS -DFOLLOW_XDG_SPEC"
+fi
+
+if test "$enable_gtk2" = "no" && test "$enable_gtk3" = "no" ; then
+	exit_error "GTK has been disabled but it's required... ERROR"
+fi
+
+if ! test "$GTK_CFLAGS" ; then
+	if test "$enable_gtk3" = "check" ; then
+		printf "Checking for GTK3... "
+		GTK_CFLAGS=$(run_pkg_config gtk+-3.0 --cflags 2>/dev/null)
+		GTK_LIBS=$(run_pkg_config gtk+-3.0 --libs 2>/dev/null)
+		if test -z "$GTK_CFLAGS" || test -z "$GTK_LIBS" ; then
+			enable_gtk3=no
+			echo "no"
+			if test "$force_gtk3" = "yes" ; then
+				exit
+			fi
+		else
+			echo "yes"
+			enable_gtk3=yes
+			enable_gtk2=no
+		fi
+	fi
+
+	if test "$enable_gtk2" = "check" ; then
+		printf "Checking for GTK2... "
+		GTK_CFLAGS=$(run_pkg_config gtk+-2.0 --cflags 2>/dev/null)
+		GTK_LIBS=$(run_pkg_config gtk+-2.0 --libs 2>/dev/null)
+		if test -z "$GTK_CFLAGS" || test -z "$GTK_LIBS" ; then
+			enable_gtk2=no
+			echo "no"
+			if test "$force_gtk2" = "yes" ; then
+				exit
+			fi
+		else
+			echo "yes"
+			enable_gtk2=yes
+			enable_gtk3=no
+			CPPFLAGS="$CPPFLAGS -DGDK_DISABLE_DEPRECATED -DGDK_PIXBUF_DISABLE_SINGLE_INCLUDES -DGTK_DISABLE_DEPRECATED -DGTK_DISABLE_SINGLE_INCLUDES"
+		fi
+	fi
+
+	if test -z "$GTK_CFLAGS" || test -z "$GTK_LIBS" ; then
+		echo "ERROR"
+		exit
+	fi
+
+	echo
+	printf "GTK version: "
+	if test "$enable_gtk3" = "yes" ; then
+		run_pkg_config gtk+-3.0 --modversion
+	else
+		run_pkg_config gtk+-2.0 --modversion
+	fi
+fi
+
+print_make_extra_flags() {
+	echo "
+GTK_CFLAGS = ${GTK_CFLAGS}
+GTK_LIBS = ${GTK_LIBS}"
+}
+
+#==========================================================
+
+CFLAGS="$CFLAGS $APP_CFLAGS"
+CPPFLAGS="$CPPFLAGS $APP_CPPFLAGS"
+CXXFLAGS="$CXXFLAGS $APP_CXXFLAGS"
+LDFLAGS="$LDFLAGS $APP_LDFLAGS"
+LIBS="$LIBS $APP_LIBS"
+
+makefiles=$(find . -name Makefile.in | sed -e 's%.in%%')
+
+for makefile in ${makefiles}
+do
+	cat > ${makefile} <<EOF
+# This is free and unencumbered software released into the public domain.
+# For more information, please refer to <http://unlicense.org/>
+
+CC = ${CC}
+CXX = ${CXX}
+STRIP = ${STRIP}
+AR = ${AR}
+AS = ${AS}
+RANLIB = ${RANLIB}
+OBJCOPY = ${OBJCOPY}
+OBJDUMP = ${OBJDUMP}
+
+CFLAGS = ${CFLAGS}
+CPPFLAGS = ${CPPFLAGS}
+CXXFLAGS = ${CXXFLAGS}
+LDFLAGS = ${LDFLAGS}
+LIBS = ${LIBS}
+$(print_make_extra_flags)
+
+#=================================================
+
+prefix = ${prefix}
+exec_prefix = ${exec_prefix}
+libdir = ${libdir}
+bindir = ${bindir}
+sbindir = ${sbindir}
+libexecdir = ${libexecdir}
+includedir = ${includedir}
+oldincludedir = ${oldincludedir}
+datarootdir = ${datarootdir}
+datadir = ${datadir}
+localstatedir = ${localstatedir}
+sysconfdir = ${sysconfdir}
+docdir = ${docdir}
+dvidir = ${dvidir}
+htmldir = ${htmldir}
+pdfdir = ${pdfdir}
+psdir = ${psdir}
+infodir = ${infodir}
+mandir = ${mandir}
+localedir = ${localedir}
+runstatedir = ${runstatedir}
+top_builddir = ${top_builddir}
+top_srcdir = ${top_srcdir}
+builddir = ${builddir}
+srcdir = ${srcdir}
+mkdir_p = ${mkdir_p}
+MKDIR_P = ${MKDIR_P}
+
+#=================================================
+
+EOF
+	cat ${makefile}.in >> ${makefile}
+done
+
+
+#==========================================================
+
+cat > config.h <<EOF
+#define PACKAGE "${PACKAGE}"
+#define VERSION "${VERSION}"
+#define PACKAGE_URL "${PACKAGE_URL}"
+#define PACKAGE_NAME "${PACKAGE_NAME}"
+#define PACKAGE_STRING "${PACKAGE_STRING}"
+#define PACKAGE_TARNAME "${PACKAGE_TARNAME}"
+#define PACKAGE_BUGREPORT "${PACKAGE_BUGREPORT}"
+#define PACKAGE_VERSION "${PACKAGE_VERSION}"
+EOF

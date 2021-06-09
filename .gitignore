@@ -9,13 +9,11 @@ config.status
 config.sub
 autom4te.cache
 aclocal.m4
-configure
 depcomp
 install-sh
 libtool
 ltmain.sh
 Makefile
-Makefile.in
 m4
 missing
 stamp-h1
