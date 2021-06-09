@@ -45,8 +45,6 @@ Requirements
 Compilation, installation
 --------------------------
 
-    Use the configure script (run ./autogen.sh if ./configure is missing):
-
         ./configure --prefix=/usr --sysconfdir=/etc
         make
         make install
