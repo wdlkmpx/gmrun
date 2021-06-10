@@ -15,11 +15,7 @@
  * 
  */
 
-#include <X11/Xlib.h>
-
 #include <gtk/gtk.h>
-#include <gdk/gdkkeysyms.h>
-#include <gdk/gdkx.h>
 
 #include <unistd.h>
 #include <errno.h>
