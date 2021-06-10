@@ -23,6 +23,8 @@
 #include "gtkcompletionline.h"
 #include "config_prefs.h"
 
+#include <config.h>
+
 enum
 {
    W_TEXT_STYLE_NORMAL,
@@ -31,15 +33,15 @@ enum
    W_TEXT_STYLE_UNIQUE,
 };
 
-GtkApplication * gmrun_app;
+GtkApplication * gmrun_app = NULL;
 
 char * gmrun_text = NULL;
 static void gmrun_exit (void);
 GtkAllocation window_geom = { -1, -1, -1, -1 };
 /* widgets that are used in several functions */
-GtkWidget * compline;
-GtkWidget * wlabel;
-GtkWidget * wlabel_search;
+GtkWidget * compline = NULL;
+GtkWidget * wlabel = NULL;
+GtkWidget * wlabel_search = NULL;
 
 /* preferences */
 int USE_GLIB_XDG = 0;
@@ -658,11 +660,13 @@ static void parse_command_line (int argc, char ** argv)
 {
    // --geometry / parse commandline options
    static char *geometry_str = NULL;
+   static gboolean show_version;
    GError *error = NULL;
    GOptionContext *context = NULL;
    static GOptionEntry entries[] =
    {
       { "geometry", 'g', 0, G_OPTION_ARG_STRING, &geometry_str, "This option specifies the initial size and location of the window.", NULL, },
+      { "version",  'v', 0, G_OPTION_ARG_NONE,   &show_version, "Show version", NULL, },
       { NULL },
    };
 
@@ -683,6 +687,12 @@ static void parse_command_line (int argc, char ** argv)
       gmrun_text = argv[1];
    }
    // --
+
+   if (show_version) {
+      puts (VERSION);
+      gmrun_exit ();
+      exit (0);
+   }
 
    if (!geometry_str)
    {
@@ -741,9 +751,13 @@ static void parse_command_line (int argc, char ** argv)
 
 void gmrun_exit(void)
 {
-   gtk_widget_destroy (compline);
+   if (compline) {
+      gtk_widget_destroy (compline);
+   }
    config_destroy ();
-   g_application_quit (G_APPLICATION (gmrun_app));
+   if (gmrun_app) {
+      g_application_quit (G_APPLICATION (gmrun_app));
+   }
 }
 
 int main(int argc, char **argv)
