@@ -779,7 +779,13 @@ int main(int argc, char **argv)
    g_signal_connect (gmrun_app, "activate", gmrun_activate, NULL);
    status = g_application_run (G_APPLICATION (gmrun_app), argc, argv);
    g_object_unref (gmrun_app);
-#else
+
+#elif GTK_MAJOR_VERSION > 2
+#  error "Gtk >= 3.4 is required"
+
+#else /* gtk2 */
+   // gmrun_app must point to *something*
+   gmrun_app = (void *) &SHELL_RUN; //gtkcompat.h: #define g_application_quit(app) gtk_main_quit()
    gtk_init (&argc, &argv);
    gmrun_activate ();
    gtk_main ();
