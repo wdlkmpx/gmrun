@@ -29,6 +29,9 @@ PACKAGE_VERSION="${VERSION}"
 
 exit_error() {
 	test "$1" && echo "$@"
+	if [ -f Makefile ] ; then
+		rm -f Makefile config.h
+	fi
 	exit 1
 }
 
@@ -283,8 +286,10 @@ fi
 #==========================================================
 #             GTK and extra options
 #==========================================================
+enable_gtk4='no'
 enable_gtk3='check'
 enable_gtk2='check'
+force_gtk4=no
 force_gtk3=no
 force_gtk2=no
 enable_debug=no
@@ -295,17 +300,28 @@ do
 	case $i in
 		--enable-gtk2)
 			enable_gtk3='no'
+			enable_gtk4='no'
 			force_gtk2=yes
 			;;
 		--disable-gtk2)
 			enable_gtk2='no'
 			;;
 		--enable-gtk3)
+			enable_gtk4='no'
 			enable_gtk2='no'
 			force_gtk3=yes
 			;;
 		--disable-gtk3)
 			enable_gtk3='no'
+			;;
+		--enable-gtk4)
+			enable_gtk3='no'
+			enable_gtk2='no'
+			force_gtk4=yes
+			enable_gtk4=check
+			;;
+		--disable-gtk4)
+			enable_gtk4='no'
 			;;
 		--enable-debug)  enable_debug='yes' ;;
 		--disable-debug) enable_debug='no'  ;;
@@ -314,61 +330,84 @@ do
 	esac
 done
 
-if test "$enable_debug" = "yes" ; then
+if [ "$enable_debug" = "yes" ] ; then
 	CFLAGS="$CFLAGS -g -DDEBUG"
 fi
 
-if test "$enable_xdg" = "yes"  ; then
+if [ "$enable_xdg" = "yes" ] ; then
 	CFLAGS="$CFLAGS -DFOLLOW_XDG_SPEC"
 fi
 
-if test "$enable_gtk2" = "no" && test "$enable_gtk3" = "no" ; then
+if [ "$enable_gtk2" = "no" ] && [ "$enable_gtk3" = "no" ] && [ "$enable_gtk4" = "no" ] ; then
 	exit_error "GTK has been disabled but it's required... ERROR"
 fi
 
-if ! test "$GTK_CFLAGS" ; then
-	if test "$enable_gtk3" = "check" ; then
+if [ -z "$GTK_CFLAGS" ]
+then
+	if [ "$enable_gtk4" = "check" ] ; then
+		printf "Checking for GTK4... "
+		GTK_CFLAGS=$(run_pkg_config gtk4 --cflags 2>/dev/null)
+		GTK_LIBS=$(run_pkg_config gtk4 --libs 2>/dev/null)
+		if [ -z "$GTK_CFLAGS" ] || [ -z "$GTK_LIBS" ] ; then
+			enable_gtk4='no'
+			echo "no"
+			if [ "$force_gtk4" = "yes" ] ; then
+				exit_error "ERROR: GTK4 was not found"
+			fi
+		else
+			echo "yes"
+			enable_gtk4=yes
+			enable_gtk2='no'
+			enable_gtk3='no'
+		fi
+	fi
+
+	if [ "$enable_gtk3" = "check" ] ; then
 		printf "Checking for GTK3... "
 		GTK_CFLAGS=$(run_pkg_config gtk+-3.0 --cflags 2>/dev/null)
 		GTK_LIBS=$(run_pkg_config gtk+-3.0 --libs 2>/dev/null)
-		if test -z "$GTK_CFLAGS" || test -z "$GTK_LIBS" ; then
-			enable_gtk3=no
+		if [ -z "$GTK_CFLAGS" ] || [ -z "$GTK_LIBS" ] ; then
+			enable_gtk3='no'
 			echo "no"
-			if test "$force_gtk3" = "yes" ; then
-				exit 1
+			if [ "$force_gtk3" = "yes" ] ; then
+				exit_error "ERROR: GTK3 was not found"
 			fi
 		else
 			echo "yes"
 			enable_gtk3=yes
-			enable_gtk2=no
+			enable_gtk2='no'
+			enable_gtk4='no'
 		fi
 	fi
 
-	if test "$enable_gtk2" = "check" ; then
+	if [ "$enable_gtk2" = "check" ] ; then
 		printf "Checking for GTK2... "
 		GTK_CFLAGS=$(run_pkg_config gtk+-2.0 --cflags 2>/dev/null)
 		GTK_LIBS=$(run_pkg_config gtk+-2.0 --libs 2>/dev/null)
-		if test -z "$GTK_CFLAGS" || test -z "$GTK_LIBS" ; then
-			enable_gtk2=no
+		if [ -z "$GTK_CFLAGS" ] || [ -z "$GTK_LIBS" ] ; then
+			enable_gtk2='no'
 			echo "no"
-			if test "$force_gtk2" = "yes" ; then
-				exit 1
+			if [ "$force_gtk2" = "yes" ] ; then
+				exit_error "ERROR: GTK2 was not found"
 			fi
 		else
 			echo "yes"
 			enable_gtk2=yes
-			enable_gtk3=no
+			enable_gtk3='no'
+			enable_gtk4='no'
 			CPPFLAGS="$CPPFLAGS -DGDK_DISABLE_DEPRECATED -DGDK_PIXBUF_DISABLE_SINGLE_INCLUDES -DGTK_DISABLE_DEPRECATED -DGTK_DISABLE_SINGLE_INCLUDES"
 		fi
 	fi
 
-	if test -z "$GTK_CFLAGS" || test -z "$GTK_LIBS" ; then
+	if [ -z "$GTK_CFLAGS" ] || [ -z "$GTK_LIBS" ] ; then
 		exit_error "ERROR"
 	fi
 
 	echo
 	printf "GTK version: "
-	if test "$enable_gtk3" = "yes" ; then
+	if [ "$enable_gtk4" = "yes" ] ; then
+		run_pkg_config gtk4 --modversion
+	elif [ "$enable_gtk3" = "yes" ] ; then
 		run_pkg_config gtk+-3.0 --modversion
 	else
 		run_pkg_config gtk+-2.0 --modversion
@@ -466,3 +505,7 @@ cat > config.h <<EOF
 #define PACKAGE_BUGREPORT "${PACKAGE_BUGREPORT}"
 #define PACKAGE_VERSION "${PACKAGE_VERSION}"
 EOF
+
+echo
+echo "* Now run 'make'  (or 'make clean' first if the app is already compiled)"
+echo
