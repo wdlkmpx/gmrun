@@ -23,7 +23,9 @@
 #include "gtkcompletionline.h"
 #include "config_prefs.h"
 
+#ifdef HAVE_CONFIG_H
 #include <config.h>
+#endif
 
 enum
 {
@@ -689,7 +691,9 @@ static void parse_command_line (int argc, char ** argv)
    // --
 
    if (show_version) {
+#ifdef HAVE_CONFIG_H
       puts (VERSION);
+#endif
       gmrun_exit ();
       exit (0);
    }
