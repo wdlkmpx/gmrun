@@ -2,8 +2,8 @@
 # This is free and unencumbered software released into the public domain.
 # For more information, please refer to <http://unlicense.org/>
 
-PACKAGE=gmrun
-VERSION=1.2w
+PACKAGE="gmrun"
+VERSION="1.2w"
 PACKAGE_URL=
 
 PROJECT_TYPE='c' # c / c++ 
@@ -13,6 +13,7 @@ APP_CXXFLAGS="${APP_CFLAGS}"
 APP_CPPFLAGS=
 APP_LDFLAGS=
 APP_LIBS=
+EXTRA_GCC_WARNINGS=yes #yes/no
 
 cd $(dirname "$0") || exit 1
 
@@ -31,7 +32,7 @@ exit_error() {
 	exit 1
 }
 
-set_cc() # [cross-prefix]
+set_cc()
 {
 	printf "Checking for C compiler... "
 	if test -n "$CC" ; then # environment
@@ -168,7 +169,6 @@ Fine tuning of the installation directories:
   --dvidir=DIR            dvi documentation [${dvidir}]
   --pdfdir=DIR            pdf documentation [${pdfdir}]
   --psdir=DIR             ps documentation [${psdir}]
-
 $(print_optional_features)
 
 Some influential environment variables:
@@ -256,6 +256,12 @@ done
 set_cc
 set_cxx
 
+if test "$EXTRA_GCC_WARNINGS" = "yes" ; then
+	case "$CC" in gcc*)
+		CPPFLAGS="$CPPFLAGS -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers" ;;
+	esac
+fi
+
 if test -n "$host" ; then
 	printf "Checking cross-compiler... "
 	if test -f ${host}-${CC} || command -v ${host}-${CC} >/dev/null 2>&1 ; then
@@ -275,7 +281,8 @@ if test -n "$host" ; then
 fi
 
 #==========================================================
-
+#             GTK and extra options
+#==========================================================
 enable_gtk3='check'
 enable_gtk2='check'
 force_gtk3=no
@@ -328,7 +335,7 @@ if ! test "$GTK_CFLAGS" ; then
 			enable_gtk3=no
 			echo "no"
 			if test "$force_gtk3" = "yes" ; then
-				exit
+				exit 1
 			fi
 		else
 			echo "yes"
@@ -345,7 +352,7 @@ if ! test "$GTK_CFLAGS" ; then
 			enable_gtk2=no
 			echo "no"
 			if test "$force_gtk2" = "yes" ; then
-				exit
+				exit 1
 			fi
 		else
 			echo "yes"
@@ -356,8 +363,7 @@ if ! test "$GTK_CFLAGS" ; then
 	fi
 
 	if test -z "$GTK_CFLAGS" || test -z "$GTK_LIBS" ; then
-		echo "ERROR"
-		exit
+		exit_error "ERROR"
 	fi
 
 	echo
@@ -375,6 +381,8 @@ GTK_CFLAGS = ${GTK_CFLAGS}
 GTK_LIBS = ${GTK_LIBS}"
 }
 
+#==========================================================
+#    create makefiles
 #==========================================================
 
 CFLAGS="$CFLAGS $APP_CFLAGS"
@@ -444,7 +452,9 @@ EOF
 done
 
 
-#==========================================================
+#==========#
+# config.h #
+#==========#
 
 cat > config.h <<EOF
 #define PACKAGE "${PACKAGE}"
