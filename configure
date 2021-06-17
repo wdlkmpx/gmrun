@@ -4,15 +4,15 @@
 
 PACKAGE="gmrun"
 VERSION="1.2w"
-PACKAGE_URL=
+PACKAGE_URL=''
 
 PROJECT_TYPE='c' # c / c++ 
 
 APP_CFLAGS='-Wall -g -O2 -DHAVE_CONFIG_H'
 APP_CXXFLAGS="${APP_CFLAGS}"
-APP_CPPFLAGS=
-APP_LDFLAGS=
-APP_LIBS=
+APP_CPPFLAGS=''
+APP_LDFLAGS=''
+APP_LIBS=''
 EXTRA_GCC_WARNINGS=yes #yes/no
 
 cd $(dirname "$0") || exit 1
@@ -35,21 +35,38 @@ exit_error() {
 	exit 1
 }
 
+check_exec() # $1=[exec] $2=[exit-if-error (exec_must_not_be_empty)]
+{
+	if [ -n "$1" ] ; then
+		if test -x $1 || command -v $1 >/dev/null 2>&1 ; then
+			return 0
+		fi
+		if [ -n "$2" ] ; then
+			exit_error "error: can't find '$1'"
+		fi
+	fi
+	return 1
+}
+
+
 set_cc()
 {
 	printf "Checking for C compiler... "
-	if test -n "$CC" ; then # environment
-		if test -x $CC ; then
-			echo "$CC"
-			return
-		fi
+	if check_exec "$CC" exit_if_error ; then
+		echo "$CC" # environment
+		return
 	fi
 	#--
 	for i in gcc clang cc
 	do
 		if command -v $i >/dev/null 2>&1 ; then
 			CC=${i}
-			echo "$CC"
+			printf "%s" "$i "
+			if [ "$i" = "gcc" ] ; then
+				gcc -dumpversion
+			else
+				echo
+			fi
 			return
 		fi
 	done
@@ -62,18 +79,26 @@ set_cxx()
 		return # don't need a c++ compiler
 	fi
 	printf "Checking for C++ compiler... "
-	if test -n "$CXX" ; then # environment
-		if test -x $CXX ; then
-			echo "$CXX"
-			return
-		fi
+	if check_exec "$CXX" exit_if_error ; then
+		echo "$CXX" # environment
+		return
+	fi
+	if check_exec "$CCC" exit_if_error ; then
+		echo "$CCC" # environment
+		CXX=$CCC
+		return
 	fi
 	#--
 	for i in g++ clang++ c++
 	do
 		if command -v $i >/dev/null 2>&1 ; then
 			CXX=${i}
-			echo "$CXX"
+			printf "%s" "$i "
+			if [ "$i" = "g++" ] ; then
+				g++ -dumpversion
+			else
+				echo
+			fi
 			return
 		fi
 	done
@@ -156,7 +181,8 @@ MKDIR_P='mkdir -p'
 
 #==========================================================
 
-help() {
+help()
+{
 	echo "
 Usage: ./configure [OPTION]... [VAR=VALUE]...
 
@@ -208,6 +234,8 @@ Some influential environment variables:
   LIBS        libraries to pass to the linker, e.g. -l<library>
   CPPFLAGS    (Objective) C/C++ preprocessor flags, e.g. -I<include dir> if
               you have headers in a nonstandard directory <include dir>
+  CXX         C++ compiler command
+  CXXFLAGS    C++ compiler flags
   PKG_CONFIG  path to pkg-config utility
   PKG_CONFIG_PATH
               directories to add to pkg-config's search path
