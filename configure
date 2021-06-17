@@ -89,6 +89,34 @@ run_pkg_config()
 	${pkgconfig} "$@"
 }
 
+
+check_pkg() # $1=<pkg> $2=[min-version]
+{
+	# returns 0=ok, use pkg-config
+	pc_pkg="$1"
+	pc_pkg_min_ver="$2"
+	if [ -n "$pc_pkg_min_ver" ] ; then
+		printf "Checking for %s >= %s... " "$pc_pkg" "$pc_pkg_min_ver"
+	else
+		printf "Checking for %s... " "$pc_pkg"
+	fi
+	#--
+	if [ -n "$pc_pkg_min_ver" ] ; then
+		run_pkg_config ${pc_pkg} --atleast-version=${pc_pkg_min_ver} 2>/dev/null
+	else
+		run_pkg_config ${pc_pkg} 2>/dev/null
+	fi
+	xret=$?
+	if [ $xret -eq 0 ] ; then
+		echo "yes"
+	else
+		echo "no"
+	fi
+	return $xret
+}
+
+#==========================================================
+
 #test "$CC"    || CC='gcc'
 #test "$CXX"   || CXX='g++'
 test "$STRIP"  || STRIP='strip'
@@ -97,8 +125,6 @@ test "$AS"     || AS='as'
 test "$RANLIB" || RANLIB='ranlib'
 test "$OBJCOPY" || OBJCOPY='objcopy'
 test "$OBJDUMP" || OBJDUMP='objdump'
-
-#==========================================================
 
 prefix=/usr/local
 exec_prefix='${prefix}'
@@ -283,9 +309,15 @@ if test -n "$host" ; then
 	fi
 fi
 
+
 #==========================================================
 #             GTK and extra options
 #==========================================================
+
+MIN_GTK4_VERSION=''
+MIN_GTK3_VERSION='3.10'
+MIN_GTK2_VERSION='2.10'
+
 enable_gtk4='no'
 enable_gtk3='check'
 enable_gtk2='check'
@@ -345,17 +377,13 @@ fi
 if [ -z "$GTK_CFLAGS" ]
 then
 	if [ "$enable_gtk4" = "check" ] ; then
-		printf "Checking for GTK4... "
-		GTK_CFLAGS=$(run_pkg_config gtk4 --cflags 2>/dev/null)
-		GTK_LIBS=$(run_pkg_config gtk4 --libs 2>/dev/null)
-		if [ -z "$GTK_CFLAGS" ] || [ -z "$GTK_LIBS" ] ; then
+		if ! check_pkg gtk4 ${MIN_GTK4_VERSION} ; then
 			enable_gtk4='no'
-			echo "no"
 			if [ "$force_gtk4" = "yes" ] ; then
 				exit_error "ERROR: GTK4 was not found"
 			fi
 		else
-			echo "yes"
+			gtk_pkg_config='gtk4'
 			enable_gtk4=yes
 			enable_gtk2='no'
 			enable_gtk3='no'
@@ -363,17 +391,13 @@ then
 	fi
 
 	if [ "$enable_gtk3" = "check" ] ; then
-		printf "Checking for GTK3... "
-		GTK_CFLAGS=$(run_pkg_config gtk+-3.0 --cflags 2>/dev/null)
-		GTK_LIBS=$(run_pkg_config gtk+-3.0 --libs 2>/dev/null)
-		if [ -z "$GTK_CFLAGS" ] || [ -z "$GTK_LIBS" ] ; then
+		if ! check_pkg gtk+-3.0 ${MIN_GTK3_VERSION} ; then
 			enable_gtk3='no'
-			echo "no"
 			if [ "$force_gtk3" = "yes" ] ; then
 				exit_error "ERROR: GTK3 was not found"
 			fi
 		else
-			echo "yes"
+			gtk_pkg_config='gtk+-3.0'
 			enable_gtk3=yes
 			enable_gtk2='no'
 			enable_gtk4='no'
@@ -381,17 +405,13 @@ then
 	fi
 
 	if [ "$enable_gtk2" = "check" ] ; then
-		printf "Checking for GTK2... "
-		GTK_CFLAGS=$(run_pkg_config gtk+-2.0 --cflags 2>/dev/null)
-		GTK_LIBS=$(run_pkg_config gtk+-2.0 --libs 2>/dev/null)
-		if [ -z "$GTK_CFLAGS" ] || [ -z "$GTK_LIBS" ] ; then
+		if ! check_pkg gtk+-2.0 ${MIN_GTK2_VERSION} ; then
 			enable_gtk2='no'
-			echo "no"
 			if [ "$force_gtk2" = "yes" ] ; then
 				exit_error "ERROR: GTK2 was not found"
 			fi
 		else
-			echo "yes"
+			gtk_pkg_config='gtk+-2.0'
 			enable_gtk2=yes
 			enable_gtk3='no'
 			enable_gtk4='no'
@@ -399,19 +419,16 @@ then
 		fi
 	fi
 
-	if [ -z "$GTK_CFLAGS" ] || [ -z "$GTK_LIBS" ] ; then
+	if [ -z "$gtk_pkg_config" ] ; then
 		exit_error "ERROR"
 	fi
 
+	GTK_VERSION=$(run_pkg_config ${gtk_pkg_config} --modversion 2>/dev/null)
+	GTK_CFLAGS=$(run_pkg_config ${gtk_pkg_config} --cflags 2>/dev/null)
+	GTK_LIBS=$(run_pkg_config ${gtk_pkg_config} --libs 2>/dev/null)
+
 	echo
-	printf "GTK version: "
-	if [ "$enable_gtk4" = "yes" ] ; then
-		run_pkg_config gtk4 --modversion
-	elif [ "$enable_gtk3" = "yes" ] ; then
-		run_pkg_config gtk+-3.0 --modversion
-	else
-		run_pkg_config gtk+-2.0 --modversion
-	fi
+	echo "GTK version: $GTK_VERSION"
 fi
 
 print_make_extra_flags() {
