@@ -1,8 +1,12 @@
+
+include ../config.mk
+
 APP  = gmrun
-# ls *.c | sed 's%\.c%.o%g'
+# ls *.c | sed 's%\.c%.o%g' | tr '\n' ' ' >> Makefile
 OBJS = config_prefs.o gtkcompletionline.o history.o main.o
 
-CPPFLAGS += -I..
+#CPPFLAGS += -I..
+CFLAGS += -I..
 
 CFLAGS += $(GTK_CFLAGS)
 LIBS   += $(GTK_LIBS)
@@ -10,20 +14,19 @@ LIBS   += $(GTK_LIBS)
 all: $(APP)
 
 $(APP): $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) -o $(APP) $(LIBS) $(LDFLAGS)
+	$(CC) $(CFLAGS) $(OBJS) -o $(APP) $(LDFLAGS) $(LIBS)
 
 strip: $(APP)
 	$(STRIP) $(APP)
 
-distclean: clean
-	rm -f Makefile
-
 clean:
 	rm -f *.o *~ $(APP) $(APP).exe
 
+distclean: clean
+
 install: $(APP)
 	mkdir -p $(DESTDIR)$(bindir)
-	install $(APP) $(DESTDIR)$(bindir)
+	install -c $(APP) $(DESTDIR)$(bindir)
 
 uninstall:
 	rm -f $(DESTDIR)$(bindir)/$(APP)

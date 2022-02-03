@@ -15,6 +15,10 @@
  * 
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <gtk/gtk.h>
 
 #include <unistd.h>
@@ -22,10 +26,6 @@
 
 #include "gtkcompletionline.h"
 #include "config_prefs.h"
-
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
 
 enum
 {

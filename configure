@@ -1,21 +1,35 @@
 #!/bin/sh
 # This is free and unencumbered software released into the public domain.
 # For more information, please refer to <http://unlicense.org/>
-
-PACKAGE="gmrun"
-VERSION="1.2w"
-PACKAGE_URL=''
-
-PROJECT_TYPE='c' # c / c++ 
+#
 
 APP_CFLAGS='-Wall -g -O2 -DHAVE_CONFIG_H'
 APP_CXXFLAGS="${APP_CFLAGS}"
-APP_CPPFLAGS=''
+#APP_CPPFLAGS='-Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers'
 APP_LDFLAGS=''
+APP_LXXFLAGS=''
 APP_LIBS=''
-EXTRA_GCC_WARNINGS=yes #yes/no
+#W_SYSROOT_PLUS_INCLUDES_AND_LIBS=1
 
-cd $(dirname "$0") || exit 1
+if ! cd $(dirname "$0") ; then
+	exit 1
+fi
+
+apps_to_check=''
+extra_env_vars=''
+config_h_extra=''
+extra_configure_opts=''
+config_h_have=
+config_mk_flags=
+w_files_in=
+
+if [ -f configure.project ] ; then
+	. ./configure.project
+fi
+
+if [ -z "$PROJECT_TYPE" ] ; then
+	PROJECT_TYPE="C++"
+fi
 
 #==========================================================
 
@@ -26,118 +40,367 @@ PACKAGE_BUGREPORT="${PACKAGE_URL}"
 PACKAGE_VERSION="${VERSION}"
 
 #==========================================================
+# ./configure release [xz|gz|lz|bz2|zst]
+
+if [ "$1" = "release" ] ; then
+	if command -v git >/dev/null; then
+		printf "Run 'git clean -dfx'? [y/N]: "
+		read anzwer
+		case $anzwer in y|Y)
+			echo '# git clean -dfx'
+			git clean -dfx ;;
+		esac
+	fi
+	dir=${PACKAGE}-${VERSION}
+	rm -rf ../${dir}
+	mkdir -p ../${dir}
+	cp -rf $(pwd)/* ../${dir}
+	cd ..
+	echo "# tar -vcf ${dir}.tar $dir"
+	tar -vcf ${dir}.tar $dir
+	comp=$2
+	if [ -z "$comp" ] ; then
+		comp=xz
+	fi
+	case $comp in
+		gz)  cmd=gzip    ;;
+		lz)  cmd=lzip    ;;
+		bz2) cmd=bzip2   ;;
+		zst) cmd=zstd    ;;
+		*)   cmd=${comp} ;;
+	esac
+	rm -f ${dir}.tar.${comp}
+	echo "# ${cmd} ${dir}.tar"
+	if ${cmd} ${dir}.tar ; then
+		echo "*** ${dir}.tar.${comp} has been created..."
+	fi
+	rm -f ${dir}.tar
+	exit
+fi
+
+# w_conf/gettext: ./configure po|pot|po2c
+
+#==========================================================
 
 exit_error() {
 	test "$1" && echo "$@"
-	if [ -f Makefile ] ; then
-		rm -f Makefile config.h
+	if [ -f config.log ] ; then
+		echo "See config.log, there might be some clues there"
 	fi
+	rm -f config.h config.mk
 	exit 1
 }
 
-check_exec() # $1=[exec] $2=[exit-if-error (exec_must_not_be_empty)]
+
+check_command() # 1:<cmd> finds $1 in $PATH
 {
-	if [ -n "$1" ] ; then
-		if test -x $1 || command -v $1 >/dev/null 2>&1 ; then
-			return 0
-		fi
-		if [ -n "$2" ] ; then
-			exit_error "error: can't find '$1'"
-		fi
+	if [ -z "$xxpath" ] ; then
+		xxpath="$(echo "$PATH" | tr ':' ' ')"
 	fi
+	for xcmdx in $@
+	do
+		case "${xcmdx}" in /*)
+			# a full path, check if file is executable
+			if [ -x "${xcmdx}" ] ; then
+				echo "${xcmdx}"
+				return 0
+			fi
+			continue
+			;;
+		esac
+		#--
+		for zpathz in ${xxpath}
+		do
+			if [ -x "${zpathz}/${xcmdx}" ] ; then
+				echo "${zpathz}/${xcmdx}"
+				return 0
+			fi
+		done
+	done
 	return 1
 }
 
 
 set_cc()
 {
-	printf "Checking for C compiler... "
-	if check_exec "$CC" exit_if_error ; then
-		echo "$CC" # environment
-		return
+	CC_IS_FULL_PATH=''
+	case $PROJECT_TYPE in
+		C|C++) okw=1;;
+		*) [ -z "$CC" ] && CC="cc"
+			return ;;
+	esac
+	case $CC in /*)
+		CC_IS_FULL_PATH=1 ;;
+	esac
+	GCC="no"
+	if [ -n "$CC" ] ; then
+		zz_list="$CC"
+	else
+		zz_list="cc gcc clang"
 	fi
-	#--
-	for i in gcc clang cc
-	do
-		if command -v $i >/dev/null 2>&1 ; then
-			CC=${i}
-			printf "%s" "$i "
-			if [ "$i" = "gcc" ] ; then
-				gcc -dumpversion
-			else
-				echo
-			fi
-			return
-		fi
-	done
-	exit_error "$CC not found"
+	printf "Checking for C compiler... "
+	ZCC="$(check_command ${zz_list})"
+	if test -z "$ZCC" ; then
+		exit_error "$CC not found"
+	fi
+	CC="$ZCC"
+	echo "$CC"
+	if [ -z "$CC_IS_FULL_PATH" ] ; then
+		CC="$(basename $CC)" # not a full path, keep binary name
+	fi
 }
+
 
 set_cxx()
 {
-	if test "$PROJECT_TYPE" = "c" ; then
-		return # don't need a c++ compiler
-	fi
-	printf "Checking for C++ compiler... "
-	if check_exec "$CXX" exit_if_error ; then
-		echo "$CXX" # environment
+	CXX_IS_FULL_PATH=''
+	if [ "$PROJECT_TYPE" != "C++" ] ; then
+		[ -z "$CXX" ] && CXX="c++"
 		return
 	fi
-	if check_exec "$CCC" exit_if_error ; then
-		echo "$CCC" # environment
-		CXX=$CCC
-		return
-	fi
+	case $CXX in /*)
+		CXX_IS_FULL_PATH=1 ;;
+	esac
 	#--
-	for i in g++ clang++ c++
-	do
-		if command -v $i >/dev/null 2>&1 ; then
-			CXX=${i}
-			printf "%s" "$i "
-			if [ "$i" = "g++" ] ; then
-				g++ -dumpversion
-			else
-				echo
-			fi
-			return
+	printf "Checking for C++ compiler... "
+	if [ -n "$CXX" ] ; then
+		zz_list="$CXX"
+	else
+		zz_list="c++ g++ clang++"
+	fi
+	ZXX="$(check_command ${zz_list})"
+	if test -z "$ZXX" ; then
+		if [ -z "$CXX" ] ; then
+			echo "not found" # not a fatal error
+		else
+			exit_error "$CXX not found"
 		fi
-	done
-	exit_error "$CXX not found"
+	fi
+	CXX="$ZXX"
+	echo "$CXX"
+	if [ -z "$CXX_IS_FULL_PATH" ] ; then
+		CXX="$(basename $CXX)" # not a full path, keep binary name
+	fi
 }
+
+
+set_w_pkg_config()
+{
+	printf "Checking for pkg-config... "
+	W_PKG_CONFIG=''
+	if [ -n "${PKG_CONFIG}" ] ; then
+		W_PKG_CONFIG="$(check_command ${PKG_CONFIG})"
+		if [ -n "$W_PKG_CONFIG" ] ; then
+			echo "$W_PKG_CONFIG (environment)"
+			return 0
+		fi
+	fi
+	W_PKG_CONFIG="$(check_command pkg-config pkgconf)"
+	if [ -n "$W_PKG_CONFIG" ] ; then
+		echo "$W_PKG_CONFIG [$($W_PKG_CONFIG --version 2>/dev/null)]"
+	else
+		echo "no"
+		echo "WARNING: missing pkg-config: this a potentially fatal error"
+	fi
+}
+
 
 run_pkg_config()
 {
-	pkgconfig='pkg-config'
-	if test -n "$PKG_CONFIG" ; then
-		pkgconfig="$PKG_CONFIG"
+	if [ -n "$static_link" ] ; then
+		pkgconfig_s='--static'
+	else
+		pkgconfig_s=''
 	fi
-	${pkgconfig} "$@"
+	if test -n "$W_PKG_CONFIG" ; then
+		${W_PKG_CONFIG} ${pkgconfig_s} "$@"
+	else
+		pkg-config ${pkgconfig_s} "$@"
+	fi
+}
+
+w_pkgconfig_run()
+{
+	run_pkg_config "$@"
 }
 
 
-check_pkg() # $1=<pkg> $2=[min-version]
+w_pkgconfig_check() # $1=<pkg> $2=[min-version]
 {
 	# returns 0=ok, use pkg-config
 	pc_pkg="$1"
 	pc_pkg_min_ver="$2"
 	if [ -n "$pc_pkg_min_ver" ] ; then
-		printf "Checking for %s >= %s... " "$pc_pkg" "$pc_pkg_min_ver"
+		printf "Checking for %s >= %s... " "${pc_pkg}.pc" "$pc_pkg_min_ver"
 	else
-		printf "Checking for %s... " "$pc_pkg"
+		printf "Checking for %s... " "${pc_pkg}.pc"
+	fi
+	if [ -z "$W_PKG_CONFIG" ] ; then
+		echo "no (!!pkg-config is missing!!)"
+		return 1
 	fi
 	#--
 	if [ -n "$pc_pkg_min_ver" ] ; then
-		run_pkg_config ${pc_pkg} --atleast-version=${pc_pkg_min_ver} 2>/dev/null
+		run_pkg_config ${pc_pkg} --exists --atleast-version=${pc_pkg_min_ver}
 	else
-		run_pkg_config ${pc_pkg} 2>/dev/null
+		run_pkg_config ${pc_pkg} --exists
 	fi
 	xret=$?
 	if [ $xret -eq 0 ] ; then
-		echo "yes"
+		echo "yes [$(run_pkg_config ${pc_pkg} --modversion)]"
 	else
 		echo "no"
 	fi
 	return $xret
+}
+
+
+w_compile_c_code() # $1:code  $2:extra-CFLAGS  $3:extra-LDFLAGS
+{
+	if [ -z "$1" ] ; then
+		exit_error 'w_compile: code to compile is an empty string'
+	fi
+	if [ -n "$W_USE_MKTEMP" ] ; then
+		conftest=$(mktemp -u .wxconftestXXXXXXXXX)
+		if [ -z "$conftest" ] ; then
+			conftest=.wxconftest$$
+		fi
+	else
+		conftest=.wxconftest$$
+	fi
+	printf "$1" > ${conftest}.c
+	printf "\n$1" >> config.log
+	echo "$CC $CFLAGS $2 ${conftest}.c -o ${conftest}.o $LDFLAGS $3" >>config.log
+	$CC $CFLAGS $2 ${conftest}.c -o ${conftest}.o $LDFLAGS $3 2>>config.log
+	zzzzretxx=$?
+	rm -f ${conftest}.c ${conftest}.o
+	return ${zzzzretxx}
+}
+
+
+w_check_header_and_libs() # 1:<header> 2-:[libs] is optional
+{
+	xheaderx=$1
+	shift
+	xlibsx=$@
+	xretval=1
+	if [ -n "$xlibsx" ] ; then
+		printf "Checking for ${xheaderx} + ${xlibsx}... "
+	else
+		printf "Checking for ${xheaderx}... "
+	fi
+	ccode="#include <${xheaderx}>
+int main (int argc, char **argv) { return 0; }
+"
+	w_compile_c_code "$ccode" "" "${xlibsx}"
+	if [ $? -eq 0 ] ; then
+		w_headers="$w_headers ${xheaderx}"
+		echo "yes"
+		xretval=0
+	else
+		echo "no"
+		xretval=1
+	fi
+	return ${xretval}
+}
+
+
+w_check_header_and_libs_required()
+{
+	zzheaderzz=$1
+	if [ -z "$2" ] ; then
+		exit_error "w_check_header_and_libs_required: 2nd paramater <libs> is required"
+	fi
+	shift
+	zzlibszz=$@
+	w_check_header_and_libs ${zzheaderzz} ${zzlibszz}
+	if [ $? -eq 0 ] ; then
+		LIBS="$LIBS ${zzlibszz}"
+	else
+		exit_error "ERROR: ${zzheaderzz} + ${zzlibszz} is required"
+	fi
+}
+
+w_check_headers()
+{
+	for zzheaderzz in $@
+	do
+		w_check_header_and_libs ${zzheaderzz}
+	done
+}
+
+w_check_headers_required()
+{
+	for zzheaderzz in $@
+	do
+		w_check_header_and_libs ${zzheaderzz}
+		if [ $? -ne 0 ] ; then
+			exit_error "ERROR: ${zzheaderzz} is required"
+		fi
+	done
+}
+
+w_check_command() # sets $wtmp_cmd
+{
+	printf "Checking for $1... "
+	wtmp_cmd="$(check_command "$1")"
+	if [ -n "$wtmp_cmd" ] ; then
+		echo "$wtmp_cmd"
+		return 0
+	else
+		echo "no"
+		return 1
+	fi
+}
+
+w_check_commands()
+{
+	for wcmdw in $@ ; do
+		w_check_command ${wcmdw}
+	done
+}
+
+w_check_commands_required()
+{
+	for wcmdw in $@ ; do
+		w_check_command ${wcmdw}
+		if [ $? -ne 0 ] ; then
+			exit_error "ERROR: $wcmdw is required"
+		fi
+	done
+}
+
+
+w_check_command_find_first() # sets $wtmp_cmd
+{
+	wtmp_cmd=''
+	for wcmdw in $@
+	do
+		w_check_command ${wcmdw}
+		if [ $? -eq 0 ] ; then
+			return
+		fi
+	done
+	wtmp_cmd=''
+	return 1
+}
+
+
+w_require_gnu_make()
+{
+	printf "Checking for GNU make... "
+	if [ -n "$MAKE" ] && "$MAKE" --version 1>/dev/null 2>&1 ; then
+		echo "$MAKE (environment)"
+		W_GNU_MAKE="MAKE = $MAKE"
+	elif make --version 1>/dev/null 2>&1 ; then
+		echo "make"
+	elif gmake --version 1>/dev/null 2>&1 ; then
+		echo "gmake"
+		W_GNU_MAKE='MAKE = gmake'
+	else
+		echo "no"
+		exit_error "ERROR: GNU make is required"
+	fi
 }
 
 #==========================================================
@@ -147,9 +410,11 @@ check_pkg() # $1=<pkg> $2=[min-version]
 test "$STRIP"  || STRIP='strip'
 test "$AR"     || AR='ar'
 test "$AS"     || AS='as'
+test "$NM"     || NM='nm'
 test "$RANLIB" || RANLIB='ranlib'
 test "$OBJCOPY" || OBJCOPY='objcopy'
 test "$OBJDUMP" || OBJDUMP='objdump'
+static_link=''
 
 prefix=/usr/local
 exec_prefix='${prefix}'
@@ -224,18 +489,24 @@ Fine tuning of the installation directories:
   --dvidir=DIR            dvi documentation [${dvidir}]
   --pdfdir=DIR            pdf documentation [${pdfdir}]
   --psdir=DIR             ps documentation [${psdir}]
+
 $(print_optional_features)
+
+Optional Packages:
+  --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
+  --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --with-sysroot[=DIR]    Search for dependent libraries within DIR (or the
+                          compiler's sysroot if not specified).
 
 Some influential environment variables:
   CC          C compiler command
   CFLAGS      C compiler flags
+  CXXFLAGS    C++ compiler flags
   LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
               nonstandard directory <lib dir>
   LIBS        libraries to pass to the linker, e.g. -l<library>
   CPPFLAGS    (Objective) C/C++ preprocessor flags, e.g. -I<include dir> if
               you have headers in a nonstandard directory <include dir>
-  CXX         C++ compiler command
-  CXXFLAGS    C++ compiler flags
   PKG_CONFIG  path to pkg-config utility
   PKG_CONFIG_PATH
               directories to add to pkg-config's search path
@@ -251,17 +522,24 @@ it to find libraries and programs with nonstandard names/locations.
 
 #==========================================================
 
-print_optional_features() {
-	echo 'Optional Features:
-  --disable-gtk3          build with GTK3 (Autodetect)
-  --enable-gtk2           build with GTK2 (Autodetect)
-  --enable-debug          produce debug build
-  --enable-xdg            follow xdg spec for configuration and history files location'
+print_optional_features()
+{
+	if [ -n "${extra_configure_opts}" ] ; then
+		echo "Optional Features:"
+	fi
+	for confx in ${extra_configure_opts}
+	do
+		opt_print_${confx}
+	done
 }
 
-print_extra_env_variables() {
-	echo '  GTK_CFLAGS  C compiler flags for GTK, overriding pkg-config
-  GTK_LIBS    linker flags for GTK, overriding pkg-config'
+print_extra_env_variables()
+{
+	for evar in ${extra_env_vars}
+	do
+		echo "  ${evar}_CFLAGS  compiler flags for ${evar}, overriding pkg-config"
+		echo "  ${evar}_LIBS    linker flags for ${evar}, overriding pkg-config"
+	done
 }
 
 #==========================================================
@@ -277,12 +555,15 @@ do
 		CFLAGS=*)   CFLAGS="$CFLAGS $(getvalue $i)"     ;;
 		CPPFLAGS=*) CPPFLAGS="$CPPFLAGS $(getvalue $i)" ;;
 		LDFLAGS=*)  LDFLAGS="$LDFLAGS $(getvalue $i)"   ;;
+		LXXFLAGS=*) LXXFLAGS="$LXXFLAGS $(getvalue $i)"   ;;
 		CXXFLAGS=*) CXXFLAGS="$CXXFLAGS $(getvalue $i)"   ;;
-		LIBS=*)  LIBS="$LDFLAGS $(getvalue $i)"   ;;
+		LIBS=*)  LIBS="$LIBS $(getvalue $i)"   ;;
 		CC=*)    CC="$(getvalue $i)"     ;;
 		CXX=*)   CXX="$(getvalue $i)"    ;;
 		STRIP=*) STRIP="$(getvalue $i)"  ;;
 		AR=*)    AR="$(getvalue $i)"     ;;
+		AS=*)    AS="$(getvalue $i)"     ;;
+		NM=*)    NM="$(getvalue $i)"     ;;
 
 		--prefix=*)     prefix="$(getvalue $i)"     ;;
 		--exec_prefix=*) exec_prefix="$(getvalue $i)"     ;;
@@ -305,189 +586,161 @@ do
 		--mandir=*)    mandir="$(getvalue $i)"   ;;
 		--localedir=*)   localedir="$(getvalue $i)"   ;;
 		--runstatedir=*) runstatedir="$(getvalue $i)" ;;
+		--with-sysroot=*) sysroot="$(getvalue $i)" ;;
+		--with-sysroot) sysroot='-print-sysroot' ;;
+		--without-sysroot) sysroot='' ;;
+		--enable-static-link)  static_link=1 ;;
+		--disable-static-link) static_link=  ;;
 
 		-h|--help) help ;;
 	esac
 done
 
+for confx in ${extra_configure_opts}
+do
+	opt_configure_${confx} "$@"
+done
+
+# ====================================================
+
+echo
 set_cc
 set_cxx
-
-if test "$EXTRA_GCC_WARNINGS" = "yes" ; then
-	case "$CC" in gcc*)
-		CPPFLAGS="$CPPFLAGS -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers" ;;
-	esac
-fi
+set_w_pkg_config
 
 if test -n "$host" ; then
 	printf "Checking cross-compiler... "
-	if test -f ${host}-${CC} || command -v ${host}-${CC} >/dev/null 2>&1 ; then
-		CC=${host}-${CC}
-		CXX=${host}-${CXX}
-		LD=${host}-${LD}
-		STRIP=${host}-${STRIP}
-		AR=${host}-${AR}
-		AS=${host}-${AS}
-		RANLIB=${host}-${RANLIB}
-		OBJCOPY=${host}-${OBJCOPY}
-		OBJDUMP=${host}-${OBJDUMP}
+	CROSS_IS_FULL_PATH=''
+	CROSS_BASE_DIR=''
+	case $host in /*)
+		CROSS_IS_FULL_PATH=1
+		CROSS_BASE_DIR="$(dirname $host)/"
+		;;
+	esac
+	cross_base_dir=''
+	w_c_cross_ok=$(check_command ${host}-cc ${host}-gcc ${host}-clang)
+	w_cpp_cross_ok=
+	if [ -n "$w_c_cross_ok" ] ; then
+		CC="$w_c_cross_ok";
+	fi
+	#--
+	if [ "$PROJECT_TYPE" = "C++" ] ; then
+		w_cpp_cross_ok=$(check_command ${host}-c++ ${host}-g++ ${host}-clang++)
+		if [ "$w_cpp_cross_ok" ] ; then
+			CXX="$w_cpp_cross_ok";
+		fi
+	else
+		w_cpp_cross_ok=1
+		CXX=${CROSS_BASE_DIR}${host}-c++
+	fi
+	#--
+	if [ -n "$w_c_cross_ok" ] && [ -n "$w_cpp_cross_ok" ]; then
+		LD=${CROSS_BASE_DIR}${host}-${LD}
+		STRIP=${CROSS_BASE_DIR}${host}-${STRIP}
+		AR=${CROSS_BASE_DIR}${host}-${AR}
+		AS=${CROSS_BASE_DIR}${host}-${AS}
+		NM=${CROSS_BASE_DIR}${host}-${NM}
+		RANLIB=${CROSS_BASE_DIR}${host}-${RANLIB}
+		OBJCOPY=${CROSS_BASE_DIR}${host}-${OBJCOPY}
+		OBJDUMP=${CROSS_BASE_DIR}${host}-${OBJDUMP}
 		echo "$host"
 	else
 		exit_error "not found"
 	fi
+	if [ -z "$CROSS_IS_FULL_PATH" ] ; then
+		# cross compiler is not a full path
+		CC="$(basename $CC)"
+		CXX="$(basename $CXX)"
+	fi
 fi
 
-
-#==========================================================
-#             GTK and extra options
-#==========================================================
-
-MIN_GTK4_VERSION=''
-MIN_GTK3_VERSION='3.10'
-MIN_GTK2_VERSION='2.10'
-
-enable_gtk4='no'
-enable_gtk3='check'
-enable_gtk2='check'
-force_gtk4=no
-force_gtk3=no
-force_gtk2=no
-enable_debug=no
-enable_xdg=no
-
-for i in $@
-do
-	case $i in
-		--enable-gtk2)
-			enable_gtk3='no'
-			enable_gtk4='no'
-			force_gtk2=yes
-			;;
-		--disable-gtk2)
-			enable_gtk2='no'
-			;;
-		--enable-gtk3)
-			enable_gtk4='no'
-			enable_gtk2='no'
-			force_gtk3=yes
-			;;
-		--disable-gtk3)
-			enable_gtk3='no'
-			;;
-		--enable-gtk4)
-			enable_gtk3='no'
-			enable_gtk2='no'
-			force_gtk4=yes
-			enable_gtk4=check
-			;;
-		--disable-gtk4)
-			enable_gtk4='no'
-			;;
-		--enable-debug)  enable_debug='yes' ;;
-		--disable-debug) enable_debug='no'  ;;
-		--enable-xdg)  enable_xdg='yes' ;;
-		--disable-xdg) enable_xdg='no'  ;;
-	esac
-done
-
-if [ "$enable_debug" = "yes" ] ; then
-	CFLAGS="$CFLAGS -g -DDEBUG"
+if [ -n "$static_link" ] ; then
+	CC="$CC -static"
+	CXX="$CXX -static"
 fi
 
-if [ "$enable_xdg" = "yes" ] ; then
-	CFLAGS="$CFLAGS -DFOLLOW_XDG_SPEC"
-fi
-
-if [ "$enable_gtk2" = "no" ] && [ "$enable_gtk3" = "no" ] && [ "$enable_gtk4" = "no" ] ; then
-	exit_error "GTK has been disabled but it's required... ERROR"
-fi
-
-if [ -z "$GTK_CFLAGS" ]
-then
-	if [ "$enable_gtk4" = "check" ] ; then
-		if ! check_pkg gtk4 ${MIN_GTK4_VERSION} ; then
-			enable_gtk4='no'
-			if [ "$force_gtk4" = "yes" ] ; then
-				exit_error "ERROR: GTK4 was not found"
-			fi
-		else
-			gtk_pkg_config='gtk4'
-			enable_gtk4=yes
-			enable_gtk2='no'
-			enable_gtk3='no'
+if [ -n "${sysroot}" ] ; then
+	if [ "${sysroot}" = "-print-sysroot" ] ; then
+		sysroot="$($CC -print-sysroot)"
+		if [ -z "$sysroot" ] ; then
+			exit_error "--with-sysroot ERROR: compiler doesn't support -print-sysroot"
 		fi
 	fi
-
-	if [ "$enable_gtk3" = "check" ] ; then
-		if ! check_pkg gtk+-3.0 ${MIN_GTK3_VERSION} ; then
-			enable_gtk3='no'
-			if [ "$force_gtk3" = "yes" ] ; then
-				exit_error "ERROR: GTK3 was not found"
-			fi
-		else
-			gtk_pkg_config='gtk+-3.0'
-			enable_gtk3=yes
-			enable_gtk2='no'
-			enable_gtk4='no'
+	if ! [ -d "$sysroot" ] ; then
+		exit_error "--with-sysroot ERROR: $sysroot is not a directory"
+	fi
+	CC="$CC --sysroot=${sysroot}"
+	CXX="$CXX --sysroot=${sysroot}"
+	#--
+	if [ -n "$W_SYSROOT_PLUS_INCLUDES_AND_LIBS" ] ; then
+		if [ -d ${sysroot}/include ] ; then
+			CFLAGS="-I${sysroot}/include $CFLAGS"
+			CXXFLAGS="-I${sysroot}/include $CXXFLAGS"
+		fi
+		if [ -d ${sysroot}/lib ] ; then
+			LDFLAGS="-L${sysroot}/lib $LDFLAGS"
+			LXXFLAGS="-L${sysroot}/lib $LXXFLAGS"
 		fi
 	fi
-
-	if [ "$enable_gtk2" = "check" ] ; then
-		if ! check_pkg gtk+-2.0 ${MIN_GTK2_VERSION} ; then
-			enable_gtk2='no'
-			if [ "$force_gtk2" = "yes" ] ; then
-				exit_error "ERROR: GTK2 was not found"
-			fi
-		else
-			gtk_pkg_config='gtk+-2.0'
-			enable_gtk2=yes
-			enable_gtk3='no'
-			enable_gtk4='no'
-			CPPFLAGS="$CPPFLAGS -DGDK_DISABLE_DEPRECATED -DGDK_PIXBUF_DISABLE_SINGLE_INCLUDES -DGTK_DISABLE_DEPRECATED -DGTK_DISABLE_SINGLE_INCLUDES"
-		fi
-	fi
-
-	if [ -z "$gtk_pkg_config" ] ; then
-		exit_error "ERROR"
-	fi
-
-	GTK_VERSION=$(run_pkg_config ${gtk_pkg_config} --modversion 2>/dev/null)
-	GTK_CFLAGS=$(run_pkg_config ${gtk_pkg_config} --cflags 2>/dev/null)
-	GTK_LIBS=$(run_pkg_config ${gtk_pkg_config} --libs 2>/dev/null)
-
-	echo
-	echo "GTK version: $GTK_VERSION"
 fi
 
-print_make_extra_flags() {
-	echo "
-GTK_CFLAGS = ${GTK_CFLAGS}
-GTK_LIBS = ${GTK_LIBS}"
-}
-
-#==========================================================
-#    create makefiles
 #==========================================================
 
 CFLAGS="$CFLAGS $APP_CFLAGS"
 CPPFLAGS="$CPPFLAGS $APP_CPPFLAGS"
 CXXFLAGS="$CXXFLAGS $APP_CXXFLAGS"
 LDFLAGS="$LDFLAGS $APP_LDFLAGS"
+LXXFLAGS="$LXXFLAGS $APP_LXXFLAGS"
 LIBS="$LIBS $APP_LIBS"
 
-makefiles=$(find . -name Makefile.in | sed -e 's%.in%%')
+#==========================================================
 
-for makefile in ${makefiles}
+echo > config.log
+case $PROJECT_TYPE in
+	C)   WCVERW=$($CC --version 2>>config.log)  ;;
+	C++) WCVERW=$($CXX --version 2>>config.log) ;;
+esac
+echo "$WCVERW" >> config.log
+if [ -n "$(echo "$WCVERW" | grep "Free Software Foundation")" ] ; then
+	printf "\n- GCC has been detected\n" >>config.log
+	GCC='yes'
+fi
+
+w_headers=''
+#----------
+w_main_func # main function where the user performs all sorts of tasks
+#----------
+for xcheckx in ${w_custom_checks}
+do
+	${xcheckx}
+done
+# apps to check, see configure.project (XXX_CFLAGS, XXX_LIBS)
+for appx in ${apps_to_check}
+do
+	opt_check_${appx}
+done
+
+#==========================================================
+#             config.mk and Makefiles
+#==========================================================
+
+if [ -z "$W_MAKEFILES_IN" ] ; then
+	w_makefiles=
+else
+	w_makefiles=$(find . -name Makefile.in | sed -e 's%.in%%')
+fi
+
+for makefile in config.mk ${w_makefiles}
 do
 	cat > ${makefile} <<EOF
-# This is free and unencumbered software released into the public domain.
-# For more information, please refer to <http://unlicense.org/>
-
+# generated by ./configure
+${W_GNU_MAKE}
 CC = ${CC}
 CXX = ${CXX}
 STRIP = ${STRIP}
 AR = ${AR}
 AS = ${AS}
+NM = ${NM}
 RANLIB = ${RANLIB}
 OBJCOPY = ${OBJCOPY}
 OBJDUMP = ${OBJDUMP}
@@ -495,9 +748,9 @@ OBJDUMP = ${OBJDUMP}
 CFLAGS = ${CFLAGS}
 CPPFLAGS = ${CPPFLAGS}
 CXXFLAGS = ${CXXFLAGS}
+LXXFLAGS = ${LXXFLAGS}
 LDFLAGS = ${LDFLAGS}
 LIBS = ${LIBS}
-$(print_make_extra_flags)
 
 #=================================================
 
@@ -529,18 +782,43 @@ srcdir = ${srcdir}
 mkdir_p = ${mkdir_p}
 MKDIR_P = ${MKDIR_P}
 
+INSTALL = install -c
+INSTALL_DATA = install -c -m 644
+
 #=================================================
+${make_extra_flags}
 
 EOF
-	cat ${makefile}.in >> ${makefile}
+	if [ -n "${config_mk_flags}" ] ; then
+		(
+			for env in ${config_mk_flags}
+			do
+				echo "${env}_CFLAGS = $(eval echo \$${env}_CFLAGS)"
+				echo "${env}_LIBS   = $(eval echo \$${env}_LIBS)"
+			done
+		) >> ${makefile}
+	fi
+
+	if [ -n "${w_config_mk_extra_lines}" ] ; then
+		echo "${w_config_mk_extra_lines}" >> ${makefile}
+	fi
+
+	if [ -f ${makefile}.in ] ; then
+		cat ${makefile}.in >> ${makefile}
+	fi
+
 done
 
 
-#==========#
-# config.h #
-#==========#
+#==========================================================
+#                       config.h
+#==========================================================
 
 cat > config.h <<EOF
+/* generated by ./configure */
+#ifndef __W_CONFIGURE_CONFIG_H__
+#define __W_CONFIGURE_CONFIG_H__
+
 #define PACKAGE "${PACKAGE}"
 #define VERSION "${VERSION}"
 #define PACKAGE_URL "${PACKAGE_URL}"
@@ -549,7 +827,52 @@ cat > config.h <<EOF
 #define PACKAGE_TARNAME "${PACKAGE_TARNAME}"
 #define PACKAGE_BUGREPORT "${PACKAGE_BUGREPORT}"
 #define PACKAGE_VERSION "${PACKAGE_VERSION}"
+
+#ifndef _DARWIN_USE_64_BIT_INODE
+# define _DARWIN_USE_64_BIT_INODE 1
+#endif
+
+${config_h_extra}
 EOF
+
+if [ -n "${w_headers}" ] ; then
+	(
+		for xheader in ${w_headers}
+		do
+			zheader=$(echo "$xheader" | tr '/' '_' | tr '.' '_' | tr '[:lower:]' '[:upper:]')
+			echo "#define HAVE_${zheader} 1"
+		done
+	) >> config.h
+fi
+
+if [ -n "${config_h_have}" ] ; then
+	(
+		for feat in ${config_h_have}
+		do
+			echo "#define HAVE_${feat} 1"
+		done
+	) >> config.h
+fi
+
+echo "#endif /* __W_CONFIGURE_CONFIG_H__ */
+${w_config_h_extra_lines}" >> config.h
+
+#============================================================
+
+for infile in ${w_infiles}
+do
+	if [ -f ${infile}.in ] ; then
+		sed -e "s%@VERSION@%${VERSION}%g" \
+			-e "s%@PACKAGE@%${PACKAGE}%g" \
+			-e "s%@PACKAGE_URL@%${PACKAGE_URL}%g" \
+			${infile}.in > ${infile}
+	else
+		echo "WARNING: ${infile}.in doesn't exist"
+		printf "" > ${infile}
+	fi
+done
+
+#============================================================
 
 echo
 echo "* Now run 'make'  (or 'make clean' first if the app is already compiled)"

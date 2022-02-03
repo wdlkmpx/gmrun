@@ -4,6 +4,7 @@ compile
 config.guess
 config.h*
 config.log
+config.mk
 config.rpath
 config.status
 config.sub
@@ -13,7 +14,6 @@ depcomp
 install-sh
 libtool
 ltmain.sh
-Makefile
 m4
 missing
 stamp-h1

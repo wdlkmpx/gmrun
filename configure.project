@@ -1,0 +1,103 @@
+#!/bin/sh
+
+PACKAGE="gmrun"
+VERSION="1.2w"
+PACKAGE_URL=''
+
+
+# Project type, use C to avoid checking for C++ compiler and stuff
+# it's possible to specify other values, but the behavior will be "undefined"
+# supported values: C, C++ ("" = C++)
+PROJECT_TYPE=C
+
+# Use mktemp to produce temp files
+#W_USE_MKTEMP=1
+
+# By default the configure script only creates a single config.mk file
+# With this option enabled, configure will also create Makefiles
+#  appending the contents of Makefile.in (Makefile = config.mk + Makefile.in)
+#W_MAKEFILES_IN=1
+
+# Files.in, to replace @VERSION@ and a few other variables
+#  not recommended ...
+#w_infiles='app.spec'
+
+# config.h: custom extra lines
+w_config_h_extra_lines=""
+
+# config.mk: custom extra lines
+w_config_mk_extra_lines=""
+
+
+# configure the project using the commands provided
+# by `configure` and other scripts and commands/tools
+w_main_func()
+{
+	# GCC=yes if gcc has been detected
+	# if the Makefiles are only compatible with GNU make, use w_require_gnu_make
+ 
+	# check required headers and exit on error
+	w_check_headers_required stdio.h
+}
+
+
+#=====================================================================
+# special scripts for optional features and various tasks
+# checks are run after w_main_func
+#
+# - source w_conf/xxx script to support a specific feature
+# - these scripts are meant to be generic, so any project can add them
+# - most of these scripts can handle --enable/--disable cmd options
+#   to make it easier to replace autoconf
+#
+# In most cases, if a feature is enabled, it will be defined in config.h
+#   #define HAVE_ZLIB 1
+# And config.mk
+#   ZLIB_CFLAGS =
+#   ZLIB_LIBS   =
+
+#W_GTK_IS_OPTIONAL=yes
+##--
+#W_GTK_DEFAULT_VERSION=3
+#W_GTK2_MIN_VERSION='2.14'
+#W_GTK3_MIN_VERSION='3.14'
+#W_GTK4_MIN_VERSION=''
+##-- support only 1 version
+#W_GTK_ONLY_VERSION=2
+#W_GTK_MIN_VERSION=2.24
+. w_conf/gtk
+
+
+# ==============
+# gmrun specific
+extra_configure_opts="$extra_configure_opts gmrun"
+
+opt_print_gmrun()
+{
+	echo '  --enable-debug          produce debug build'
+	echo '  --enable-xdg            follow xdg spec for configuration and history files location'
+}
+
+opt_configure_gmrun()
+{
+	enable_debug=no
+	enable_xdg=no
+
+	for i in $@
+	do
+		case $i in
+		--enable-debug)  enable_debug='yes' ;;
+		--disable-debug) enable_debug='no'  ;;
+		--enable-xdg)  enable_xdg='yes' ;;
+		--disable-xdg) enable_xdg='no'  ;;
+		esac
+	done
+
+	if [ "$enable_debug" = "yes" ] ; then
+		CFLAGS="$CFLAGS -g -DDEBUG"
+	fi
+
+	if [ "$enable_xdg" = "yes" ] ; then
+		CFLAGS="$CFLAGS -DFOLLOW_XDG_SPEC"
+	fi
+}
