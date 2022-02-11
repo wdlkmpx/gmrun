@@ -1,11 +1,12 @@
 env:
   CIRRUS_CLONE_DEPTH: 1
 
+#freebsd-11-4
 #freebsd-12-3
 #freebsd-13-0
 freebsd_task:
   freebsd_instance:
-    image_family: freebsd-11-4
+    image_family: freebsd-13-0
     cpu: 1
     memory: 1GB
   install_script:
@@ -16,11 +17,12 @@ freebsd_task:
 #    - uname -a
 
 
+# catalina-base
 # big-sur-base
 # monterey-base
 macos_task:
   macos_instance:
-    image: catalina-base
+    image: monterey-base
     cpu: 1
     memory: 1GB
   install_script:

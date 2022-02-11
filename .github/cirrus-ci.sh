@@ -2,13 +2,13 @@
 
 if [ "$1" = "freebsd" ] ; then
 	#export REPO_AUTOUPDATE=NO
-	pkg install -y pkgconf gtk20
+	pkg install -y devel/pkgconf x11-toolkits/gtk20
 	exit $?
 fi
 
 if [ "$1" = "macos" ] ; then
-	export HOMEBREW_NO_AUTO_UPDATE=1
-	brew install pkg-config &&
+	#export HOMEBREW_NO_AUTO_UPDATE=1
+	# pkg-config is already installed
 	brew install gtk+3
 	exit $?
 fi
