@@ -1,0 +1,29 @@
+env:
+  CIRRUS_CLONE_DEPTH: 1
+
+#freebsd-12-3
+#freebsd-13-0
+freebsd_task:
+  freebsd_instance:
+    image_family: freebsd-11-4
+    cpu: 1
+    memory: 1GB
+  install_script:
+    - .github/cirrus-ci.sh freebsd
+  build_script:
+    - .github/cirrus-ci.sh
+#  test_script:
+#    - uname -a
+
+
+# big-sur-base
+# monterey-base
+macos_task:
+  macos_instance:
+    image: catalina-base
+    cpu: 1
+    memory: 1GB
+  install_script:
+    - .github/cirrus-ci.sh macos
+  build_script:
+    - .github/cirrus-ci.sh
