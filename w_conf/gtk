@@ -96,6 +96,7 @@ opt_configure_gtk()
 		--enable-gtk2)
 			enable_gtk3='no'
 			enable_gtk4='no'
+			enable_gtk2='check'
 			force_gtk2=yes
 			;;
 		--disable-gtk2)
@@ -104,6 +105,7 @@ opt_configure_gtk()
 		--enable-gtk3)
 			enable_gtk4='no'
 			enable_gtk2='no'
+			enable_gtk3='check'
 			force_gtk3=yes
 			;;
 		--disable-gtk3)
@@ -112,8 +114,8 @@ opt_configure_gtk()
 		--enable-gtk4)
 			enable_gtk3='no'
 			enable_gtk2='no'
+			enable_gtk4='check'
 			force_gtk4=yes
-			enable_gtk4=check
 			;;
 		--disable-gtk4)
 			enable_gtk4='no'
@@ -132,10 +134,6 @@ opt_configure_gtk()
 		if [ "$enable_gtk2" = "no" ] && [ "$enable_gtk3" = "no" ] && [ "$enable_gtk4" = "no" ] ; then
 			exit_error "GTK has been disabled but it's required... ERROR"
 		fi
-	fi
-
-	if test "$disable_deprecated_gtk" = "yes"; then
-		CPPFLAGS="$CPPFLAGS -DGDK_DISABLE_DEPRECATED -DGDK_PIXBUF_DISABLE_DEPRECATED -DGDK_PIXBUF_DISABLE_SINGLE_INCLUDES -DGTK_DISABLE_DEPRECATED -DGTK_DISABLE_SINGLE_INCLUDES"
 	fi
 }
 
@@ -210,6 +208,12 @@ GTK_LIBS = ${GTK_LIBS}"
 	GTK_CFLAGS=$(run_pkg_config ${gtk_pkg_config} --cflags 2>/dev/null)
 	GTK_LIBS=$(run_pkg_config ${gtk_pkg_config} --libs 2>/dev/null)
 
+	# disabling deprecated gtk only makes sense if GTK is going to be compiled
+	# so make it part of GTK_CFLAGS
+	if test "$disable_deprecated_gtk" = "yes"; then
+		GTK_CFLAGS="$GTK_CFLAGS -DGDK_DISABLE_DEPRECATED -DGDK_PIXBUF_DISABLE_DEPRECATED -DGDK_PIXBUF_DISABLE_SINGLE_INCLUDES -DGTK_DISABLE_DEPRECATED -DGTK_DISABLE_SINGLE_INCLUDES"
+	fi
+
 	config_h_have="$config_h_have GTK"
 	config_mk_flags="$config_mk_flags GTK"
 }
@@ -259,6 +263,12 @@ opt_check_gtk_only_version()
 		#--
 		GTK_CFLAGS=$(run_pkg_config ${gtkpc} --cflags 2>/dev/null)
 		GTK_LIBS=$(run_pkg_config ${gtkpc} --libs 2>/dev/null)
+	fi
+
+	# disabling deprecated gtk only makes sense if GTK is going to be compiled
+	# so make it part of GTK_CFLAGS
+	if test "$disable_deprecated_gtk" = "yes"; then
+		GTK_CFLAGS="$GTK_CFLAGS -DGDK_DISABLE_DEPRECATED -DGDK_PIXBUF_DISABLE_DEPRECATED -DGDK_PIXBUF_DISABLE_SINGLE_INCLUDES -DGTK_DISABLE_DEPRECATED -DGTK_DISABLE_SINGLE_INCLUDES"
 	fi
 
 	config_h_have="$config_h_have GTK"

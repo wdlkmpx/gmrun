@@ -28,6 +28,8 @@ install: $(APP)
 	mkdir -p $(DESTDIR)$(bindir)
 	install -c $(APP) $(DESTDIR)$(bindir)
 
+install-strip: strip install
+
 uninstall:
 	rm -f $(DESTDIR)$(bindir)/$(APP)
 

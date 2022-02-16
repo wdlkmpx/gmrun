@@ -145,7 +145,7 @@ set_cc()
 	fi
 	CC="$ZCC"
 	echo "$CC"
-	if [ -z "$CC_IS_FULL_PATH" ] ; then
+	if [ -n "$CC" ] && [ -z "$CC_IS_FULL_PATH" ] ; then
 		CC="$(basename $CC)" # not a full path, keep binary name
 	fi
 }
@@ -178,7 +178,7 @@ set_cxx()
 	fi
 	CXX="$ZXX"
 	echo "$CXX"
-	if [ -z "$CXX_IS_FULL_PATH" ] ; then
+	if [ -n "$CXX" ] && [ -z "$CXX_IS_FULL_PATH" ] ; then
 		CXX="$(basename $CXX)" # not a full path, keep binary name
 	fi
 }
@@ -429,10 +429,6 @@ datadir='${datarootdir}'
 localstatedir='${prefix}/var'
 sysconfdir='${prefix}/etc'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
-dvidir='${docdir}'
-htmldir='${docdir}'
-pdfdir='${docdir}'
-psdir='${docdir}'
 infodir='${datarootdir}/info'
 mandir='${datarootdir}/man'
 localedir='${datarootdir}/locale'
@@ -441,8 +437,25 @@ top_builddir="$(pwd)"
 top_srcdir="$(pwd)"
 builddir=.
 srcdir=.
-mkdir_p='mkdir -p'
-MKDIR_P='mkdir -p'
+
+print_eval_define()
+{
+	zzdef=
+	up=
+	for i in $@
+	do
+		zzdef="$(eval echo \$${i})"
+		while [ 1 ]
+		do
+			case $zzdef in
+				"$"*) zzdef="$(eval echo $zzdef)" ;;
+				*) break ;;
+			esac
+		done
+		up="$(echo "$i" | tr '[:lower:]' '[:upper:]')"
+		echo "#define ${up} \"${zzdef}\""
+	done
+}
 
 #==========================================================
 
@@ -485,10 +498,6 @@ Fine tuning of the installation directories:
   --localedir=DIR         locale-dependent data [${localedir}]
   --mandir=DIR            man documentation [${mandir}]
   --docdir=DIR            documentation root [${docdir}]
-  --htmldir=DIR           html documentation [${htmldir}]
-  --dvidir=DIR            dvi documentation [${dvidir}]
-  --pdfdir=DIR            pdf documentation [${pdfdir}]
-  --psdir=DIR             ps documentation [${psdir}]
 
 $(print_optional_features)
 
@@ -578,10 +587,6 @@ do
 		--localstatedir=*) localstatedir="$(getvalue $i)" ;;
 		--sysconfdir=*)    sysconfdir="$(getvalue $i)"    ;;
 		--docdir=*)    docdir="$(getvalue $i)"   ;;
-		--dvidir=*)    dvidir="$(getvalue $i)"   ;;
-		--htmldir=*)   htmldir="$(getvalue $i)"  ;;
-		--pdfdir=*)    pdfdir="$(getvalue $i)"   ;;
-		--psdir=*)     psdir="$(getvalue $i)"    ;;
 		--infodir=*)   infodir="$(getvalue $i)"  ;;
 		--mandir=*)    mandir="$(getvalue $i)"   ;;
 		--localedir=*)   localedir="$(getvalue $i)"   ;;
@@ -650,7 +655,9 @@ if test -n "$host" ; then
 	if [ -z "$CROSS_IS_FULL_PATH" ] ; then
 		# cross compiler is not a full path
 		CC="$(basename $CC)"
-		CXX="$(basename $CXX)"
+		if [ -n "$CXX" ] ; then
+			CXX="$(basename $CXX)"
+		fi
 	fi
 fi
 
@@ -767,10 +774,6 @@ datadir = ${datadir}
 localstatedir = ${localstatedir}
 sysconfdir = ${sysconfdir}
 docdir = ${docdir}
-dvidir = ${dvidir}
-htmldir = ${htmldir}
-pdfdir = ${pdfdir}
-psdir = ${psdir}
 infodir = ${infodir}
 mandir = ${mandir}
 localedir = ${localedir}
@@ -779,11 +782,18 @@ top_builddir = ${top_builddir}
 top_srcdir = ${top_srcdir}
 builddir = ${builddir}
 srcdir = ${srcdir}
-mkdir_p = ${mkdir_p}
-MKDIR_P = ${MKDIR_P}
 
 INSTALL = install -c
 INSTALL_DATA = install -c -m 644
+
+PACKAGE = ${PACKAGE}
+VERSION = ${VERSION}
+PACKAGE_URL = ${PACKAGE_URL}
+PACKAGE_NAME = ${PACKAGE_NAME}
+PACKAGE_STRING = ${PACKAGE_STRING}
+PACKAGE_TARNAME = ${PACKAGE_TARNAME}
+PACKAGE_BUGREPORT = ${PACKAGE_BUGREPORT}
+PACKAGE_VERSION = ${PACKAGE_VERSION}
 
 #=================================================
 ${make_extra_flags}
@@ -834,6 +844,8 @@ cat > config.h <<EOF
 
 ${config_h_extra}
 EOF
+
+print_eval_define datadir localedir docdir >> config.h
 
 if [ -n "${w_headers}" ] ; then
 	(
