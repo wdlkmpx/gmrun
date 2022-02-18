@@ -1,9 +1,20 @@
 #!/bin/sh
 
+# Project name and version
 PACKAGE="gmrun"
 VERSION="1.2w"
 PACKAGE_URL=''
 
+# Flags that will be used in all makefiles that compile code...
+PROJECT_CFLAGS='-Wall -g -O2' # -Wextra -Wno-unused-parameter -Wno-missing-field-initializers
+PROJECT_CXXFLAGS="${PROJECT_CFLAGS}"
+PROJECT_CPPFLAGS=''
+PROJECT_LDFLAGS=''
+PROJECT_LXXFLAGS=''
+PROJECT_LIBS=''
+
+# Enhance --sysroot?
+#W_SYSROOT_PLUS_INCLUDES_AND_LIBS=1
 
 # Project type, use C to avoid checking for C++ compiler and stuff
 # it's possible to specify other values, but the behavior will be "undefined"

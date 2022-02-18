@@ -3,14 +3,6 @@
 # For more information, please refer to <http://unlicense.org/>
 #
 
-APP_CFLAGS='-Wall -g -O2 -DHAVE_CONFIG_H'
-APP_CXXFLAGS="${APP_CFLAGS}"
-#APP_CPPFLAGS='-Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers'
-APP_LDFLAGS=''
-APP_LXXFLAGS=''
-APP_LIBS=''
-#W_SYSROOT_PLUS_INCLUDES_AND_LIBS=1
-
 if ! cd $(dirname "$0") ; then
 	exit 1
 fi
@@ -394,6 +386,7 @@ w_require_gnu_make()
 		W_GNU_MAKE="MAKE = $MAKE"
 	elif make --version 1>/dev/null 2>&1 ; then
 		echo "make"
+		W_GNU_MAKE='MAKE = make'
 	elif gmake --version 1>/dev/null 2>&1 ; then
 		echo "gmake"
 		W_GNU_MAKE='MAKE = gmake'
@@ -415,6 +408,10 @@ test "$RANLIB" || RANLIB='ranlib'
 test "$OBJCOPY" || OBJCOPY='objcopy'
 test "$OBJDUMP" || OBJDUMP='objdump'
 static_link=''
+# mingw
+test "$DLLTOOL" || DLLTOOL='dlltool'
+test "$WINDRES" || WINDRES='windres'
+test "$WINDMC"  || WINDMC='windmc'
 
 prefix=/usr/local
 exec_prefix='${prefix}'
@@ -423,7 +420,6 @@ bindir='${exec_prefix}/bin'
 sbindir='${exec_prefix}/sbin'
 libexecdir='${exec_prefix}/libexec'
 includedir='${prefix}/include'
-oldincludedir=/usr/include
 datarootdir='${prefix}/share'
 datadir='${datarootdir}'
 localstatedir='${prefix}/var'
@@ -438,23 +434,15 @@ top_srcdir="$(pwd)"
 builddir=.
 srcdir=.
 
-print_eval_define()
+print_eval_var()
 {
-	zzdef=
-	up=
-	for i in $@
+	zzvareval=
+	for i in $@ # perform up to 2 evals
 	do
-		zzdef="$(eval echo \$${i})"
-		while [ 1 ]
-		do
-			case $zzdef in
-				"$"*) zzdef="$(eval echo $zzdef)" ;;
-				*) break ;;
-			esac
-		done
-		up="$(echo "$i" | tr '[:lower:]' '[:upper:]')"
-		echo "#define ${up} \"${zzdef}\""
+		zzvareval="$(eval echo $i)"
+		zzvareval="$(eval echo $zzvareval)"
 	done
+	echo "$zzvareval"
 }
 
 #==========================================================
@@ -491,7 +479,6 @@ Fine tuning of the installation directories:
   --runstatedir=DIR       modifiable per-process data [${runstatedir}]
   --libdir=DIR            object code libraries [${libdir}]
   --includedir=DIR        C header files [${includedir}]
-  --oldincludedir=DIR     C header files for non-gcc [${oldincludedir}]
   --datarootdir=DIR       read-only arch.-independent data root [${datarootdir}]
   --datadir=DIR           read-only architecture-independent data [${datadir}]
   --infodir=DIR           info documentation [${infodir}]
@@ -499,14 +486,14 @@ Fine tuning of the installation directories:
   --mandir=DIR            man documentation [${mandir}]
   --docdir=DIR            documentation root [${docdir}]
 
+Optional Features:
+  (Use --disable-FEATURE or --enable-FEATURE)
 $(print_optional_features)
-
 Optional Packages:
-  --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
-  --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  (Use --without-PACKAGE or --with-PACKAGE[=ARG] )
   --with-sysroot[=DIR]    Search for dependent libraries within DIR (or the
                           compiler's sysroot if not specified).
-
+$(print_optional_packages)
 Some influential environment variables:
   CC          C compiler command
   CFLAGS      C compiler flags
@@ -533,13 +520,20 @@ it to find libraries and programs with nonstandard names/locations.
 
 print_optional_features()
 {
-	if [ -n "${extra_configure_opts}" ] ; then
-		echo "Optional Features:"
-	fi
 	for confx in ${extra_configure_opts}
 	do
 		opt_print_${confx}
 	done
+	test -n "${extra_configure_opts}" && printf "  \n"
+}
+
+print_optional_packages()
+{
+	for confx in ${extra_packages_opts}
+	do
+		opt_pkg_print_${confx}
+	done
+	printf "  \n"
 }
 
 print_extra_env_variables()
@@ -573,6 +567,9 @@ do
 		AR=*)    AR="$(getvalue $i)"     ;;
 		AS=*)    AS="$(getvalue $i)"     ;;
 		NM=*)    NM="$(getvalue $i)"     ;;
+		DLLTOOL=*) DLLTOOL="$(getvalue $i)" ;;
+		WINDRES=*) WINDRES="$(getvalue $i)" ;;
+		WINDMC=*)  WINDMC="$(getvalue $i)" ;;
 
 		--prefix=*)     prefix="$(getvalue $i)"     ;;
 		--exec_prefix=*) exec_prefix="$(getvalue $i)"     ;;
@@ -597,11 +594,12 @@ do
 		--enable-static-link)  static_link=1 ;;
 		--disable-static-link) static_link=  ;;
 
+		---*) exit_error "Invalid opt: $i" ;;
 		-h|--help) help ;;
 	esac
 done
 
-for confx in ${extra_configure_opts}
+for confx in ${extra_configure_opts} ${extra_packages_opts}
 do
 	opt_configure_${confx} "$@"
 done
@@ -613,13 +611,19 @@ set_cc
 set_cxx
 set_w_pkg_config
 
+OS_BUILD=$(uname -s)
+OS_CROSS=''
+OS_TARGET=''
+
 if test -n "$host" ; then
 	printf "Checking cross-compiler... "
 	CROSS_IS_FULL_PATH=''
 	CROSS_BASE_DIR=''
+	OS_CROSS="$host"
 	case $host in /*)
 		CROSS_IS_FULL_PATH=1
 		CROSS_BASE_DIR="$(dirname $host)/"
+		OS_CROSS="$(basename $host)"
 		;;
 	esac
 	cross_base_dir=''
@@ -648,6 +652,11 @@ if test -n "$host" ; then
 		RANLIB=${CROSS_BASE_DIR}${host}-${RANLIB}
 		OBJCOPY=${CROSS_BASE_DIR}${host}-${OBJCOPY}
 		OBJDUMP=${CROSS_BASE_DIR}${host}-${OBJDUMP}
+		#--
+		DLLTOOL=${CROSS_BASE_DIR}${host}-${DLLTOOL}
+		WINDRES=${CROSS_BASE_DIR}${host}-${WINDRES}
+		WINDMC=${CROSS_BASE_DIR}${host}-${WINDMC}
+		#--
 		echo "$host"
 	else
 		exit_error "not found"
@@ -693,12 +702,34 @@ fi
 
 #==========================================================
 
-CFLAGS="$CFLAGS $APP_CFLAGS"
-CPPFLAGS="$CPPFLAGS $APP_CPPFLAGS"
-CXXFLAGS="$CXXFLAGS $APP_CXXFLAGS"
-LDFLAGS="$LDFLAGS $APP_LDFLAGS"
-LXXFLAGS="$LXXFLAGS $APP_LXXFLAGS"
-LIBS="$LIBS $APP_LIBS"
+case ${OS_BUILD} in
+	CYGWIN*) OS_BUILD="Cygwin" ;;
+	MINGW*)  OS_BUILD="MinGW"  ;;
+	MSYS*)   OS_BUILD="MinGW"  ;;
+esac
+
+OS_TARGET=${OS_BUILD}
+
+if [ -n "$OS_CROSS" ] ; then
+	# cross-compiling, reset OS_TARGET
+	OS_TARGET=''
+	# determine OS_TARGET again
+	case $OS_CROSS in
+		*-mingw*)   OS_TARGET='MinGW'   ;;
+		*-darwin*)  OS_TARGET='Darwin'  ;;
+		*-linux-*)  OS_TARGET='Linux'   ;;
+		*-freebsd*) OS_TARGET='FreeBSD' ;;
+	esac
+fi
+
+#==========================================================
+
+CFLAGS="$CFLAGS $PROJECT_CFLAGS"
+CPPFLAGS="$CPPFLAGS $PROJECT_CPPFLAGS"
+CXXFLAGS="$CXXFLAGS $PROJECT_CXXFLAGS"
+LDFLAGS="$LDFLAGS $PROJECT_LDFLAGS"
+LXXFLAGS="$LXXFLAGS $PROJECT_LXXFLAGS"
+LIBS="$LIBS $PROJECT_LIBS"
 
 #==========================================================
 
@@ -731,6 +762,10 @@ done
 #             config.mk and Makefiles
 #==========================================================
 
+# ensure -DHAVE_CONFIG_H
+CFLAGS="$CFLAGS -DHAVE_CONFIG_H"
+CXXFLAGS="$CXXFLAGS -DHAVE_CONFIG_H"
+
 if [ -z "$W_MAKEFILES_IN" ] ; then
 	w_makefiles=
 else
@@ -748,9 +783,13 @@ STRIP = ${STRIP}
 AR = ${AR}
 AS = ${AS}
 NM = ${NM}
-RANLIB = ${RANLIB}
+RANLIB  = ${RANLIB}
 OBJCOPY = ${OBJCOPY}
 OBJDUMP = ${OBJDUMP}
+
+DLLTOOL = ${DLLTOOL}
+WINDRES = ${WINDRES}
+WINDMC  = ${WINDMC}
 
 CFLAGS = ${CFLAGS}
 CPPFLAGS = ${CPPFLAGS}
@@ -795,6 +834,10 @@ PACKAGE_TARNAME = ${PACKAGE_TARNAME}
 PACKAGE_BUGREPORT = ${PACKAGE_BUGREPORT}
 PACKAGE_VERSION = ${PACKAGE_VERSION}
 
+OS_BUILD = ${OS_BUILD}
+OS_CROSS = ${OS_CROSS}
+OS_TARGET = ${OS_TARGET}
+
 #=================================================
 ${make_extra_flags}
 
@@ -838,14 +881,15 @@ cat > config.h <<EOF
 #define PACKAGE_BUGREPORT "${PACKAGE_BUGREPORT}"
 #define PACKAGE_VERSION "${PACKAGE_VERSION}"
 
-#ifndef _DARWIN_USE_64_BIT_INODE
-# define _DARWIN_USE_64_BIT_INODE 1
-#endif
+#define PREFIX "$(print_eval_var $prefix)"
+#define DOCDIR "$(print_eval_var $docdir)"
+#define LOCALEDIR "$(print_eval_var $localedir)"
+#define DATADIR "$(print_eval_var $datadir)"
+#define SYSCONFDIR "$(print_eval_var $sysconfdir)"
 
+#define OS_TARGET "${OS_TARGET}"
 ${config_h_extra}
 EOF
-
-print_eval_define datadir localedir docdir >> config.h
 
 if [ -n "${w_headers}" ] ; then
 	(
@@ -866,8 +910,8 @@ if [ -n "${config_h_have}" ] ; then
 	) >> config.h
 fi
 
-echo "#endif /* __W_CONFIGURE_CONFIG_H__ */
-${w_config_h_extra_lines}" >> config.h
+echo "${w_config_h_extra_lines}
+#endif /* __W_CONFIGURE_CONFIG_H__ */" >> config.h
 
 #============================================================
 
