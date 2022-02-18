@@ -1,4 +1,11 @@
 ==========
+gmrun 1.3w
+==========
+  - Replaced autotools with a custom configure script and makefiles
+    users shouldn't notice any difference, the script is supposed to work the same way
+  - gmrun --version
+
+==========
 gmrun 1.2w
 ==========
   - Fix some issues / tweaks

@@ -2,7 +2,7 @@
 
 # Project name and version
 PACKAGE="gmrun"
-VERSION="1.2w"
+VERSION="1.3w"
 PACKAGE_URL=''
 
 # Flags that will be used in all makefiles that compile code...
