@@ -13,25 +13,9 @@ PROJECT_LDFLAGS=''
 PROJECT_LXXFLAGS=''
 PROJECT_LIBS=''
 
-# Enhance --sysroot?
-#W_SYSROOT_PLUS_INCLUDES_AND_LIBS=1
-
 # Project type, use C to avoid checking for C++ compiler and stuff
-# it's possible to specify other values, but the behavior will be "undefined"
 # supported values: C, C++ ("" = C++)
 PROJECT_TYPE=C
-
-# Use mktemp to produce temp files
-#W_USE_MKTEMP=1
-
-# By default the configure script only creates a single config.mk file
-# With this option enabled, configure will also create Makefiles
-#  appending the contents of Makefile.in (Makefile = config.mk + Makefile.in)
-#W_MAKEFILES_IN=1
-
-# Files.in, to replace @VERSION@ and a few other variables
-#  not recommended ...
-#w_infiles='app.spec'
 
 # config.h: custom extra lines
 w_config_h_extra_lines=""

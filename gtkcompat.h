@@ -4,7 +4,7 @@
  * For more information, please refer to <https://unlicense.org>
  */
 
-/** 2021-03-01 **/
+/** 2022-02-22 **/
 
 /*
  * gtkcompat.h, GTK2+ compatibility layer
@@ -167,7 +167,10 @@ extern "C"
 #define gtkcompat_widget_set_halign_right(w)  gtk_widget_set_halign(GTK_WIDGET(w), GTK_ALIGN_END)
 #endif
 
-
+// GTK < 3.14
+#if (GTK_MAJOR_VERSION == 3 && !GTK_CHECK_VERSION(3, 14, 0))
+#error "GTK 3 < 3.14 should not be allowed"
+/*
 // GTK < 3.12
 #if ! GTK_CHECK_VERSION (3, 12, 0)
 #define gtk_application_set_accels_for_action(app,name,accels) \
@@ -195,7 +198,8 @@ extern "C"
 #if ! GTK_CHECK_VERSION (3, 4, 0)
 #define gtk_application_window_new(app) gtk_window_new(GTK_WINDOW_TOPLEVEL)
 #endif
-
+*/
+#endif
 
 
 /* ================================================== */
@@ -238,6 +242,7 @@ extern "C"
    gtk_tree_path_free (path); \
    valid; \
 })
+#define gtk_progress_bar_set_show_text(pb,show)
 #define gtk_widget_override_font(w,f) gtk_widget_modify_font(w,f)
 #define gtkcompat_widget_set_halign_left(w)   gtk_misc_set_alignment(GTK_MISC(w), 0.0, 0.5)
 #define gtkcompat_widget_set_halign_center(w) gtk_misc_set_alignment(GTK_MISC(w), 0.5, 0.5)
@@ -367,7 +372,6 @@ typedef struct _GtkComboBoxPrivate GtkComboBoxTextPrivate;
 
 // GTK < 2.16
 #if ! GTK_CHECK_VERSION (2, 16, 0)
-#define gtk_status_icon_set_tooltip_text(icon,text) gtk_status_icon_set_tooltip(icon,text)
 #define gtk_menu_item_get_label(i) (gtk_label_get_label (GTK_LABEL (GTK_BIN (i)->child)))
 #define gtk_menu_item_set_label(i,label) gtk_label_set_label(GTK_LABEL(GTK_BIN(i)->child), (label) ? label : "")
 #define gtk_menu_item_get_use_underline(i) (gtk_label_get_use_underline (GTK_LABEL (GTK_BIN (i)->child)))
@@ -376,7 +380,9 @@ typedef struct _GtkComboBoxPrivate GtkComboBoxTextPrivate;
 
 
 // GTK < 2.14
-#if ! GTK_CHECK_VERSION (2, 14, 0)
+#if GTK_MAJOR_VERSION == 2 && !GTK_CHECK_VERSION(2, 14, 0)
+#error "GTK 2 < 2.14 should not be allowed"
+/* this is untested
 #define gtk_dialog_get_action_area(dialog)    (GTK_DIALOG(dialog)->action_area)
 #define gtk_dialog_get_content_area(dialog)   (GTK_DIALOG(dialog)->vbox)
 #define gtk_widget_get_window(widget)         (GTK_WIDGET(widget)->window)
@@ -385,6 +391,13 @@ typedef struct _GtkComboBoxPrivate GtkComboBoxTextPrivate;
 #define gtk_menu_get_accel_path(menu)         (GTK_MENU(menu)->accel_path)
 #define gtk_message_dialog_get_image(m)       (GTK_MESSAGE_DIALOG(m)->image)
 #define gtk_entry_get_overwrite_mode(e)       (GTK_ENTRY(e)->overwrite_mode)
+// ---
+#define gtk_adjustment_set_page_increment(a,val) ((a)->page_increment = (val))
+#define gtk_adjustment_get_page_size(a)       ((a)->page_size)
+#define gtk_adjustment_get_lower(a)           ((a)->lower)
+#define gtk_adjustment_get_upper(a)           ((a)->upper) // GTK_ADJUSTMENT
+#define gtk_selection_data_get_length(data)   ((data)->length)
+*/
 #endif
 
 

@@ -23,3 +23,5 @@ src/gmrun
 build-aux
 autoconf
 autoconf-m4
+config.h
+config.sh
