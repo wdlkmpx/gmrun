@@ -1,4 +1,3 @@
-# http://unlicense.org/
 
 SUBDIRS = data src 
 
@@ -14,29 +13,55 @@ WSCRIPT = w_conf/_exec_make_dir.sh $(MAKE)
 
 MAKEFLAGS += --no-print-directory
 
-all: subdirs
-
-subdirs:
-	@sh $(WSCRIPT) "" $(SUBDIRS)
+all:
+	@for dir in ${SUBDIRS} ; do \
+		echo "$(MAKE): Entering directory [$${dir}]"; \
+		$(MAKE) -C $${dir} $@ || exit 1; \
+		echo "$(MAKE): Leaving directory [$${dir}]"; \
+	done
 
 strip:
-	@sh $(WSCRIPT) strip $(SUBDIRS)
+	@for dir in ${SUBDIRS} ; do \
+		echo "$(MAKE): Entering directory [$${dir}]"; \
+		$(MAKE) -C $${dir} $@ || exit 1; \
+		echo "$(MAKE): Leaving directory [$${dir}]"; \
+	done
 
 clean:
-	@sh $(WSCRIPT) clean $(SUBDIRS)
+	@for dir in ${SUBDIRS} ; do \
+		echo "$(MAKE): Entering directory [$${dir}]"; \
+		$(MAKE) -C $${dir} $@ || exit 1; \
+		echo "$(MAKE): Leaving directory [$${dir}]"; \
+	done
 
 distclean:
-	@sh $(WSCRIPT) distclean $(SUBDIRS)
+	@for dir in ${SUBDIRS} ; do \
+		echo "$(MAKE): Entering directory [$${dir}]"; \
+		$(MAKE) -C $${dir} $@ || exit 1; \
+		echo "$(MAKE): Leaving directory [$${dir}]"; \
+	done
 	-rm -f $(DISTCLEAN_FILES)
 
 install:
-	@sh $(WSCRIPT) install $(SUBDIRS)
+	@for dir in ${SUBDIRS} ; do \
+		echo "$(MAKE): Entering directory [$${dir}]"; \
+		$(MAKE) -C $${dir} $@ || exit 1; \
+		echo "$(MAKE): Leaving directory [$${dir}]"; \
+	done
 
 install-strip:
-	@sh $(WSCRIPT) install-strip $(SUBDIRS)
+	@for dir in ${SUBDIRS} ; do \
+		echo "$(MAKE): Entering directory [$${dir}]"; \
+		$(MAKE) -C $${dir} $@ || exit 1; \
+		echo "$(MAKE): Leaving directory [$${dir}]"; \
+	done
 
 uninstall:
-	@sh $(WSCRIPT) uninstall $(SUBDIRS)
+	@for dir in ${SUBDIRS} ; do \
+		echo "$(MAKE): Entering directory [$${dir}]"; \
+		$(MAKE) -C $${dir} $@ || exit 1; \
+		echo "$(MAKE): Leaving directory [$${dir}]"; \
+	done
 
 check:
 
