@@ -9,8 +9,6 @@ include config.mk
 
 DISTCLEAN_FILES += config.h config.mk config.log config.sh
 
-WSCRIPT = w_conf/_exec_make_dir.sh $(MAKE)
-
 MAKEFLAGS += --no-print-directory
 
 all:
