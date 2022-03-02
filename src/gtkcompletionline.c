@@ -933,15 +933,15 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
    int key = event->keyval;
    switch (key)
    {
-      case GDK_KEY_Control_R:
-      case GDK_KEY_Control_L:
-      case GDK_KEY_Shift_R:
-      case GDK_KEY_Shift_L:
-      case GDK_KEY_Alt_R:
-      case GDK_KEY_Alt_L:
+      case GDK_KEY(Control_R):
+      case GDK_KEY(Control_L):
+      case GDK_KEY(Shift_R):
+      case GDK_KEY(Shift_L):
+      case GDK_KEY(Alt_R):
+      case GDK_KEY(Alt_L):
          break;
 
-      case GDK_KEY_Tab:
+      case GDK_KEY(Tab):
          if (timeout_id != 0) {
             g_source_remove(timeout_id);
             timeout_id = 0;
@@ -949,10 +949,10 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
          tab_pressed(cl);
          return TRUE; /* stop signal emission */
 
-      case GDK_KEY_Up:
-      case GDK_KEY_P:
-      case GDK_KEY_p:
-         if (key == GDK_KEY_p || key == GDK_KEY_P) {
+      case GDK_KEY(Up):
+      case GDK_KEY(P):
+      case GDK_KEY(p):
+         if (key == GDK_KEY(p) || key == GDK_KEY(P)) {
             if (!(event->state & GDK_CONTROL_MASK)) {
                goto ordinary;
             }
@@ -973,7 +973,7 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
          }
          return TRUE; /* stop signal emission */
 
-      case GDK_KEY_space:
+      case GDK_KEY(space):
       {
          if (cl->hist_search_mode) {
             search_off (cl);
@@ -984,10 +984,10 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
       }
       return FALSE;
 
-      case GDK_KEY_Down:
-      case GDK_KEY_N:
-      case GDK_KEY_n:
-         if (key == GDK_KEY_n || key == GDK_KEY_N) {
+      case GDK_KEY(Down):
+      case GDK_KEY(N):
+      case GDK_KEY(n):
+         if (key == GDK_KEY(n) || key == GDK_KEY(N)) {
             if (!(event->state & GDK_CONTROL_MASK)) {
                goto ordinary;
             }
@@ -1006,7 +1006,7 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
          }
          return TRUE; /* stop signal emission */
 
-      case GDK_KEY_Return:
+      case GDK_KEY(Return):
          if (cl->win_compl != NULL) {
             destroy_completion_window (cl);
          }
@@ -1017,14 +1017,14 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
          }
          return TRUE; /* stop signal emission */
 
-      case GDK_KEY_S:
-      case GDK_KEY_s:
-      case GDK_KEY_R:
-      case GDK_KEY_r:
+      case GDK_KEY(S):
+      case GDK_KEY(s):
+      case GDK_KEY(R):
+      case GDK_KEY(r):
          if (event->state & GDK_CONTROL_MASK) {
             if (searching_history == FALSE) {
                /* set proper funcs for forward/backward search */
-               if (key == GDK_KEY_R || key == GDK_KEY_r) {  /* reverse - backward */
+               if (key == GDK_KEY(R) || key == GDK_KEY(r)) {  /* reverse - backward */
                   history_search_first_func = history_last;
                   history_search_next_func  = history_prev;
                } else { /* from start - forward */
@@ -1046,7 +1046,7 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
             return TRUE; /* stop signal emission */
          } else goto ordinary;
 
-      case GDK_KEY_exclam:
+      case GDK_KEY(exclam):
          if (cl->hist_search_mode == FALSE) {
            const char * entry_text = gtk_entry_get_text (GTK_ENTRY (cl));
            if (!*entry_text) {
@@ -1062,7 +1062,7 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
          }
          goto ordinary;
 
-      case GDK_KEY_BackSpace:
+      case GDK_KEY(BackSpace):
          if (cl->hist_search_mode == TRUE) {
             if (cl->hist_word[0]) {
                cl->hist_word_count--;
@@ -1074,12 +1074,12 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
          }
          return FALSE;
 
-      case GDK_KEY_Home:
-      case GDK_KEY_End:
+      case GDK_KEY(Home):
+      case GDK_KEY(End):
          clear_selection(cl);
          goto ordinary;
 
-      case GDK_KEY_Escape:
+      case GDK_KEY(Escape):
          if (cl->hist_search_mode == TRUE) {
             search_off(cl);
          } else if (cl->win_compl != NULL) {
@@ -1090,8 +1090,8 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
          }
          return TRUE; /* stop signal emission */
 
-      case GDK_KEY_G:
-      case GDK_KEY_g:
+      case GDK_KEY(G):
+      case GDK_KEY(g):
          if ((event->state & GDK_CONTROL_MASK) && cl->hist_search_mode) {
             search_off(cl);
             gtk_entry_set_text (GTK_ENTRY (cl), "");
