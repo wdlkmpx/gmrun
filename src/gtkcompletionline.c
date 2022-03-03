@@ -445,7 +445,7 @@ static GList * generate_execs_list (char * pfix)
       if (n >= 0) {
          for (j = 0; j < n; j++) {
             // Avoid adding duplicate entries. No need to search for dup while in first PATH entry
-            if (path_gc_i == path_gc || NULL == g_list_find_custom(execs_gc, eps[j]->d_name, (GCompareFunc)g_ascii_strcasecmp)) {
+            if (path_gc_i == path_gc || NULL == g_list_find_custom(execs_gc, eps[j]->d_name, (GCompareFunc)g_strcmp0)) {
                execs_gc = g_list_prepend (execs_gc, g_strdup (eps[j]->d_name));
             }
             free (eps[j]);
