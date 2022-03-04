@@ -60,7 +60,9 @@ enum {
 
 static guint gtk_completion_line_signals[LAST_SIGNAL];
 
-static gchar ** path_gc   = NULL; /* string list (gchar *) containing each directory in PATH */
+/* string list containing each directory in PATH */
+static char ** path_strv   = NULL;
+
 static gchar * prefix     = NULL;
 static int g_show_dot_files;
 
@@ -249,9 +251,9 @@ static void gtk_completion_line_dispose (GObject *object)
    // -- The current fix is to set an empty text
    gtk_entry_set_text (GTK_ENTRY (self), "");
    // --
-   if (path_gc) {
-      g_strfreev (path_gc);
-      path_gc = NULL;
+   if (path_strv) {
+      g_strfreev (path_strv);
+      path_strv = NULL;
    }
    G_OBJECT_CLASS (gtk_completion_line_parent_class)->dispose (object);
 }
@@ -427,32 +429,32 @@ static int select_executables_only(const struct dirent* dent)
 static GList * generate_execs_list (char * pfix)
 {
    // generate_path_list
-   if (!path_gc) {
+   if (!path_strv) {
       char *path_cstr = (char*) getenv("PATH");
-      path_gc = g_strsplit (path_cstr, ":", -1);
+      path_strv = g_strsplit (path_cstr, ":", -1);
    }
 
    GList * execs_gc = NULL;
    if (prefix) g_free (prefix);
    prefix = g_strdup (pfix);
 
-   gchar ** path_gc_i = path_gc;
-   while (*path_gc_i)
+   gchar ** path_strv_i = path_strv;
+   while (*path_strv_i)
    {
       struct dirent **eps;
-      int n = scandir (*path_gc_i, &eps, select_executables_only, NULL);
+      int n = scandir (*path_strv_i, &eps, select_executables_only, NULL);
       int j;
       if (n >= 0) {
          for (j = 0; j < n; j++) {
             // Avoid adding duplicate entries. No need to search for dup while in first PATH entry
-            if (path_gc_i == path_gc || NULL == g_list_find_custom(execs_gc, eps[j]->d_name, (GCompareFunc)g_strcmp0)) {
+            if (path_strv_i == path_strv || NULL == g_list_find_custom(execs_gc, eps[j]->d_name, (GCompareFunc)g_strcmp0)) {
                execs_gc = g_list_prepend (execs_gc, g_strdup (eps[j]->d_name));
             }
             free (eps[j]);
          }
          free (eps);
       }
-      path_gc_i++;
+      path_strv_i++;
    }
    if (prefix) {
       g_free (prefix);
