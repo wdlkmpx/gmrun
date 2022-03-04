@@ -221,7 +221,7 @@ static void on_compline_runwithterm (GtkCompletionLine *cl)
 
 static gboolean search_off_timeout ()
 {
-   set_info_text_color (wlabel, "Run program:", W_TEXT_STYLE_NORMAL);
+   set_info_text_color (wlabel, "Run:", W_TEXT_STYLE_NORMAL);
    gtk_widget_hide (wlabel_search);
    g_search_off_timeout_id = 0;
    return G_SOURCE_REMOVE;
@@ -559,7 +559,7 @@ static void gmrun_activate(void)
    GtkWidget *hhbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 2);
    gtk_box_pack_start (GTK_BOX (main_vbox), hhbox, FALSE, FALSE, 0);
 
-   GtkWidget *label = gtk_label_new("Run program:");
+   GtkWidget *label = gtk_label_new("Run:");
    gtk_box_pack_start (GTK_BOX(hhbox), label, FALSE, FALSE, 10);
    gtkcompat_widget_set_halign_left (GTK_WIDGET (label));
    wlabel = label;
