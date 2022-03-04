@@ -27,11 +27,16 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <limits.h>
 
 #include "config_prefs.h"
 #include "gtkcompletionline.h"
 
 #define HISTORY_FILE "gmrun_history"
+
+#ifndef PATH_MAX
+#define PATH_MAX 4096
+#endif
 
 static int on_cursor_changed_handler = 0;
 static int on_key_press_handler = 0;
@@ -62,6 +67,7 @@ static guint gtk_completion_line_signals[LAST_SIGNAL];
 
 /* string list containing each directory in PATH */
 static char ** path_strv   = NULL;
+static GList * path_glist  = NULL;
 
 static gchar * prefix     = NULL;
 static int g_show_dot_files;
@@ -251,9 +257,9 @@ static void gtk_completion_line_dispose (GObject *object)
    // -- The current fix is to set an empty text
    gtk_entry_set_text (GTK_ENTRY (self), "");
    // --
-   if (path_strv) {
-      g_strfreev (path_strv);
-      path_strv = NULL;
+   if (path_glist) {
+       g_list_free_full (path_glist, g_free);
+       path_glist = NULL;
    }
    G_OBJECT_CLASS (gtk_completion_line_parent_class)->dispose (object);
 }
@@ -428,33 +434,60 @@ static int select_executables_only(const struct dirent* dent)
 /* Iterates though PATH and list all executables */
 static GList * generate_execs_list (char * pfix)
 {
+   int i = 0;
+   GList *gli;
+   char *path_cstr = NULL;
+   struct stat sb;
+   char * dir;
+   char resolved_path[PATH_MAX];
+
    // generate_path_list
-   if (!path_strv) {
-      char *path_cstr = (char*) getenv("PATH");
+   if (!path_glist)
+   {
+      path_cstr = (char*) getenv("PATH");
       path_strv = g_strsplit (path_cstr, ":", -1);
+      for (i = 0; path_strv[i]; i++)
+      {
+          // deal with syminks and duplicate dirs
+          *resolved_path = 0;
+          lstat (path_strv[i], &sb);
+          if (S_ISLNK(sb.st_mode)) {
+              realpath (path_strv[i], resolved_path);
+          } else if (!S_ISDIR(sb.st_mode)) {
+              continue;
+          }
+          dir = path_strv[i];
+          if (*resolved_path) {
+              dir = resolved_path;
+          }
+          // Avoid adding duplicate dirs. No need to search for dup while in first PATH entry
+          if (i == 0 || !g_list_find_custom (path_glist, dir, (GCompareFunc)g_strcmp0)) {
+              path_glist = g_list_prepend (path_glist, g_strdup (dir));
+          }
+      }
+      g_strfreev (path_strv);
    }
 
    GList * execs_gc = NULL;
    if (prefix) g_free (prefix);
    prefix = g_strdup (pfix);
 
-   gchar ** path_strv_i = path_strv;
-   while (*path_strv_i)
+   for (gli = path_glist;  gli;  gli = gli->next)
    {
       struct dirent **eps;
-      int n = scandir (*path_strv_i, &eps, select_executables_only, NULL);
+      dir = (char *) gli->data;
+      int n = scandir (dir, &eps, select_executables_only, NULL);
       int j;
       if (n >= 0) {
          for (j = 0; j < n; j++) {
-            // Avoid adding duplicate entries. No need to search for dup while in first PATH entry
-            if (path_strv_i == path_strv || NULL == g_list_find_custom(execs_gc, eps[j]->d_name, (GCompareFunc)g_strcmp0)) {
+            // Avoid adding duplicate entries. No need to search for dup while in first dir
+            if (gli == path_glist || NULL == g_list_find_custom(execs_gc, eps[j]->d_name, (GCompareFunc)g_strcmp0)) {
                execs_gc = g_list_prepend (execs_gc, g_strdup (eps[j]->d_name));
             }
             free (eps[j]);
          }
          free (eps);
       }
-      path_strv_i++;
    }
    if (prefix) {
       g_free (prefix);
