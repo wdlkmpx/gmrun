@@ -76,6 +76,8 @@ GType gtk_completion_line_get_type (void);
 GtkWidget * gtk_completion_line_new ();
 void gtk_completion_line_last_history_item (GtkCompletionLine*);
 
+void compline_clear_selection (GtkCompletionLine* cl);
+
 #ifdef __cplusplus
 }
 #endif

@@ -632,7 +632,7 @@ static void on_cursor_changed(GtkTreeView *tree, gpointer data)
    complete_from_list (object, NULL);
 }
 
-static void clear_selection (GtkCompletionLine* cl)
+void compline_clear_selection (GtkCompletionLine* cl)
 {
    int pos = gtk_editable_get_position (GTK_EDITABLE (cl));
    gtk_editable_select_region (GTK_EDITABLE(cl), pos, pos);
@@ -667,7 +667,7 @@ static void complete_line (GtkCompletionLine *object)
    if (num_items == 1) { // only 1 item
       complete_from_list (object, (char*)(FileList->data));
       g_signal_emit_by_name(G_OBJECT(object), "unique");
-      clear_selection (object);
+      compline_clear_selection (object);
       g_list_free_full (WordList, g_free);
       g_list_free_full (FileList, g_free);
       return;
@@ -1114,7 +1114,7 @@ on_key_press(GtkCompletionLine *cl, GdkEventKey *event, gpointer data)
 
       case GDK_KEY(Home):
       case GDK_KEY(End):
-         clear_selection(cl);
+         compline_clear_selection(cl);
          goto ordinary;
 
       case GDK_KEY(Escape):
