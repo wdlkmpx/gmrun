@@ -33,7 +33,7 @@ extern "C"
 typedef struct _GtkCompletionLine GtkCompletionLine;
 typedef struct _GtkCompletionLineClass GtkCompletionLineClass;
 
-#define MAX_HISTWORD_CHARS 1024
+#define MAX_HISTWORD_CHARS 2048
 
 struct _GtkCompletionLine
 {
