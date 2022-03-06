@@ -318,7 +318,7 @@ gboolean config_get_string_expanded (const char * key, char ** out_str)
          value = replace_variable (value2);
          free (value2);
       }
-   } else {
+   } else if (value1) {
       value = strdup (value1);
    }
 
