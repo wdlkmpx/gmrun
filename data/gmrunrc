@@ -11,7 +11,7 @@ AlwaysInTerm = ssh telnet ftp lynx mc vi vim pine centericq perldoc man
 # - WxH+x+y width x height +x +y 400x0+200+100
 #
 # If +x+y is not specified (or not allowed), the gmrun window is displayed centered
-Geometry = 450x
+Geometry = 500x
 
 # History size
 History = 256

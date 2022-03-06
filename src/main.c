@@ -635,8 +635,8 @@ static void gmrun_activate(void)
       gtk_window_set_default_size (GTK_WINDOW (dialog), window_geom.width,
                                    window_geom.height);
    } else {
-      /* default width = 450 */
-      gtk_window_set_default_size (GTK_WINDOW (dialog), 450, -1);
+      /* default width = 500 */
+      gtk_window_set_default_size (GTK_WINDOW (dialog), 500, -1);
    }
 
    // window icon
