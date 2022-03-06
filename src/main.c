@@ -39,6 +39,7 @@ GtkApplication * gmrun_app = NULL;
 
 char * gmrun_text = NULL;
 static void gmrun_exit (void);
+static gint signal_connect_id_cb_dialog_size_allocate;
 GtkAllocation window_geom = { -1, -1, -1, -1 };
 /* widgets that are used in several functions */
 GtkWidget * compline = NULL;
@@ -531,6 +532,21 @@ static void on_compline_activated (GtkCompletionLine *cl)
 }
 
 
+static void cb_dialog_size_allocate (GtkWidget *w, GdkRectangle *alloc, gpointer udata)
+{
+    // https://stackoverflow.com/questions/4886420/gtk-forbid-vertical-resize-of-gtkwindow
+    GdkGeometry hints;
+    g_signal_handler_disconnect (G_OBJECT(w), signal_connect_id_cb_dialog_size_allocate);
+    /* dummy values for minx/max to no restrict vertical resizing */
+    hints.min_width = 0;
+    hints.max_width = G_MAXINT;
+    /* do not allow vertical resizing */
+    hints.min_height = alloc->height;
+    hints.max_height = alloc->height;
+    gtk_window_set_geometry_hints (GTK_WINDOW(w), NULL, &hints,
+                                   GDK_HINT_MIN_SIZE | GDK_HINT_MAX_SIZE);
+}
+
 // =============================================================
 
 
@@ -553,8 +569,11 @@ static void gmrun_activate(void)
    gtk_window_set_title (GTK_WINDOW(window), "A simple launcher with completion");
 
    gtk_container_set_border_width(GTK_CONTAINER(dialog), 4);
-   g_signal_connect(G_OBJECT(dialog), "destroy",
-                  G_CALLBACK(gmrun_exit), NULL);
+   g_signal_connect (G_OBJECT(dialog), "destroy",
+                     G_CALLBACK(gmrun_exit), NULL);
+   signal_connect_id_cb_dialog_size_allocate = 
+      g_signal_connect (G_OBJECT(dialog), "size-allocate",
+                        G_CALLBACK(cb_dialog_size_allocate), NULL);
 
    GtkWidget *hhbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 2);
    gtk_box_pack_start (GTK_BOX (main_vbox), hhbox, FALSE, FALSE, 0);
