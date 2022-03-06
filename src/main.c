@@ -77,6 +77,10 @@ static void add_search_off_timeout (guint32 timeout, GSourceFunc func)
 static void set_info_text_color (GtkWidget *w, const char *text, int spec)
 {
    char *markup = NULL;
+   if (spec == W_TEXT_STYLE_NORMAL) {
+       gtk_label_set_text (GTK_LABEL(w), text);
+       return;
+   }
    static const char * colors[] = {
       "black", /* W_TEXT_STYLE_NORMAL */
       "red",   /* W_TEXT_STYLE_NOTFOUND */
@@ -144,8 +148,7 @@ static void run_the_command (char * cmd)
 }
 
 
-static void
-on_ext_handler (GtkCompletionLine *cl, const char * filename)
+static void on_ext_handler (GtkCompletionLine *cl, const char * filename)
 {
  if (USE_GLIB_XDG) // GLib XDG handling (freedesktop specification)
  {
@@ -228,29 +231,25 @@ static gboolean search_off_timeout ()
    return G_SOURCE_REMOVE;
 }
 
-static void
-on_compline_unique (GtkCompletionLine *cl)
+static void on_compline_unique (GtkCompletionLine *cl)
 {
    set_info_text_color (wlabel, "unique", W_TEXT_STYLE_UNIQUE);
    add_search_off_timeout (1000, NULL);
 }
 
-static void
-on_compline_notunique (GtkCompletionLine *cl)
+static void on_compline_notunique (GtkCompletionLine *cl)
 {
    set_info_text_color (wlabel, "not unique", W_TEXT_STYLE_NOTUNIQUE);
    add_search_off_timeout (1000, NULL);
 }
 
-static void
-on_compline_incomplete (GtkCompletionLine *cl)
+static void on_compline_incomplete (GtkCompletionLine *cl)
 {
    set_info_text_color (wlabel, "not found", W_TEXT_STYLE_NOTFOUND);
    add_search_off_timeout (1000, NULL);
 }
 
-static void
-on_search_mode (GtkCompletionLine *cl)
+static void on_search_mode (GtkCompletionLine *cl)
 {
    if (cl->hist_search_mode == TRUE) {
       gtk_widget_show (wlabel_search);
@@ -263,8 +262,7 @@ on_search_mode (GtkCompletionLine *cl)
    }
 }
 
-static void
-on_search_letter(GtkCompletionLine *cl, GtkWidget *label)
+static void on_search_letter (GtkCompletionLine *cl, GtkWidget *label)
 {
    gtk_label_set_text (GTK_LABEL(label), cl->hist_word);
 }
@@ -276,8 +274,7 @@ static gboolean search_fail_timeout (gpointer user_data)
    return G_SOURCE_REMOVE;
 }
 
-static void
-on_search_not_found(GtkCompletionLine *cl)
+static void on_search_not_found(GtkCompletionLine *cl)
 {
    set_info_text_color (wlabel, "Not Found!", W_TEXT_STYLE_NOTFOUND);
    add_search_off_timeout (1000, (GSourceFunc) search_fail_timeout);
