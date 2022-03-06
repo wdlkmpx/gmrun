@@ -654,7 +654,10 @@ static void gmrun_activate(void)
    gtk_widget_show_all (dialog);
 
    gtk_window_set_focus (GTK_WINDOW(dialog), compline);
-   compline_clear_selection (GTK_COMPLETION_LINE (compline));
+   if (gmrun_text) {
+      // clear selection if command (text) is supplied as a parameter
+      compline_clear_selection (GTK_COMPLETION_LINE (compline));
+   }
 }
 
 // =============================================================
