@@ -1,0 +1,104 @@
+#!/bin/sh
+# http://unlicense.org/
+
+#=======================================
+apps_to_check="$apps_to_check gettext"
+extra_configure_opts="$extra_configure_opts gettext"
+#=======================================
+
+export GETTEXT_PACKAGE
+
+
+opt_print_gettext()
+{
+	echo '  --disable-nls           do not use Native Language Support (autodetect)'
+}
+
+
+opt_configure_gettext()
+{
+	enable_gettext='check'
+	for i in $@
+	do
+		case $i in
+		--enable-nls)  enable_gettext='yes' ;;
+		--disable-nls) enable_gettext='no'  ;;
+		# ./configure po|pot
+		pot)
+			./po/zzpo.sh pot ${GETTEXT_PACKAGE}
+			exit $? ;;
+		po)
+			./po/zzpo.sh po  ${GETTEXT_PACKAGE}
+			#sed -i '/#~ /d' po/*.po
+			exit 0
+			;;
+		esac
+	done
+}
+
+
+opt_check_gettext()
+{
+	if [ "$enable_gettext" = "no" ] ; then
+		return
+	fi
+
+	printf "Checking for gettext... "
+	ccode='#include <libintl.h>
+#include <locale.h>
+int main(void) {
+	setlocale(LC_ALL, "");
+	gettext("hi");
+	return 0;
+}
+'
+	w_compile_c_code "$ccode" "" ""
+	if [ $? = 0 ] ; then
+		echo "yes"
+	else
+		w_compile_c_code "$ccode" "" "-lintl"
+		if [ $? = 0 ] ; then
+			echo "yes (libintl)"
+			LDFLAGS="$LDFLAGS -lintl"
+		else
+			echo "no"
+			if [ "$enable_gettext" = "yes" ] ; then
+				exit_error "Use --disable-nls"
+			fi
+			enable_gettext='no'
+		fi
+	fi
+
+	if [ "$enable_gettext" = "yes" ] ; then
+		w_check_commands_required msgfmt
+	elif [ "$enable_gettext" = "check" ] ; then
+		w_check_command msgfmt
+		if [ $? -ne 0 ] ; then
+			enable_gettext='no'
+		fi
+	fi
+
+	if [ "$enable_gettext" = "no" ] ; then
+		return
+	fi
+
+	LINGUAS="$(ls po/*.po | sed -e 's%\.po$%%' -e 's%po/%%')"
+
+	config_h_extra="$config_h_extra
+#define ENABLE_NLS 1
+#define HAVE_GETTEXT 1
+#define GETTEXT_PACKAGE \"$GETTEXT_PACKAGE\""
+
+	config_sh_extra="$config_sh_extra
+ENABLE_NLS=1
+USE_NLS=yes
+LINGUAS=\"$(echo $LINGUAS)\"
+GETTEXT_PACKAGE=\"$GETTEXT_PACKAGE\""
+
+	# config.mk
+	make_extra_flags="$make_extra_flags
+USE_NLS = yes
+LINGUAS = $(echo $LINGUAS)
+GETTEXT_PACKAGE = $GETTEXT_PACKAGE
+"
+}

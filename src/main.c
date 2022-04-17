@@ -19,8 +19,17 @@
 #include <config.h>
 #endif
 
-#include <gtk/gtk.h>
+#if ENABLE_NLS
+#include <locale.h>
+#include <libintl.h>
+#define _(x) gettext(x)
+#define N_(x) (x)
+#else
+#define _(x)  (x)
+#define N_(x) (x)
+#endif
 
+#include <gtk/gtk.h>
 #include <unistd.h>
 #include <errno.h>
 
@@ -165,7 +174,7 @@ static void on_ext_handler (GtkCompletionLine *cl, const char * filename)
          g_free (mime_type);
          if (app_info) {
             handler = g_app_info_get_commandline (app_info);
-            msg = g_strconcat("Handler: ", handler, NULL);
+            msg = g_strconcat(_("Program: "), handler, NULL);
             gtk_label_set_text (GTK_LABEL (wlabel_search), msg);
             gtk_widget_show (wlabel_search);
 
@@ -186,7 +195,7 @@ static void on_ext_handler (GtkCompletionLine *cl, const char * filename)
    }
    const char * handler = config_get_handler_for_extension (ext);
    if (handler) {
-      char * tmp = g_strconcat ("Handler: ", handler, NULL);
+      char * tmp = g_strconcat (_("Program: "), handler, NULL);
       gtk_label_set_text (GTK_LABEL (wlabel_search), tmp);
       gtk_widget_show (wlabel_search);
       g_free (tmp);
@@ -225,7 +234,7 @@ static void on_compline_runwithterm (GtkCompletionLine *cl)
 
 static gboolean search_off_timeout ()
 {
-   set_info_text_color (wlabel, "Run:", W_TEXT_STYLE_NORMAL);
+   set_info_text_color (wlabel, _("Run:"), W_TEXT_STYLE_NORMAL);
    gtk_widget_hide (wlabel_search);
    g_search_off_timeout_id = 0;
    return G_SOURCE_REMOVE;
@@ -233,19 +242,19 @@ static gboolean search_off_timeout ()
 
 static void on_compline_unique (GtkCompletionLine *cl)
 {
-   set_info_text_color (wlabel, "unique", W_TEXT_STYLE_UNIQUE);
+   set_info_text_color (wlabel, _("unique"), W_TEXT_STYLE_UNIQUE);
    add_search_off_timeout (1000, NULL);
 }
 
 static void on_compline_notunique (GtkCompletionLine *cl)
 {
-   set_info_text_color (wlabel, "not unique", W_TEXT_STYLE_NOTUNIQUE);
+   set_info_text_color (wlabel, _("not unique"), W_TEXT_STYLE_NOTUNIQUE);
    add_search_off_timeout (1000, NULL);
 }
 
 static void on_compline_incomplete (GtkCompletionLine *cl)
 {
-   set_info_text_color (wlabel, "not found", W_TEXT_STYLE_NOTFOUND);
+   set_info_text_color (wlabel, _("not found"), W_TEXT_STYLE_NOTFOUND);
    add_search_off_timeout (1000, NULL);
 }
 
@@ -253,11 +262,11 @@ static void on_search_mode (GtkCompletionLine *cl)
 {
    if (cl->hist_search_mode == TRUE) {
       gtk_widget_show (wlabel_search);
-      gtk_label_set_text (GTK_LABEL (wlabel), "Search:");
+      gtk_label_set_text (GTK_LABEL (wlabel), _("Search:"));
       gtk_label_set_text (GTK_LABEL (wlabel_search), cl->hist_word);
    } else {
       gtk_widget_hide (wlabel_search);
-      gtk_label_set_text (GTK_LABEL (wlabel), "Search OFF");
+      gtk_label_set_text (GTK_LABEL (wlabel), _("Search OFF"));
       add_search_off_timeout (1000, NULL);
    }
 }
@@ -269,14 +278,14 @@ static void on_search_letter (GtkCompletionLine *cl, GtkWidget *label)
 
 static gboolean search_fail_timeout (gpointer user_data)
 {
-   set_info_text_color (wlabel, "Search:", W_TEXT_STYLE_NOTUNIQUE);
+   set_info_text_color (wlabel, _("Search:"), W_TEXT_STYLE_NOTUNIQUE);
    g_search_off_timeout_id = 0;
    return G_SOURCE_REMOVE;
 }
 
 static void on_search_not_found(GtkCompletionLine *cl)
 {
-   set_info_text_color (wlabel, "Not Found!", W_TEXT_STYLE_NOTFOUND);
+   set_info_text_color (wlabel, _("Not Found!"), W_TEXT_STYLE_NOTFOUND);
    add_search_off_timeout (1000, (GSourceFunc) search_fail_timeout);
 }
 
@@ -325,15 +334,14 @@ static gboolean url_check (GtkCompletionLine *cl, char * entry_text)
          history_append (cl->hist, entry_text);
          g_object_unref (app);
       } else {
-         char *tmp = g_strconcat ("No URL handler for [", protocol, "]", NULL);
+         char *tmp = g_strdup_printf (_("No program associated to [ %s ]"), protocol);
          set_info_text_color (wlabel, tmp, W_TEXT_STYLE_NOTFOUND);
          add_search_off_timeout (1000, NULL);
          g_free (tmp);
       }
       return TRUE;
    }
-   *delim = ':';
-   return FALSE;
+   *delim = ':';   return FALSE;
 
  }
  else //-------- custom URL handlers
@@ -385,7 +393,7 @@ static gboolean url_check (GtkCompletionLine *cl, char * entry_text)
       g_free (cmd);
    } else {
       g_free (tmp);
-      tmp = g_strconcat ("No URL handler for [", config_key, "]", NULL);
+      tmp = g_strdup_printf (_("No program associated to [ %s ]"), config_key);
       set_info_text_color (wlabel, tmp, W_TEXT_STYLE_NOTFOUND);
       add_search_off_timeout (1000, NULL);
    }
@@ -555,15 +563,14 @@ static void gmrun_activate(void)
    GtkWidget * window = gtk_application_window_new (gmrun_app);
    dialog = gtk_dialog_new();
    gtk_window_set_transient_for( (GtkWindow*)dialog, (GtkWindow*)window );
-   gtk_widget_realize(dialog);
+   gtk_window_set_title (GTK_WINDOW(window), "gmrun");
+   gtk_window_set_title (GTK_WINDOW(dialog), "gmrun");
    main_vbox = gtk_dialog_get_content_area (GTK_DIALOG (dialog));
 
    // this removes the title bar..
+   gtk_widget_realize (dialog);
    GdkWindow *gwin = gtk_widget_get_window (GTK_WIDGET(dialog));
    gdk_window_set_decorations (gwin, GDK_DECOR_BORDER);
-
-   gtk_widget_set_name (GTK_WIDGET (dialog), "gmrun");
-   gtk_window_set_title (GTK_WINDOW(window), "A simple launcher with completion");
 
    gtk_container_set_border_width(GTK_CONTAINER(dialog), 4);
    g_signal_connect (G_OBJECT(dialog), "destroy",
@@ -575,7 +582,7 @@ static void gmrun_activate(void)
    GtkWidget *hhbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 2);
    gtk_box_pack_start (GTK_BOX (main_vbox), hhbox, FALSE, FALSE, 0);
 
-   GtkWidget *label = gtk_label_new("Run:");
+   GtkWidget *label = gtk_label_new (_("Run:"));
    gtk_box_pack_start (GTK_BOX(hhbox), label, FALSE, FALSE, 10);
    gtkcompat_widget_set_halign_left (GTK_WIDGET (label));
    wlabel = label;
@@ -585,7 +592,7 @@ static void gmrun_activate(void)
    wlabel_search = label_search;
 
    compline = gtk_completion_line_new();
-   gtk_widget_set_name (compline, "gmrun_compline");
+
    gtk_box_pack_start (GTK_BOX (main_vbox), compline, TRUE, TRUE, 0);
 
    if (!config_get_int ("SHELL_RUN", &SHELL_RUN)) {
@@ -787,6 +794,12 @@ void gmrun_exit(void)
 int main(int argc, char **argv)
 {
    int status = 0;
+
+#ifdef ENABLE_NLS
+   bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
+   bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
+   textdomain (GETTEXT_PACKAGE);
+#endif
 
    config_init ();
    parse_command_line (argc, argv);

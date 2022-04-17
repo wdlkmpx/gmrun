@@ -51,6 +51,9 @@ w_main_func()
 #   ZLIB_CFLAGS =
 #   ZLIB_LIBS   =
 
+GETTEXT_PACKAGE="$PACKAGE"
+. w_conf/gettext
+
 #W_GTK_IS_OPTIONAL=yes
 ##--
 #W_GTK_DEFAULT_VERSION=3

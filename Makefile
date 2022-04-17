@@ -1,5 +1,5 @@
 
-SUBDIRS = data src 
+SUBDIRS = data po src 
 
 DISTCLEAN_FILES = 
 
