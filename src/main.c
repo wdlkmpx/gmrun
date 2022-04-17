@@ -334,7 +334,7 @@ static gboolean url_check (GtkCompletionLine *cl, char * entry_text)
          history_append (cl->hist, entry_text);
          g_object_unref (app);
       } else {
-         char *tmp = g_strdup_printf (_("No program associated to [ %s ]"), protocol);
+         char *tmp = g_strdup_printf (_("No program associated with [ %s ]"), protocol);
          set_info_text_color (wlabel, tmp, W_TEXT_STYLE_NOTFOUND);
          add_search_off_timeout (1000, NULL);
          g_free (tmp);
@@ -393,7 +393,7 @@ static gboolean url_check (GtkCompletionLine *cl, char * entry_text)
       g_free (cmd);
    } else {
       g_free (tmp);
-      tmp = g_strdup_printf (_("No program associated to [ %s ]"), config_key);
+      tmp = g_strdup_printf (_("No program associated with [ %s ]"), config_key);
       set_info_text_color (wlabel, tmp, W_TEXT_STYLE_NOTFOUND);
       add_search_off_timeout (1000, NULL);
    }

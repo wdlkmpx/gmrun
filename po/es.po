@@ -3,44 +3,44 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Language: \n"
+"Language: es\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
 #: ../src/main.c:177 ../src/main.c:198
 msgid "Program: "
-msgstr ""
+msgstr "Programa: "
 
 #: ../src/main.c:237 ../src/main.c:585
 msgid "Run:"
-msgstr ""
+msgstr "Ejecutar:"
 
 #: ../src/main.c:245
 msgid "unique"
-msgstr ""
+msgstr "único"
 
 #: ../src/main.c:251
 msgid "not unique"
-msgstr ""
+msgstr "no único"
 
 #: ../src/main.c:257
 msgid "not found"
-msgstr ""
+msgstr "no encontrado"
 
 #: ../src/main.c:265 ../src/main.c:281
 msgid "Search:"
-msgstr ""
+msgstr "Buscar:"
 
 #: ../src/main.c:269
 msgid "Search OFF"
-msgstr ""
+msgstr "Búsqueda DESACTIVADA"
 
 #: ../src/main.c:288
 msgid "Not Found!"
-msgstr ""
+msgstr "No encontrado!"
 
 #: ../src/main.c:337 ../src/main.c:396
 #, c-format
 msgid "No program associated with [ %s ]"
-msgstr ""
+msgstr "Ningún programa asociado con [ %s ]"
