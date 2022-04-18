@@ -10,37 +10,37 @@ msgstr ""
 
 #: ../src/main.c:177 ../src/main.c:198
 msgid "Program: "
-msgstr ""
+msgstr "תוכנית: "
 
 #: ../src/main.c:237 ../src/main.c:585
 msgid "Run:"
-msgstr ""
+msgstr "הפעל:"
 
 #: ../src/main.c:245
 msgid "unique"
-msgstr ""
+msgstr "מיוחד"
 
 #: ../src/main.c:251
 msgid "not unique"
-msgstr ""
+msgstr "לא מיוחד"
 
 #: ../src/main.c:257
 msgid "not found"
-msgstr ""
+msgstr "לא נמצא"
 
 #: ../src/main.c:265 ../src/main.c:281
 msgid "Search:"
-msgstr ""
+msgstr "חיפוש:"
 
 #: ../src/main.c:269
 msgid "Search OFF"
-msgstr ""
+msgstr "חיפוש כבוי"
 
 #: ../src/main.c:288
 msgid "Not Found!"
-msgstr ""
+msgstr "לא נמצא!"
 
 #: ../src/main.c:337 ../src/main.c:396
 #, c-format
 msgid "No program associated with [ %s ]"
-msgstr ""
+msgstr "אין תוכנית משוייכת עם [ %s ]"
