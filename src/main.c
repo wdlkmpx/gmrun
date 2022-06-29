@@ -671,6 +671,8 @@ static void gmrun_activate(void)
    if (gmrun_text) {
       // clear selection if command (text) is supplied as a parameter
       compline_clear_selection (GTK_COMPLETION_LINE (compline));
+      // free memory
+      free (gmrun_text);
    }
 }
 
@@ -679,7 +681,8 @@ static void gmrun_activate(void)
 static void parse_command_line (int argc, char ** argv)
 {
    // --geometry / parse commandline options
-   static char *geometry_str = NULL;
+   static char *geometry_str = NULL, *tmp = NULL;
+   int i;
    static gboolean show_version;
    GError *error = NULL;
    GOptionContext *context = NULL;
@@ -704,7 +707,17 @@ static void parse_command_line (int argc, char ** argv)
    if (context) g_option_context_free (context);
    if (error)   g_error_free (error);
    if (argc >= 2) {
-      gmrun_text = argv[1];
+      for (i = 1; i < argc; i++)
+      { // all cli arguments are part of the same line
+        if (tmp) {
+            gmrun_text = g_strconcat (tmp, " ", argv[i], NULL);
+            free (tmp);
+            tmp = gmrun_text;
+        } else {
+            tmp = strdup (argv[i]);
+            gmrun_text = tmp;
+        }
+      }
    }
    // --
 
