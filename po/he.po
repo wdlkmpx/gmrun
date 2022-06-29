@@ -12,7 +12,7 @@ msgstr ""
 msgid "Program: "
 msgstr "תוכנית: "
 
-#: ../src/main.c:237 ../src/main.c:585
+#: ../src/main.c:237 ../src/main.c:577
 msgid "Run:"
 msgstr "הפעל:"
 
@@ -39,8 +39,3 @@ msgstr "חיפוש כבוי"
 #: ../src/main.c:288
 msgid "Not Found!"
 msgstr "לא נמצא!"
-
-#: ../src/main.c:337 ../src/main.c:396
-#, c-format
-msgid "No program associated with [ %s ]"
-msgstr "אין תוכנית משוייכת עם [ %s ]"

@@ -12,7 +12,7 @@ msgstr ""
 msgid "Program: "
 msgstr ""
 
-#: ../src/main.c:237 ../src/main.c:585
+#: ../src/main.c:237 ../src/main.c:577
 msgid "Run:"
 msgstr ""
 
@@ -38,9 +38,4 @@ msgstr ""
 
 #: ../src/main.c:288
 msgid "Not Found!"
-msgstr ""
-
-#: ../src/main.c:337 ../src/main.c:396
-#, c-format
-msgid "No program associated with [ %s ]"
 msgstr ""

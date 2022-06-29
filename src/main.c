@@ -321,27 +321,22 @@ static gboolean url_check (GtkCompletionLine *cl, char * entry_text)
    if (!delim || !*(delim+1)) {
       return FALSE;
    }
-   protocol = entry_text;
    url = delim + 1;
-   *delim = 0;
-
    if (url[0] == '/' && url[1] == '/')
    {
+      protocol = entry_text;
+      *delim = 0;
       app = g_app_info_get_default_for_uri_scheme (protocol);
-      if (app) { // found known uri handler for protocol
-         *delim = ':';
+      *delim = ':';
+      if (app)
+      { // found known uri handler for protocol
          xdg_app_run_command (app, entry_text);
          history_append (cl->hist, entry_text);
          g_object_unref (app);
-      } else {
-         char *tmp = g_strdup_printf (_("No program associated with [ %s ]"), protocol);
-         set_info_text_color (wlabel, tmp, W_TEXT_STYLE_NOTFOUND);
-         add_search_off_timeout (1000, NULL);
-         g_free (tmp);
+         return TRUE;
       }
-      return TRUE;
    }
-   *delim = ':';   return FALSE;
+   return FALSE;
 
  }
  else //-------- custom URL handlers
@@ -387,19 +382,15 @@ static gboolean url_check (GtkCompletionLine *cl, char * entry_text)
       g_free (url_handler);
    }
 
+   g_free (config_key);
+   g_free (tmp);
    if (cmd) {
       history_append (cl->hist, entry_text);
       run_the_command (cmd);
       g_free (cmd);
-   } else {
-      g_free (tmp);
-      tmp = g_strdup_printf (_("No program associated with [ %s ]"), config_key);
-      set_info_text_color (wlabel, tmp, W_TEXT_STYLE_NOTFOUND);
-      add_search_off_timeout (1000, NULL);
+      return TRUE;
    }
-   g_free (config_key);
-   g_free (tmp);
-   return TRUE;
+   return FALSE;
  }
 }
 
@@ -496,8 +487,8 @@ static void on_compline_activated (GtkCompletionLine *cl)
    char * entry_text = g_strdup (gtk_entry_get_text (GTK_ENTRY(cl)));
    g_strstrip (entry_text);
 
-   if (url_check (cl, entry_text) == TRUE
-       || ext_check (cl, entry_text) == TRUE)  {
+   if (url_check(cl,entry_text) == TRUE || ext_check(cl,entry_text) == TRUE)
+   {
       g_free (entry_text);
       return;
    }
