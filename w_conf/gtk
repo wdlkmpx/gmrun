@@ -7,9 +7,7 @@
 # W_GTK_DEFAULT_VERSION can be 2/3/4
 
 #=======================================
-apps_to_check="$apps_to_check gtk"
-extra_env_vars="$extra_env_vars GTK"
-extra_configure_opts="$extra_configure_opts gtk"
+w_new_option gtk GTK
 #=======================================
 
 opt_print_gtk()
@@ -166,7 +164,7 @@ GTK_LIBS = ${GTK_LIBS}"
 				exit_error "ERROR: GTK4 was not found"
 			fi
 		else
-			gtk_pkg_config='gtk4'
+			gtkpc='gtk4'
 			enable_gtk4=yes
 			enable_gtk2='no'
 			enable_gtk3='no'
@@ -180,7 +178,7 @@ GTK_LIBS = ${GTK_LIBS}"
 				exit_error "ERROR: GTK3 was not found"
 			fi
 		else
-			gtk_pkg_config='gtk+-3.0'
+			gtkpc='gtk+-3.0'
 			enable_gtk3=yes
 			enable_gtk2='no'
 			enable_gtk4='no'
@@ -194,19 +192,19 @@ GTK_LIBS = ${GTK_LIBS}"
 				exit_error "ERROR: GTK2 was not found"
 			fi
 		else
-			gtk_pkg_config='gtk+-2.0'
+			gtkpc='gtk+-2.0'
 			enable_gtk2=yes
 			enable_gtk3='no'
 			enable_gtk4='no'
 		fi
 	fi
 
-	if [ -z "$gtk_pkg_config" ] ; then
+	if [ -z "$gtkpc" ] ; then
 		exit_error "ERROR: GTK was not found"
 	fi
 
-	GTK_CFLAGS=$(run_pkg_config ${gtk_pkg_config} --cflags 2>/dev/null)
-	GTK_LIBS=$(run_pkg_config ${gtk_pkg_config} --libs 2>/dev/null)
+	GTK_CFLAGS=$(run_pkg_config ${gtkpc} --cflags 2>/dev/null)
+	GTK_LIBS=$(run_pkg_config ${gtkpc} --libs 2>/dev/null)
 
 	# disabling deprecated gtk only makes sense if GTK is going to be compiled
 	# so make it part of GTK_CFLAGS

@@ -35,6 +35,11 @@ w_main_func()
 	w_check_headers_required stdio.h
 }
 
+w_finish_func()
+{
+    printf ""
+}
+
 
 #=====================================================================
 # special scripts for optional features and various tasks

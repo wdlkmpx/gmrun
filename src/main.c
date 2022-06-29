@@ -796,7 +796,7 @@ int main(int argc, char **argv)
    int status = 0;
 
 #ifdef ENABLE_NLS
-   bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
+   bindtextdomain (GETTEXT_PACKAGE, PACKAGE_LOCALEDIR);
    bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
    textdomain (GETTEXT_PACKAGE);
 #endif

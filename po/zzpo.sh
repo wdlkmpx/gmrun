@@ -79,7 +79,6 @@ update_pot()
 	get_gettext_package
 	#--
 	echo "GETTEXT_PACKAGE: ${GETTEXT_PACKAGE}.pot"
-    extraopts=
 	xgettext \
 		--default-domain=${GETTEXT_PACKAGE} \
 		--add-comments \

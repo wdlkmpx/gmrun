@@ -21,6 +21,24 @@ extra_configure_opts=''
 config_h_have=
 config_mk_flags=
 w_files_in=
+sysroot=
+
+
+w_new_option() # $1=opt [$2=env_variable]
+{
+	w_opts_configure="$w_opts_configure $1"
+	w_opts_check="$w_opts_check $1"
+	if [ -n "$2" ] ; then
+		extra_env_vars="$extra_env_vars $2"
+	fi
+}
+
+w_new_option_with()
+{
+	extra_packages_opts="$extra_packages_opts $1"
+	w_opts_check="$w_opts_check $1"
+}
+
 
 if [ -f configure.project ] ; then
 	. ./configure.project
@@ -264,7 +282,16 @@ w_pkgconfig_check() # $1=<pkg> $2=[min-version]
 	if [ $xret -eq 0 ] ; then
 		echo "yes [$(run_pkg_config ${pc_pkg} --modversion)]"
 	else
-		echo "no"
+		if [ -n "$pc_pkg_min_ver" ] ; then
+			xxzzfound=$(run_pkg_config ${pc_pkg} --modversion 2>/dev/null)
+			if [ -n "$xxzzfound" ] ; then
+				echo "no [found $xxzzfound]"
+			else
+				echo "no"
+			fi
+		else
+			echo "no"
+		fi
 	fi
 	return $xret
 }
@@ -275,14 +302,7 @@ w_compile_c_code() # $1:code  $2:extra-CFLAGS  $3:extra-LDFLAGS
 	if [ -z "$1" ] ; then
 		exit_error 'w_compile: code to compile is an empty string'
 	fi
-	if [ -n "$W_USE_MKTEMP" ] ; then
-		conftest=$(mktemp -u .wxconftestXXXXXXXXX)
-		if [ -z "$conftest" ] ; then
-			conftest=.wxconftest$$
-		fi
-	else
-		conftest=.wxconftest$$
-	fi
+	conftest=.wxconftest$$
 	printf "$1" > ${conftest}.c
 	printf "\n$1" >> config.log
 	echo "$CC $CFLAGS $2 ${conftest}.c -o ${conftest}.o $LDFLAGS $3" >>config.log
@@ -445,7 +465,6 @@ w_require_gnu_make()
 	w_prefer_gnu_make require
 }
 
-
 #==========================================================
 
 #test "$CC"    || CC='gcc'
@@ -541,8 +560,8 @@ Optional Features:
 $(print_optional_features)
 Optional Packages:
   (Use --without-PACKAGE or --with-PACKAGE[=ARG] )
-  --with-sysroot[=DIR]    Search for dependent libraries within DIR (or the
-                          compiler's sysroot if not specified).
+  --with-sysroot[=DIR]    Set DIR as the compiler's sysroot directory
+                          for headers and libraries
 $(print_optional_packages)
 Some influential environment variables:
   CC          C compiler command
@@ -570,11 +589,12 @@ it to find libraries and programs with nonstandard names/locations.
 
 print_optional_features()
 {
-	for confx in ${extra_configure_opts}
+	for confx in ${w_opts_configure} ${extra_configure_opts}
 	do
 		opt_print_${confx}
 	done
-	test -n "${extra_configure_opts}" && printf "  \n"
+	test -n "${extra_configure_opts}" || \
+	test -n "${w_opts_configure}" && printf "  \n"
 }
 
 print_optional_packages()
@@ -648,7 +668,11 @@ do
 	esac
 done
 
-for confx in ${extra_configure_opts} ${extra_packages_opts}
+if [ -n "$W_PKG_CONFIG_STATIC" ] ; then
+	static_link=1
+fi
+
+for confx in ${w_opts_configure} ${extra_configure_opts} ${extra_packages_opts}
 do
 	opt_configure_${confx} "$@"
 done
@@ -736,8 +760,7 @@ if [ -n "${sysroot}" ] ; then
 	fi
 	CC="$CC --sysroot=${sysroot}"
 	CXX="$CXX --sysroot=${sysroot}"
-	#--
-	if [ -n "$W_SYSROOT_PLUS_INCLUDES_AND_LIBS" ] ; then
+	if [ -n "$W_SYSROOT_EXTRA" ] ; then
 		if [ -d ${sysroot}/include ] ; then
 			CFLAGS="-I${sysroot}/include $CFLAGS"
 			CXXFLAGS="-I${sysroot}/include $CXXFLAGS"
@@ -771,6 +794,15 @@ if [ -n "$OS_CROSS" ] ; then
 	esac
 fi
 
+case $OS_TARGET in
+	Linux)   SYSDEFINE='__linux__=1' ;;
+	MinGW)   SYSDEFINE='__MINGW32__=1' ;;
+	FreeBSD) SYSDEFINE='__FreeBSD__=1' ;;
+	Darwub)  SYSDEFINE='__APPLE__=1' ;;
+esac
+
+TARGET_OS="$OS_TARGET"
+
 #==========================================================
 
 CFLAGS="$CFLAGS $PROJECT_CFLAGS"
@@ -797,14 +829,15 @@ w_headers=''
 #----------
 w_main_func # main function where the user performs all sorts of tasks
 #----------
-for xcheckx in ${w_custom_checks}
-do
-	${xcheckx}
-done
 # apps to check, see configure.project (XXX_CFLAGS, XXX_LIBS)
-for appx in ${apps_to_check}
+for appx in ${w_opts_check} ${apps_to_check}
 do
 	opt_check_${appx}
+done
+# custom checks
+for xcheckx in ${w_opts_after_check} ${w_custom_checks}
+do
+	${xcheckx}
 done
 
 #==========================================================
@@ -857,6 +890,7 @@ PACKAGE_VERSION = ${PACKAGE_VERSION}
 OS_BUILD = ${OS_BUILD}
 OS_CROSS = ${OS_CROSS}
 OS_TARGET = ${OS_TARGET}
+TARGET_OS = ${TARGET_OS}
 
 #=================================================
 
@@ -882,19 +916,11 @@ LDFLAGS = ${LDFLAGS}
 LIBS = ${LIBS}
 
 #=================================================
+
+${SYSDEFINE}
 ${make_extra_flags}
 ${w_config_mk_extra_lines}
 EOF
-
-if [ -n "${config_mk_flags}" ] ; then
-	(
-		for env in ${config_mk_flags}
-		do
-			echo "${env}_CFLAGS = $(eval echo \$${env}_CFLAGS)
-${env}_LIBS  = $(eval echo \$${env}_LIBS)"
-		done
-	) >> config.mk
-fi
 
 #==========================================================
 #                  config.sh (=config.mk)
@@ -941,6 +967,7 @@ PACKAGE_VERSION="${PACKAGE_VERSION}"
 OS_BUILD="${OS_BUILD}"
 OS_CROSS="${OS_CROSS}"
 OS_TARGET="${OS_TARGET}"
+TARGET_OS="${TARGET_OS}"
 
 #=================================================
 
@@ -966,17 +993,20 @@ LDFLAGS="${LDFLAGS}"
 LIBS="${LIBS}"
 
 #=================================================
+
+${SYSDEFINE}
 ${config_sh_extra}
 EOF
 
 if [ -n "${config_mk_flags}" ] ; then
-	(
-		for env in ${config_mk_flags}
-		do
-			echo "${env}_CFLAGS=\"$(eval echo \$${env}_CFLAGS)\"
-${env}_LIBS=\"$(eval echo \$${env}_LIBS)\""
-		done
-	) >> config.sh
+	for env in ${config_mk_flags}
+	do
+		echo "${env}_CFLAGS = $(eval echo \$${env}_CFLAGS)
+${env}_LIBS  = $(eval echo \$${env}_LIBS)" >> config.mk
+		#--
+		echo "${env}_CFLAGS=\"$(eval echo \$${env}_CFLAGS)\"
+${env}_LIBS=\"$(eval echo \$${env}_LIBS)\"" >> config.sh
+    done
 fi
 
 
@@ -1014,11 +1044,13 @@ cat > config.h <<EOF
 #define PACKAGE_BUGREPORT "${PACKAGE_BUGREPORT}"
 #define PACKAGE_VERSION "${PACKAGE_VERSION}"
 
-#define PREFIX "$prefix"
-#define DOCDIR "$docdir"
-#define LOCALEDIR "$localedir"
-#define DATADIR "$datadir"
-#define SYSCONFDIR "$sysconfdir"
+// use PACKAGE_* (i.e: DATADIR may break a MinGW build)
+#define PACKAGE_PREFIX "$prefix"
+#define PACKAGE_LOCALEDIR "$localedir"
+#define PACKAGE_DATADIR "$datadir"
+#define PACKAGE_SYSCONFDIR "$sysconfdir"
+#define PACKAGE_DOCDIR "$docdir"
+#define PACKAGE_MANDIR "$mandir"
 
 #define OS_TARGET "${OS_TARGET}"
 ${config_h_extra}
@@ -1043,15 +1075,19 @@ if [ -n "${config_h_have}" ] ; then
 	) >> config.h
 fi
 
-echo "${w_config_h_extra_lines}
-#endif /* __W_CONFIGURE_CONFIG_H__ */" >> config.h
-
 #==========================================================
 
 for infile in ${w_infiles}
 do
 	./w_conf/00_standard_infile.sh ${infile}
 done
+
+#==========================================================
+
+w_finish_func
+
+echo "${w_config_h_extra_lines}
+#endif /* __W_CONFIGURE_CONFIG_H__ */" >> config.h
 
 #==========================================================
 

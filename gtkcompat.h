@@ -4,7 +4,7 @@
  * For more information, please refer to <https://unlicense.org>
  */
 
-/** 2022-03-02 **/
+/** 2022-04-20 **/
 
 /*
  * gtkcompat.h, GTK2+ compatibility layer
@@ -18,31 +18,6 @@
  * Apps should support gtk2 >= 2.14 / gtk3 >= 3.14
  * 
  */
-
-/* 
-special defines:
-	gtkcompat_widget_set_halign_left   (w)
-	gtkcompat_widget_set_halign_center (w)
-	gtkcompat_widget_set_halign_right  (w)
-*/
-
-/*
-GTKCOMPAT_DRAW_SIGNAL (gtk3="draw", gtk2="expose_event")
----------------------
- g_signal_connect (w, GTKCOMPAT_DRAW_SIGNAL, G_CALLBACK (w_draw_cb), NULL);
- gboolean w_draw_cb (GtkWidget *w, gpointer compat, gpointer user_data)
- {
- #if GTK_CHECK_VERSION (3, 0, 0)
-    cairo_t * cr = (cairo_t *) compat;
- #else // gtk2
-    //GdkEventExpose * event = (GdkEventExpose *) compat;
-    cairo_t * cr = gdk_cairo_create (gtk_widget_get_window (w));
- #endif
- #if GTK_MAJOR_VERSION == 2
-    cairo_destroy (cr);
- #endif
- }
-*/
 
 #ifndef __GTKCOMPAT_H
 #define __GTKCOMPAT_H
@@ -175,13 +150,27 @@ extern "C"
 #define gtkcompat_grid_new(rows,cols) (gtk_grid_new())
 #endif
 
+
+#if GTK_MAJOR_VERSION == 3
+
+// GTK >= 3.20 (gtk_widget_set_focus_on_click)
+#if GTK_MINOR_VERSION >= 20
+#define gtk_button_set_focus_on_click(w,b) gtk_widget_set_focus_on_click(GTK_WIDGET(w),b)
+#define gtk_button_get_focus_on_click(w)   gtk_widget_get_focus_on_click(GTK_WIDGET(w))
+#define gtk_combo_box_set_focus_on_click(w,b) gtk_widget_set_focus_on_click(GTK_WIDGET(w),b)
+#define gtk_combo_box_get_focus_on_click(w)   gtk_widget_get_focus_on_click(GTK_WIDGET(w))
+#define gtk_file_chooser_button_set_focus_on_click(w,b) gtk_widget_set_focus_on_click(GTK_WIDGET(w),b)
+#define gtk_file_chooser_button_get_focus_on_click(w)   gtk_widget_get_focus_on_click(GTK_WIDGET(w))
+#endif
+
 /* GTK < 3.12
 #if ! GTK_CHECK_VERSION (3, 12, 0)
-#define gtk_application_set_accels_for_action(app,name,accels) \
-          gtk_application_add_accelerator(app,accels[0],name,NULL)
+#define gtk_application_set_accels_for_action(app,name,accels)   gtk_application_add_accelerator(app,accels[0],name,NULL)
 #define gtk_widget_set_margin_start(widget,margin) gtk_widget_set_margin_left(widget,margin)
 #define gtk_widget_set_margin_end(widget,margin)   gtk_widget_set_margin_right(widget,margin)
 #endif */
+
+#endif /* ------- GTK3 ------- */
 
 
 /* ================================================== */
@@ -243,8 +232,7 @@ extern "C"
 //-
 #define GTK_GRID GTK_TABLE
 #define GtkGrid  GtkTable
-#define gtk_grid_attach(grid,child,left,top,width,height) \
-    gtk_table_attach_defaults((grid),(child), (left), (left)+(width), (top), (top)+(height))
+//#define gtk_grid_attach(grid,child,left,top,width,height) gtk_table_attach_defaults(grid,child,left,left+width,top,top+height)
 #define gtkcompat_grid_new(rows,cols) (gtk_table_new((rows),(cols),FALSE))
 #define gtkcompat_grid_attach       gtk_table_attach_defaults
 #define gtk_grid_set_column_spacing gtk_table_set_col_spacings
@@ -290,7 +278,7 @@ typedef struct _GtkComboBoxPrivate GtkComboBoxTextPrivate;
 #define gtk_combo_box_text_prepend_text(combo,text)    gtk_combo_box_prepend_text(combo,text)
 #define gtk_combo_box_text_remove(combo,pos)           gtk_combo_box_remove_text(combo,pos)
 #define gtk_combo_box_text_get_active_text(combo)      (gtk_combo_box_get_active_text(combo))
-#define gtk_combo_box_get_has_entry(combo) (0)
+//#define gtk_combo_box_get_has_entry(combo) (0)
 #define gtk_combo_box_set_entry_text_column(combo,cl)
 #define gtk_combo_box_get_entry_text_column(combo) (0)
 #define gtk_range_get_round_digits(range) (GTK_RANGE(range)->round_digits)

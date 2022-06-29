@@ -2,8 +2,7 @@
 # http://unlicense.org/
 
 #=======================================
-apps_to_check="$apps_to_check gettext"
-extra_configure_opts="$extra_configure_opts gettext"
+w_new_option gettext
 #=======================================
 
 export GETTEXT_PACKAGE
