@@ -1,4 +1,12 @@
 ==========
+gmrun 1.4w
+==========
+  - some optimizations and tweaks/fixes
+  - NLS support
+  - make dialog only horizontally resizable
+  - fix handling of lines containing ':'
+
+==========
 gmrun 1.3w
 ==========
   - Replaced autotools with a custom configure script and makefiles
