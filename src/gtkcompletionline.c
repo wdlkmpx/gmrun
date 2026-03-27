@@ -46,6 +46,7 @@ static guint timeout_id = 0;
 const char * (*history_search_first_func) (HistoryFile *);
 const char * (*history_search_next_func)  (HistoryFile *);
 static gboolean searching_history = FALSE;
+static gboolean history_nothing = TRUE;
 
 /* GLOBALS */
 
@@ -284,6 +285,7 @@ void gtk_completion_line_last_history_item (GtkCompletionLine* object) {
    if (last_item) {
       gtk_entry_set_text (GTK_ENTRY(object), last_item);
    }
+   history_nothing = FALSE;
 }
 
 /* Get one word of a string: separator is space, but only unescaped spaces */
@@ -787,16 +789,15 @@ GtkWidget * gtk_completion_line_new()
 
 static void up_history (GtkCompletionLine* cl)
 {
-   static int pause = 0;
    const char * text_up;
-   if (pause == 1) {
+   if (history_nothing) {
       text_up = history_last (cl->hist);
-      pause = 0;
+      history_nothing = FALSE;
    } else {
       text_up = history_prev (cl->hist);
       if (!text_up) {  // empty, set a flag, next time we'll get something
-         pause = 1;
          text_up = "";
+         history_nothing = TRUE;
       }
    }
    if (text_up) {
@@ -806,16 +807,15 @@ static void up_history (GtkCompletionLine* cl)
 
 static void down_history (GtkCompletionLine* cl)
 {
-   static int pause = 0;
    const char * text_down;
-   if (pause == 1) {
+   if (history_nothing) {
       text_down = history_first (cl->hist);
-      pause = 0;
+      history_nothing = FALSE;
    } else {
       text_down = history_next (cl->hist);
       if (!text_down) {  // empty, set a flag, next time we'll get something
-         pause = 1;
          text_down = "";
+         history_nothing = TRUE;
       }
    }
    if (text_down) {
