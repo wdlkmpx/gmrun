@@ -268,8 +268,8 @@ const char * history_last (HistoryFile * history)
 {
    if (history->list) {
       history->current = history->list_end; // g_list_last (history->list);
-      return ((char *) (history->current->data));
       history->index = history->count;
+      return ((char *) (history->current->data));
    }
    return (NULL);
 }
